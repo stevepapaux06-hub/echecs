@@ -9,6 +9,7 @@ import type {
 import { calculateMetrics } from "@/domain/diagnostic/metrics";
 import { generateExercises } from "@/domain/training/generate";
 import type { StockfishClient } from "@/infrastructure/engine/stockfish-client";
+import { evaluationForPlayer } from "@/infrastructure/engine/uci";
 
 export type AnalysisProgress = {
   completed: number;
@@ -22,10 +23,6 @@ function movesToAnalyze(moves: MoveSnapshot[], playerColor: "white" | "black"): 
   if (candidates.length <= 24) return candidates;
   const step = (candidates.length - 1) / 23;
   return Array.from({ length: 24 }, (_, index) => candidates[Math.round(index * step)]);
-}
-
-function forPlayer(whiteCp: number, playerColor: "white" | "black"): number {
-  return playerColor === "white" ? whiteCp : -whiteCp;
 }
 
 export async function analyzePayload(
@@ -59,8 +56,8 @@ export async function analyzePayload(
     for (const move of moves) {
       const before = await evaluate(move.fenBefore);
       const after = await evaluate(move.fenAfter);
-      const playerCpBefore = forPlayer(before.whiteCp, game.playerColor);
-      const playerCpAfter = forPlayer(after.whiteCp, game.playerColor);
+      const playerCpBefore = evaluationForPlayer(before.whiteCp, game.playerColor);
+      const playerCpAfter = evaluationForPlayer(after.whiteCp, game.playerColor);
       analyzedMoves.push({
         ...move,
         before,

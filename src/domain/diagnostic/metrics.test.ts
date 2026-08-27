@@ -1,6 +1,32 @@
 import { describe, expect, it } from "vitest";
-import type { AnalyzedGame, AnalyzedMove, GamePhase } from "@/domain/chess/types";
+import type { AnalyzedGame, AnalyzedMove, EngineEvaluation, GamePhase } from "@/domain/chess/types";
 import { calculateMetrics } from "./metrics";
+
+function evaluation(whiteCp: number, bestMove: string): EngineEvaluation {
+  return {
+    fen: "8/8/8/8/8/8/8/K6k w - - 0 1",
+    sideToMove: "w",
+    whiteCp,
+    bestMove,
+    depth: 7,
+    lines: [{
+      multipv: 1,
+      depth: 7,
+      rawScore: { type: "cp", value: whiteCp },
+      whiteScore: { type: "cp", value: whiteCp },
+      whiteCp,
+      pv: bestMove ? [bestMove] : [],
+    }],
+    debug: {
+      fen: "8/8/8/8/8/8/8/K6k w - - 0 1",
+      sideToMove: "w",
+      requestedDepth: 7,
+      reachedDepth: 7,
+      bestMove,
+      lines: [],
+    },
+  };
+}
 
 function move(phase: GamePhase, before: number, after: number): AnalyzedMove {
   return {
@@ -13,8 +39,8 @@ function move(phase: GamePhase, before: number, after: number): AnalyzedMove {
     fenBefore: "before",
     fenAfter: "after",
     phase,
-    before: { whiteCp: before, bestMove: "g1f3", depth: 7 },
-    after: { whiteCp: after, bestMove: "", depth: 7 },
+    before: evaluation(before, "g1f3"),
+    after: evaluation(after, ""),
     playerCpBefore: before,
     playerCpAfter: after,
     lossCp: Math.max(0, before - after),

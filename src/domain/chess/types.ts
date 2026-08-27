@@ -45,11 +45,49 @@ export type AnalysisPayload = {
   warnings: string[];
 };
 
+export type EngineScore = {
+  type: "cp" | "mate";
+  /** Raw UCI value. A positive value favours the side whose perspective is stated. */
+  value: number;
+};
+
+export type EngineLine = {
+  multipv: number;
+  depth: number;
+  /** Score exactly as emitted by Stockfish, from the side-to-move perspective. */
+  rawScore: EngineScore;
+  /** The same score normalized once and for all from White's perspective. */
+  whiteScore: EngineScore;
+  /** Comparable value used by the diagnostic; mate scores are mapped far beyond material scores. */
+  whiteCp: number;
+  pv: string[];
+};
+
+export type EngineDebugInfo = {
+  fen: string;
+  sideToMove: MoveColor;
+  requestedDepth: number;
+  reachedDepth: number;
+  bestMove: string;
+  lines: Array<{
+    multipv: number;
+    depth: number;
+    rawScore: string;
+    whiteScore: string;
+    pv: string[];
+  }>;
+};
+
 export type EngineEvaluation = {
+  fen: string;
+  sideToMove: MoveColor;
   whiteCp: number;
   bestMove: string;
   depth: number;
+  /** Mate distance normalized from White's perspective. */
   mate?: number;
+  lines: EngineLine[];
+  debug: EngineDebugInfo;
 };
 
 export type AnalyzedMove = MoveSnapshot & {
