@@ -1,0 +1,205 @@
+import { Chess, type Move, type Square } from "chess.js";
+import type {
+  EngineEvaluation,
+  PlayerColor,
+  TrainingType,
+} from "@/domain/chess/types";
+import { evaluationForPlayer } from "../../infrastructure/engine/uci";
+
+export type MoveGrade = "excellent" | "very-good" | "playable" | "inaccuracy" | "mistake";
+
+export type CandidateMove = {
+  uci: string;
+  san: string;
+  playerCp: number;
+  pvSan: string;
+};
+
+export type TrainingFeedback = {
+  grade: MoveGrade;
+  tone: "great" | "good" | "warning";
+  title: string;
+  body: string;
+  bestMove: string;
+  bestMoveSan: string;
+  playedMove: string;
+  playedMoveSan: string;
+  bestLineSan: string;
+  playedLineSan: string;
+  lossCp: number;
+  afterPlayerCp: number;
+  candidates: CandidateMove[];
+};
+
+const PIECE_NAMES: Record<Move["piece"], string> = {
+  p: "pion",
+  n: "cavalier",
+  b: "fou",
+  r: "tour",
+  q: "dame",
+  k: "roi",
+};
+
+export function gradeMove(lossCp: number): MoveGrade {
+  if (lossCp <= 20) return "excellent";
+  if (lossCp <= 50) return "very-good";
+  if (lossCp <= 100) return "playable";
+  if (lossCp <= 180) return "inaccuracy";
+  return "mistake";
+}
+
+export function uciToSan(fen: string, uci: string): string {
+  try {
+    const chess = new Chess(fen);
+    return chess.move({
+      from: uci.slice(0, 2) as Square,
+      to: uci.slice(2, 4) as Square,
+      promotion: uci.slice(4, 5) || "q",
+    }).san;
+  } catch {
+    return uci;
+  }
+}
+
+export function uciLineToSan(fen: string, line: string[], maxPlies = 6): string {
+  const chess = new Chess(fen);
+  const san: string[] = [];
+
+  for (const uci of line.slice(0, maxPlies)) {
+    try {
+      san.push(chess.move({
+        from: uci.slice(0, 2) as Square,
+        to: uci.slice(2, 4) as Square,
+        promotion: uci.slice(4, 5) || "q",
+      }).san);
+    } catch {
+      break;
+    }
+  }
+
+  return san.join(" ");
+}
+
+function describeMoveIdea(fen: string, uci: string, exerciseType: TrainingType): string {
+  try {
+    const chess = new Chess(fen);
+    const move = chess.move({
+      from: uci.slice(0, 2) as Square,
+      to: uci.slice(2, 4) as Square,
+      promotion: uci.slice(4, 5) || "q",
+    });
+
+    if (chess.isCheckmate()) return "La ligne de référence force immédiatement le mat.";
+    if (chess.isCheck()) return "Le coup de référence joue avec tempo : l’échec force une réponse adverse.";
+    if (move.promotion) return "Le coup de référence concrétise l’avantage en promouvant un pion.";
+    if (move.captured) return "Le coup de référence clarifie tout de suite le bilan matériel par une prise.";
+    if (move.isKingsideCastle() || move.isQueensideCastle()) {
+      return "Le coup de référence met le roi en sécurité et active une tour.";
+    }
+    if (move.piece === "k") {
+      return "Le coup de référence active le roi sans l’exposer à une menace immédiate.";
+    }
+    if (exerciseType === "defense") {
+      return `Le coup de référence active le ${PIECE_NAMES[move.piece]} tout en limitant les menaces immédiates.`;
+    }
+    if (exerciseType === "conversion") {
+      return `Le coup de référence améliore le ${PIECE_NAMES[move.piece]} sans rendre le contre-jeu adverse plus facile.`;
+    }
+    return `Le coup de référence améliore l’activité du ${PIECE_NAMES[move.piece]} avant de chercher une action forcing.`;
+  } catch {
+    return "Compare surtout les réponses forcing dans la ligne de référence.";
+  }
+}
+
+function copyForGrade(grade: MoveGrade, foundCandidate: boolean): { title: string; lead: string } {
+  switch (grade) {
+    case "excellent":
+      return {
+        title: "Excellent",
+        lead: foundCandidate
+          ? "Tu as trouvé l’une des meilleures continuations de la position."
+          : "Ton choix conserve toute la valeur mesurée de la position.",
+      };
+    case "very-good":
+      return {
+        title: "Très bon",
+        lead: "Tu conserves presque tout le potentiel de la position, même si une suite est un peu plus précise.",
+      };
+    case "playable":
+      return {
+        title: "Jouable",
+        lead: "Ton idée reste saine, mais elle laisse une marge de manœuvre supplémentaire à l’adversaire.",
+      };
+    case "inaccuracy":
+      return {
+        title: "Imprécision",
+        lead: "La position reste jouable, mais ce coup cède une part mesurable de ton avantage.",
+      };
+    default:
+      return {
+        title: "Erreur importante",
+        lead: "Ce coup change nettement l’évaluation et autorise une ressource adverse concrète.",
+      };
+  }
+}
+
+export function buildTrainingFeedback({
+  fen,
+  playerColor,
+  exerciseType,
+  playedMove,
+  playedMoveSan,
+  baseline,
+  after,
+}: {
+  fen: string;
+  playerColor: PlayerColor;
+  exerciseType: TrainingType;
+  playedMove: string;
+  playedMoveSan: string;
+  baseline: EngineEvaluation;
+  after: EngineEvaluation;
+}): TrainingFeedback {
+  const expectedSide = playerColor === "white" ? "w" : "b";
+  if (baseline.sideToMove !== expectedSide) {
+    throw new Error("La position d’exercice n’est pas orientée du point de vue du joueur.");
+  }
+
+  const baselinePlayerCp = evaluationForPlayer(baseline.whiteCp, playerColor);
+  const afterPlayerCp = evaluationForPlayer(after.whiteCp, playerColor);
+  const lossCp = Math.max(0, baselinePlayerCp - afterPlayerCp);
+  const grade = gradeMove(lossCp);
+  const foundCandidate = baseline.lines.some((line) => line.pv[0] === playedMove);
+  const copy = copyForGrade(grade, foundCandidate);
+  const principal = baseline.lines[0];
+  const bestMove = baseline.bestMove || principal?.pv[0] || "";
+  const candidates = baseline.lines
+    .filter((line) => line.pv[0])
+    .slice(0, 3)
+    .map((line) => ({
+      uci: line.pv[0],
+      san: uciToSan(fen, line.pv[0]),
+      playerCp: evaluationForPlayer(line.whiteCp, playerColor),
+      pvSan: uciLineToSan(fen, line.pv),
+    }));
+
+  return {
+    grade,
+    tone: grade === "excellent" || grade === "very-good"
+      ? "great"
+      : grade === "playable" || grade === "inaccuracy"
+        ? "good"
+        : "warning",
+    title: copy.title,
+    body: `${copy.lead} ${describeMoveIdea(fen, bestMove, exerciseType)}`,
+    bestMove,
+    bestMoveSan: uciToSan(fen, bestMove),
+    playedMove,
+    playedMoveSan,
+    bestLineSan: principal ? uciLineToSan(fen, principal.pv) : "",
+    playedLineSan: uciLineToSan(fen, [playedMove, ...(after.lines[0]?.pv ?? [])]),
+    lossCp,
+    afterPlayerCp,
+    candidates,
+  };
+}
