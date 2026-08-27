@@ -1,0 +1,5 @@
+allowBuilds:
+  sharp: false
+  stockfish: false
+  unrs-resolver: false
+confirmModulesPurge: false
