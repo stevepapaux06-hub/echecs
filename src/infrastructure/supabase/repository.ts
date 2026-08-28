@@ -56,21 +56,91 @@ function json(value: unknown): Json {
   return JSON.parse(JSON.stringify(value)) as Json;
 }
 
-export async function sendMagicLink(email: string): Promise<void> {
-  const supabase = getSupabaseClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: window.location.origin,
-      shouldCreateUser: true,
-    },
-  });
-  if (error) throw error;
+function authErrorMessage(reason: unknown): string {
+  const error = reason && typeof reason === "object" ? reason as Record<string, unknown> : null;
+  const code = typeof error?.code === "string" ? error.code : "";
+  const message = reason instanceof Error
+    ? reason.message
+    : typeof error?.message === "string"
+      ? error.message
+      : "";
+  const normalized = `${code} ${message}`.toLowerCase();
+
+  if (normalized.includes("invalid_credentials") || normalized.includes("invalid login credentials")) {
+    return "E-mail ou mot de passe incorrect.";
+  }
+  if (normalized.includes("email_not_confirmed") || normalized.includes("email not confirmed")) {
+    return "Confirme d’abord ton adresse e-mail, puis reconnecte-toi.";
+  }
+  if (normalized.includes("over_email_send_rate_limit") || normalized.includes("rate limit")) {
+    return "Trop de demandes ont été envoyées. Attends une minute avant de réessayer.";
+  }
+  if (normalized.includes("weak_password") || normalized.includes("password should be")) {
+    return "Choisis un mot de passe d’au moins 8 caractères.";
+  }
+  if (normalized.includes("user_already_exists") || normalized.includes("already registered")) {
+    return "Un compte existe déjà avec cet e-mail. Connecte-toi ou utilise « Mot de passe oublié ».";
+  }
+  if (normalized.includes("fetch") || normalized.includes("network")) {
+    return "La connexion au service de compte a échoué. Vérifie ton réseau puis réessaie.";
+  }
+  return message || "Le service de connexion n’a pas pu terminer cette action.";
+}
+
+function throwAuthError(reason: unknown): never {
+  throw new Error(authErrorMessage(reason));
+}
+
+export async function signInWithPassword(email: string, password: string): Promise<void> {
+  try {
+    const { error } = await getSupabaseClient().auth.signInWithPassword({ email, password });
+    if (error) throwAuthError(error);
+  } catch (reason) {
+    throwAuthError(reason);
+  }
+}
+
+export async function signUpWithPassword(email: string, password: string): Promise<boolean> {
+  try {
+    const { data, error } = await getSupabaseClient().auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    if (error) throwAuthError(error);
+    return Boolean(data.session);
+  } catch (reason) {
+    throwAuthError(reason);
+  }
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  try {
+    const { error } = await getSupabaseClient().auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    if (error) throwAuthError(error);
+  } catch (reason) {
+    throwAuthError(reason);
+  }
+}
+
+export async function updatePassword(password: string): Promise<void> {
+  try {
+    const { error } = await getSupabaseClient().auth.updateUser({ password });
+    if (error) throwAuthError(error);
+  } catch (reason) {
+    throwAuthError(reason);
+  }
 }
 
 export async function signOut(): Promise<void> {
-  const { error } = await getSupabaseClient().auth.signOut();
-  if (error) throw error;
+  try {
+    const { error } = await getSupabaseClient().auth.signOut({ scope: "local" });
+    if (error) throwAuthError(error);
+  } catch (reason) {
+    throwAuthError(reason);
+  }
 }
 
 function profileFromRow(row: {
@@ -158,6 +228,35 @@ export async function loadPersistentProfile(user: User): Promise<PersistentProfi
   };
 }
 
+export async function saveChessProfile(userId: string, profile: PlayerProfile): Promise<void> {
+  const ratings = profile.ratings ?? {};
+  const { error } = await getSupabaseClient().from("chess_profiles").upsert({
+    id: userId,
+    chess_username: profile.username,
+    display_name: profile.displayName,
+    rapid_rating: ratings.rapid ?? null,
+    blitz_rating: ratings.blitz ?? null,
+    bullet_rating: ratings.bullet ?? null,
+    daily_rating: ratings.daily ?? null,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(error.message || "Le compte Chess.com n’a pas pu être sauvegardé.");
+}
+
+export async function unlinkChessProfile(userId: string): Promise<void> {
+  const { error } = await getSupabaseClient().from("chess_profiles").upsert({
+    id: userId,
+    chess_username: null,
+    display_name: null,
+    rapid_rating: null,
+    blitz_rating: null,
+    bullet_rating: null,
+    daily_rating: null,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(error.message || "Le compte Chess.com n’a pas pu être délié.");
+}
+
 export async function saveGames(
   userId: string,
   profile: PlayerProfile,
@@ -203,18 +302,7 @@ export async function saveCompleteAnalysis(
   result: CompleteAnalysis,
 ): Promise<string> {
   const supabase = getSupabaseClient();
-  const ratings = payload.profile.ratings ?? {};
-  const { error: profileError } = await supabase.from("chess_profiles").upsert({
-    id: userId,
-    chess_username: payload.profile.username,
-    display_name: payload.profile.displayName,
-    rapid_rating: ratings.rapid ?? null,
-    blitz_rating: ratings.blitz ?? null,
-    bullet_rating: ratings.bullet ?? null,
-    daily_rating: ratings.daily ?? null,
-    updated_at: new Date().toISOString(),
-  });
-  if (profileError) throw profileError;
+  await saveChessProfile(userId, payload.profile);
 
   const savedGames = await saveGames(userId, payload.profile, payload.games);
   const cadenceLabel = payload.selection.cadence === "all"

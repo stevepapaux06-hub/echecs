@@ -38,11 +38,24 @@ export async function POST(request: Request) {
     return Response.json(await getRecentGames(username, limit, cadence as GameCadence));
   } catch (error) {
     if (error instanceof ChessComError) {
-      const status = error.code === "not_found" ? 404 : error.code === "rate_limited" ? 429 : 503;
+      const status = error.code === "not_found"
+        ? 404
+        : error.code === "rate_limited"
+          ? 429
+          : error.code === "no_games"
+            ? 422
+            : error.code === "timeout"
+              ? 504
+              : error.code === "network" || error.code === "invalid_response"
+                ? 502
+                : 503;
       return Response.json({ error: error.message, code: error.code }, { status });
     }
     return Response.json(
-      { error: "Une erreur inattendue a interrompu la récupération des parties." },
+      {
+        error: "Une erreur interne ChessPath a interrompu la récupération. Aucune donnée n’a été modifiée.",
+        code: "internal",
+      },
       { status: 500 },
     );
   }

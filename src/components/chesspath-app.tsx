@@ -20,6 +20,7 @@ import {
 import type {
   AnalysisPayload,
   CompleteAnalysis,
+  PlayerProfile,
   TrainingExercise,
 } from "@/domain/chess/types";
 import { analyzePayload } from "@/domain/chess/analyze";
@@ -31,8 +32,10 @@ import {
   loadPersistentProfile,
   reopenAnalysis,
   saveCompleteAnalysis,
+  saveChessProfile,
   saveExerciseAttempt,
   saveGames,
+  unlinkChessProfile,
   type AnalysisHistoryItem,
   type PersistentProfile,
 } from "@/infrastructure/supabase/repository";
@@ -44,6 +47,33 @@ import { TrainingBoard } from "./training-board";
 import { TrainingHub } from "./training-hub";
 
 type Screen = AppSection | "loading" | "dashboard" | "training";
+
+function readableError(reason: unknown, fallback: string): string {
+  if (reason instanceof Error && reason.message) return reason.message;
+  if (reason && typeof reason === "object" && "message" in reason) {
+    const message = (reason as { message?: unknown }).message;
+    if (typeof message === "string" && message) return message;
+  }
+  return fallback;
+}
+
+async function readApiResponse<T>(response: Response, fallback: string): Promise<T> {
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(response.ok
+      ? "Le serveur a renvoyé une réponse illisible."
+      : `${fallback} (HTTP ${response.status}).`);
+  }
+  if (!response.ok) {
+    const message = data && typeof data === "object" && "error" in data
+      ? (data as { error?: unknown }).error
+      : null;
+    throw new Error(typeof message === "string" && message ? message : `${fallback} (HTTP ${response.status}).`);
+  }
+  return data as T;
+}
 
 const pillars = [
   ["01", "Analyse", "De 1 à 100 parties, filtrées par cadence ou importées en PGN."],
@@ -271,42 +301,68 @@ export function ChessPathApp() {
   const [user, setUser] = useState<User | null>(null);
   const [persistent, setPersistent] = useState<PersistentProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const engineRef = useRef<StockfishClient | null>(null);
+  const profileRequestRef = useRef(0);
 
-  async function refreshProfile(targetUser = user) {
+  async function refreshProfile(targetUser: User | null) {
+    const requestId = ++profileRequestRef.current;
     if (!targetUser) {
       setPersistent(null);
+      setProfileError(null);
       setProfileLoading(false);
       return;
     }
     setProfileLoading(true);
+    setProfileError(null);
     try {
-      setPersistent(await loadPersistentProfile(targetUser));
+      const loadedProfile = await loadPersistentProfile(targetUser);
+      if (requestId === profileRequestRef.current) setPersistent(loadedProfile);
+    } catch (reason) {
+      if (requestId === profileRequestRef.current) {
+        setPersistent(null);
+        setProfileError(readableError(reason, "Ton historique n’a pas pu être chargé."));
+      }
     } finally {
-      setProfileLoading(false);
+      if (requestId === profileRequestRef.current) setProfileLoading(false);
     }
   }
 
   useEffect(() => {
-    const supabase = getSupabaseClient();
-    void supabase.auth.getSession().then(({ data }) => {
-      const current = data.session?.user ?? null;
-      setUser(current);
-      void refreshProfile(current);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const current = session?.user ?? null;
-      setUser(current);
-      void refreshProfile(current);
-    });
+    let active = true;
+    let unsubscribe = () => {};
+    try {
+      const supabase = getSupabaseClient();
+      const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+        if (!active) return;
+        const current = session?.user ?? null;
+        setUser(current);
+        if (event === "PASSWORD_RECOVERY") {
+          setPasswordRecovery(true);
+          setScreen("profile");
+        }
+        // Supabase auth callbacks must stay synchronous. Profile queries are
+        // deferred to avoid contending with the session refresh lock on mobile.
+        queueMicrotask(() => {
+          if (active) void refreshProfile(current);
+        });
+      });
+      unsubscribe = () => listener.subscription.unsubscribe();
+    } catch (reason) {
+      queueMicrotask(() => {
+        if (!active) return;
+        setProfileLoading(false);
+        setProfileError(readableError(reason, "Le service de connexion n’est pas configuré."));
+      });
+    }
     return () => {
-      listener.subscription.unsubscribe();
+      active = false;
+      unsubscribe();
       engineRef.current?.destroy();
     };
-    // Supabase's auth listener is installed once; refreshProfile receives the
-    // session user explicitly to avoid closing over stale state.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Supabase's listener emits INITIAL_SESSION, including restored sessions.
   }, []);
 
   function navigate(section: AppSection) {
@@ -369,8 +425,8 @@ export function ChessPathApp() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username: request.username, limit: request.count, cadence: request.cadence }),
         });
-        const data = (await response.json()) as AnalysisPayload | { error?: string };
-        if (!response.ok || !("games" in data)) throw new Error("error" in data && data.error ? data.error : "Impossible de récupérer ces parties.");
+        const data = await readApiResponse<AnalysisPayload>(response, "Impossible de récupérer ces parties");
+        if (!Array.isArray(data.games)) throw new Error("ChessPath a reçu des parties dans un format invalide.");
         payload = data;
       }
       await runPayload(payload);
@@ -421,6 +477,7 @@ export function ChessPathApp() {
       return;
     }
     setScreen("loading");
+    setError(null);
     setProgress(8);
     setLoadingLabel("Synchronisation des archives Chess.com");
     try {
@@ -429,16 +486,38 @@ export function ChessPathApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: persistent.chess.username, limit: 100, cadence: "all" }),
       });
-      const payload = (await response.json()) as AnalysisPayload | { error?: string };
-      if (!response.ok || !("games" in payload)) throw new Error("error" in payload && payload.error ? payload.error : "Synchronisation impossible.");
+      const payload = await readApiResponse<AnalysisPayload>(response, "Synchronisation impossible");
+      if (!Array.isArray(payload.games)) throw new Error("ChessPath a reçu des parties dans un format invalide.");
+      await saveChessProfile(user.id, payload.profile);
       const saved = await saveGames(user.id, payload.profile, payload.games);
       await refreshProfile(user);
       setSaveStatus(`${saved.inserted} nouvelle${saved.inserted > 1 ? "s" : ""} partie${saved.inserted > 1 ? "s" : ""} trouvée${saved.inserted > 1 ? "s" : ""}. Aucune partie existante n’a été dupliquée.`);
       setScreen("profile");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Synchronisation impossible.");
+      setError(readableError(reason, "Synchronisation impossible."));
       setScreen("profile");
     }
+  }
+
+  async function linkChessAccount(username: string) {
+    if (!user) throw new Error("Connecte-toi à ChessPath avant de lier un compte Chess.com.");
+    const response = await fetch("/api/chesscom/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    });
+    const chessProfile = await readApiResponse<PlayerProfile>(response, "Liaison Chess.com impossible");
+    if (!chessProfile.username) throw new Error("Chess.com a renvoyé un profil incomplet.");
+    await saveChessProfile(user.id, chessProfile);
+    await refreshProfile(user);
+    setSaveStatus(`Le compte Chess.com ${chessProfile.username} est lié à ton profil.`);
+  }
+
+  async function unlinkChessAccount() {
+    if (!user) return;
+    await unlinkChessProfile(user.id);
+    await refreshProfile(user);
+    setSaveStatus("Le compte Chess.com est délié. Tes parties et anciennes analyses sont conservées.");
   }
 
   const connected = Boolean(user);
@@ -456,6 +535,6 @@ export function ChessPathApp() {
   if (screen === "analyze") return <AnalyzeScreen username={persistent?.chess?.username} error={error} onAnalyze={(request) => void startAnalysis(request)} {...navProps} />;
   if (screen === "training-hub") return <main className="app-page"><AppNav active="training-hub" {...navProps} /><TrainingHub exercises={hubExercises} attempts={persistent?.trainingAttempts ?? []} priority={result?.metrics.priorityTitle ?? persistent?.analyses[0]?.metrics.priorityTitle} onStart={(items) => void startTraining(items)} onAnalyze={() => navigate("analyze")} /></main>;
   if (screen === "progress") return <main className="app-page"><AppNav active="progress" {...navProps} /><ProgressView profile={persistent} onProfile={() => navigate("profile")} /></main>;
-  if (screen === "profile") return <main className="app-page"><AppNav active="profile" {...navProps} />{saveStatus ? <p className="global-notice">{saveStatus}</p> : null}{error ? <p className="global-notice error">{error}</p> : null}<ProfileView profile={persistent} loading={profileLoading} onSync={() => void synchronize()} onNewAnalysis={() => navigate("analyze")} onImport={() => navigate("analyze")} onOpenAnalysis={openAnalysis} /></main>;
+  if (screen === "profile") return <main className="app-page"><AppNav active="profile" {...navProps} />{saveStatus ? <p className="global-notice">{saveStatus}</p> : null}{error ? <p className="global-notice error">{error}</p> : null}<ProfileView user={user} profile={persistent} loading={profileLoading} profileError={profileError} passwordRecovery={passwordRecovery} onPasswordRecovered={() => setPasswordRecovery(false)} onRetryProfile={() => refreshProfile(user)} onSync={synchronize} onLinkChess={linkChessAccount} onUnlinkChess={unlinkChessAccount} onOpenAnalysis={openAnalysis} /></main>;
   return <HomeScreen profile={persistent} error={error} onAnalyze={(request) => void startAnalysis(request)} onNavigate={navigate} />;
 }
