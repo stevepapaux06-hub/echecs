@@ -6,15 +6,18 @@ import type {
   EngineEvaluation,
   MoveSnapshot,
 } from "./types";
-import { calculateMetrics } from "@/domain/diagnostic/metrics";
-import { generateExercises } from "@/domain/training/generate";
-import type { StockfishClient } from "@/infrastructure/engine/stockfish-client";
-import { evaluationForPlayer } from "@/infrastructure/engine/uci";
+import { calculateMetrics } from "../diagnostic/metrics";
+import { generateExercises } from "../training/generate";
+import { evaluationForPlayer } from "../../infrastructure/engine/uci";
 
 export type AnalysisProgress = {
   completed: number;
   total: number;
   label: string;
+};
+
+export type PositionEvaluator = {
+  evaluate: (fen: string, depth?: number) => Promise<EngineEvaluation>;
 };
 
 function analysisBudget(gameCount: number): { movesPerGame: number; firstDepth: number; deepPositions: number } {
@@ -39,7 +42,7 @@ function movesToAnalyze(
 
 export async function analyzePayload(
   payload: AnalysisPayload,
-  engine: StockfishClient,
+  engine: PositionEvaluator,
   onProgress: (progress: AnalysisProgress) => void,
 ): Promise<CompleteAnalysis> {
   const games = payload.games.slice(0, 100);
@@ -51,6 +54,9 @@ export async function analyzePayload(
   let total = selected.reduce((sum, item) => sum + item.moves.length * 2, 0)
     + budget.deepPositions * 2;
   let completed = 0;
+  let skippedDecisions = 0;
+  let shallowFallbacks = 0;
+  let consecutiveFailures = 0;
   const cache = new Map<string, EngineEvaluation>();
 
   async function evaluate(fen: string, depth: number, label: string): Promise<EngineEvaluation> {
@@ -61,27 +67,43 @@ export async function analyzePayload(
       onProgress({ completed, total, label });
       return cached;
     }
-    const result = await engine.evaluate(fen, depth);
-    cache.set(key, result);
-    completed += 1;
-    onProgress({ completed, total, label });
-    return result;
+    try {
+      const result = await engine.evaluate(fen, depth);
+      cache.set(key, result);
+      return result;
+    } finally {
+      completed += 1;
+      onProgress({ completed, total, label });
+    }
   }
 
   const analyzedGames: AnalyzedGame[] = [];
   for (const { game, moves } of selected) {
     const analyzedMoves: AnalyzedMove[] = [];
     for (const move of moves) {
-      const before = await evaluate(
-        move.fenBefore,
-        budget.firstDepth,
-        `Première passe · ${analyzedGames.length + 1}/${games.length} parties`,
-      );
-      const after = await evaluate(
-        move.fenAfter,
-        budget.firstDepth,
-        "Stockfish compare la position avant et après ton coup",
-      );
+      const [beforeResult, afterResult] = await Promise.allSettled([
+        evaluate(
+          move.fenBefore,
+          budget.firstDepth,
+          `Première passe · ${analyzedGames.length + 1}/${games.length} parties`,
+        ),
+        evaluate(
+          move.fenAfter,
+          budget.firstDepth,
+          "Stockfish compare la position avant et après ton coup",
+        ),
+      ]);
+      if (beforeResult.status === "rejected" || afterResult.status === "rejected") {
+        skippedDecisions += 1;
+        consecutiveFailures += 1;
+        if (consecutiveFailures >= 3) {
+          throw new Error("Stockfish n’a pas réussi à évaluer plusieurs positions consécutives, même après redémarrage automatique.");
+        }
+        continue;
+      }
+      consecutiveFailures = 0;
+      const before = beforeResult.value;
+      const after = afterResult.value;
       const playerCpBefore = evaluationForPlayer(before.whiteCp, game.playerColor);
       const playerCpAfter = evaluationForPlayer(after.whiteCp, game.playerColor);
       analyzedMoves.push({
@@ -107,8 +129,16 @@ export async function analyzePayload(
   total = completed + critical.length * 2;
 
   for (const { game, move } of critical) {
-    const before = await evaluate(move.fenBefore, 10, "Seconde passe approfondie sur tes décisions critiques");
-    const after = await evaluate(move.fenAfter, 10, "Validation des erreurs récurrentes");
+    const [beforeResult, afterResult] = await Promise.allSettled([
+      evaluate(move.fenBefore, 10, "Seconde passe approfondie sur tes décisions critiques"),
+      evaluate(move.fenAfter, 10, "Validation des erreurs récurrentes"),
+    ]);
+    if (beforeResult.status === "rejected" || afterResult.status === "rejected") {
+      shallowFallbacks += 1;
+      continue;
+    }
+    const before = beforeResult.value;
+    const after = afterResult.value;
     move.before = before;
     move.after = after;
     move.playerCpBefore = evaluationForPlayer(before.whiteCp, game.playerColor);
@@ -117,9 +147,19 @@ export async function analyzePayload(
   }
 
   const metrics = calculateMetrics(analyzedGames);
+  if (metrics.positionsAnalyzed === 0) {
+    throw new Error("Stockfish n’a pu évaluer aucune décision exploitable dans ces parties.");
+  }
+  const warnings = [...payload.warnings];
+  if (skippedDecisions > 0) {
+    warnings.push(`${skippedDecisions} décision${skippedDecisions > 1 ? "s ont" : " a"} été ignorée${skippedDecisions > 1 ? "s" : ""} après deux tentatives moteur ; le reste de l’analyse est complet.`);
+  }
+  if (shallowFallbacks > 0) {
+    warnings.push(`${shallowFallbacks} décision${shallowFallbacks > 1 ? "s critiques restent" : " critique reste"} évaluée${shallowFallbacks > 1 ? "s" : ""} à la profondeur initiale.`);
+  }
   return {
     profile: payload.profile,
-    warnings: payload.warnings,
+    warnings,
     selection: payload.selection,
     games: analyzedGames,
     metrics,

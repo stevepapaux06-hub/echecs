@@ -25,6 +25,9 @@ function errorEvidence(items: MoveEvidence[], limit = 3): string[] {
     .slice(0, limit)
     .map(({ game, move }) => {
       const moveNumber = Math.ceil(move.ply / 2);
+      if (move.lossCp >= 90_000) {
+        return `Contre ${game.opponent}, au ${moveNumber}e coup : ${move.san} a conduit à un mat forcé.`;
+      }
       const loss = (move.lossCp / 100).toFixed(1).replace(".0", "");
       return `Contre ${game.opponent}, au ${moveNumber}e coup : ${move.san} a cédé environ ${loss} pion${move.lossCp >= 200 ? "s" : ""}.`;
     });
@@ -232,4 +235,3 @@ export function detectDiagnosticThemes(games: AnalyzedGame[]): DiagnosticTheme[]
     return scoreB - scoreA;
   });
 }
-

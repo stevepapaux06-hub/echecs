@@ -1,5 +1,5 @@
 import type { EngineEvaluation, EngineLine } from "@/domain/chess/types";
-import { buildEngineEvaluation, parseUciInfoLine } from "./uci";
+import { buildEngineEvaluation, buildTerminalEvaluation, parseUciInfoLine } from "./uci";
 
 type SearchRequest = {
   fen: string;
@@ -82,10 +82,7 @@ export class StockfishClient {
     const multiPv = Math.min(5, Math.max(1, Math.round(options.multiPv ?? 1)));
     const timeoutMs = Math.max(5_000, options.timeoutMs ?? 20_000);
 
-    const task = this.queue.then(async () => {
-      await this.init();
-      return this.searchPosition(fen, depth, multiPv, timeoutMs);
-    });
+    const task = this.queue.then(() => this.analyzePosition(fen, depth, multiPv, timeoutMs));
     this.queue = task.then(() => undefined, () => undefined);
     return task;
   }
@@ -117,6 +114,42 @@ export class StockfishClient {
     this.send("setoption name Hash value 16");
     await this.sendAndWait("isready", "readyok", 12_000);
     this.initialized = true;
+  }
+
+  private async analyzePosition(
+    fen: string,
+    depth: number,
+    multiPv: number,
+    timeoutMs: number,
+  ): Promise<EngineEvaluation> {
+    const terminal = buildTerminalEvaluation(fen, depth);
+    if (terminal) {
+      debugEngineResult(terminal);
+      return terminal;
+    }
+
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        await this.init();
+        return await this.searchPosition(fen, depth, multiPv, timeoutMs);
+      } catch (reason) {
+        lastError = reason instanceof Error ? reason : new Error("Réponse Stockfish invalide.");
+        if (attempt === 1 || this.destroyed) throw lastError;
+        this.resetWorkerForRetry();
+      }
+    }
+
+    throw lastError ?? new Error("Stockfish n’a pas pu analyser cette position.");
+  }
+
+  private resetWorkerForRetry(): void {
+    const error = new Error("Redémarrage automatique de Stockfish.");
+    this.rejectTokenWaiters(error);
+    this.worker?.terminate();
+    this.worker = null;
+    this.initialized = false;
+    this.initialization = null;
   }
 
   private async searchPosition(

@@ -1,3 +1,4 @@
+import { Chess } from "chess.js";
 import type {
   EngineDebugInfo,
   EngineEvaluation,
@@ -35,6 +36,45 @@ export function scoreToComparableCp(score: EngineScore): number {
 
 export function evaluationForPlayer(whiteCp: number, playerColor: PlayerColor): number {
   return playerColor === "white" ? whiteCp : -whiteCp;
+}
+
+/**
+ * Stockfish legitimately returns `bestmove (none)` without a PV when a FEN is
+ * already checkmate, stalemate, or another automatic draw. Resolve those
+ * positions before starting a search so a finished game cannot abort a batch.
+ */
+export function buildTerminalEvaluation(
+  fen: string,
+  requestedDepth: number,
+): EngineEvaluation | null {
+  const chess = new Chess(fen);
+  if (!chess.isGameOver()) return null;
+
+  const sideToMove = sideToMoveFromFen(fen);
+  const isCheckmate = chess.isCheckmate();
+  const whiteIsMated = isCheckmate && sideToMove === "w";
+  const whiteCp = isCheckmate
+    ? whiteIsMated ? -MATE_SCORE_CP : MATE_SCORE_CP
+    : 0;
+  const mate = isCheckmate ? whiteIsMated ? -1 : 1 : undefined;
+
+  return {
+    fen,
+    sideToMove,
+    whiteCp,
+    bestMove: "",
+    depth: 0,
+    mate,
+    lines: [],
+    debug: {
+      fen,
+      sideToMove,
+      requestedDepth,
+      reachedDepth: 0,
+      bestMove: "",
+      lines: [],
+    },
+  };
 }
 
 /** Parse one exact UCI `info` line while preserving both raw and normalized scores. */

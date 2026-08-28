@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MATE_SCORE_CP,
   buildEngineEvaluation,
+  buildTerminalEvaluation,
   evaluationForPlayer,
   parseUciInfoLine,
   scoreToComparableCp,
@@ -74,5 +75,33 @@ describe("UCI score normalization", () => {
     expect(evaluation.bestMove).toBe("d2d4");
     expect(evaluation.lines.map((line) => line.multipv)).toEqual([1, 2]);
     expect(evaluation.debug.lines[0].rawScore).toBe("cp 31");
+  });
+
+  it("resolves checkmates without requiring a principal variation", () => {
+    const whiteMated = buildTerminalEvaluation(
+      "rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3",
+      8,
+    );
+    const blackMated = buildTerminalEvaluation(
+      "r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4",
+      8,
+    );
+
+    expect(whiteMated?.whiteCp).toBe(-MATE_SCORE_CP);
+    expect(whiteMated?.mate).toBe(-1);
+    expect(whiteMated?.bestMove).toBe("");
+    expect(blackMated?.whiteCp).toBe(MATE_SCORE_CP);
+    expect(blackMated?.mate).toBe(1);
+  });
+
+  it("scores a terminal draw as equal", () => {
+    const stalemate = buildTerminalEvaluation(
+      "7k/5Q2/6K1/8/8/8/8/8 b - - 0 1",
+      8,
+    );
+
+    expect(stalemate?.whiteCp).toBe(0);
+    expect(stalemate?.mate).toBeUndefined();
+    expect(stalemate?.lines).toEqual([]);
   });
 });
