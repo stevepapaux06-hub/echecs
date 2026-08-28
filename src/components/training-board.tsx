@@ -14,14 +14,18 @@ import {
   Search,
   Sparkles,
 } from "lucide-react";
-import type { TrainingExercise } from "@/domain/chess/types";
+import type { EngineEvaluation, TrainingExercise } from "@/domain/chess/types";
 import {
+  buildSequenceFeedback,
   buildTrainingFeedback,
   type TrainingFeedback,
-  uciToSan,
 } from "@/domain/training/feedback";
+import { decideSequence, referenceReply, type TrainingResult } from "@/domain/training/sequence";
 import type { StockfishClient } from "@/infrastructure/engine/stockfish-client";
+import { evaluationForPlayer } from "@/infrastructure/engine/uci";
 import { Brand } from "./brand";
+
+type ThinkingStage = "checking" | "reply" | null;
 
 function formatEvaluation(cp: number): string {
   if (Math.abs(cp) >= 90_000) return cp > 0 ? "gain forcé" : "mat proche";
@@ -60,6 +64,10 @@ function variantPosition(fen: string, line: string[], step: number): string {
   return chess.fen();
 }
 
+function waitForReplyAnimation(): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, 320));
+}
+
 export function TrainingBoard({
   exercises,
   engine,
@@ -71,7 +79,7 @@ export function TrainingBoard({
   onBack: () => void;
   onAttempt?: (
     exercise: TrainingExercise,
-    result: "success" | "partial" | "failed",
+    result: TrainingResult,
     lossCp: number,
     moves: string[],
   ) => void;
@@ -80,13 +88,16 @@ export function TrainingBoard({
   const [position, setPosition] = useState(exercises[0]?.fen ?? new Chess().fen());
   const [feedbackFen, setFeedbackFen] = useState(exercises[0]?.fen ?? new Chess().fen());
   const [feedback, setFeedback] = useState<TrainingFeedback | null>(null);
-  const [thinking, setThinking] = useState(false);
+  const [thinkingStage, setThinkingStage] = useState<ThinkingStage>(null);
+  const [engineError, setEngineError] = useState<string | null>(null);
   const [playerMoves, setPlayerMoves] = useState(0);
   const [attemptMoves, setAttemptMoves] = useState<string[]>([]);
-  const [pendingReply, setPendingReply] = useState<{ fen: string; uci: string } | null>(null);
-  const [result, setResult] = useState<"success" | "partial" | "failed" | null>(null);
+  const [result, setResult] = useState<TrainingResult | null>(null);
   const [variantStep, setVariantStep] = useState<number | null>(null);
-  const baselineCache = useRef(new Map<string, Awaited<ReturnType<StockfishClient["analyze"]>>>());
+  const baselineCache = useRef(new Map<string, EngineEvaluation>());
+  const initialEvaluation = useRef<EngineEvaluation | null>(null);
+  const initialPlayerCp = useRef<number | null>(null);
+  const largestLossCp = useRef(0);
   const attemptToken = useRef(0);
   const exercise = exercises[index];
 
@@ -96,12 +107,15 @@ export function TrainingBoard({
     setPosition(target.fen);
     setFeedbackFen(target.fen);
     setFeedback(null);
-    setThinking(false);
+    setThinkingStage(null);
+    setEngineError(null);
     setPlayerMoves(0);
     setAttemptMoves([]);
-    setPendingReply(null);
     setResult(null);
     setVariantStep(null);
+    initialEvaluation.current = null;
+    initialPlayerCp.current = null;
+    largestLossCp.current = 0;
   }
 
   function findNextOnTheme(): number {
@@ -121,35 +135,47 @@ export function TrainingBoard({
     resetBoard(next);
   }
 
-  function finish(
-    status: "success" | "partial" | "failed",
-    lossCp: number,
-    moves: string[],
-  ) {
-    setResult(status);
-    onAttempt?.(exercise, status, lossCp, moves);
-  }
-
-  function continueSequence() {
-    if (!pendingReply) return;
-    const chess = new Chess(pendingReply.fen);
+  async function analyzePosition(
+    fen: string,
+    options: { multiPv: number },
+  ): Promise<EngineEvaluation> {
     try {
-      chess.move({
-        from: pendingReply.uci.slice(0, 2) as Square,
-        to: pendingReply.uci.slice(2, 4) as Square,
-        promotion: pendingReply.uci.slice(4, 5) || "q",
-      });
-      setPosition(chess.fen());
-      setFeedback(null);
-      setPendingReply(null);
-      setVariantStep(null);
+      return await engine.analyze(fen, { depth: 11, multiPv: options.multiPv, timeoutMs: 30_000 });
     } catch {
-      finish("success", feedback?.lossCp ?? 0, attemptMoves);
+      return engine.analyze(fen, { depth: 8, multiPv: options.multiPv, timeoutMs: 30_000 });
     }
   }
 
+  function finishSequence({
+    status,
+    lossCp,
+    moves,
+    afterPlayerCp,
+  }: {
+    status: TrainingResult;
+    lossCp: number;
+    moves: string[];
+    afterPlayerCp: number;
+  }) {
+    const initial = initialEvaluation.current;
+    if (!initial) return;
+    setFeedbackFen(exercise.fen);
+    setFeedback(buildSequenceFeedback({
+      exercise,
+      initial,
+      moves,
+      result: status,
+      lossCp,
+      afterPlayerCp,
+    }));
+    setThinkingStage(null);
+    setResult(status);
+    setVariantStep(null);
+    onAttempt?.(exercise, status, lossCp, moves);
+  }
+
   async function attemptMove(sourceSquare: string, targetSquare: string | null): Promise<boolean> {
-    if (!targetSquare || thinking || feedback || result) return false;
+    if (!targetSquare || thinkingStage || feedback || result) return false;
     const token = ++attemptToken.current;
     const decisionFen = position;
     const chess = new Chess(decisionFen);
@@ -162,20 +188,27 @@ export function TrainingBoard({
 
     const fenAfter = chess.fen();
     const playedUci = `${move.from}${move.to}${move.promotion ?? ""}`;
-    const nextMoves = [...attemptMoves, playedUci];
+    const movesAfterPlayer = [...attemptMoves, playedUci];
+    const nextPlayerMoves = playerMoves + 1;
     setPosition(fenAfter);
-    setThinking(true);
+    setEngineError(null);
+    setThinkingStage("checking");
+
     try {
       const cacheKey = `${exercise.id}:${decisionFen}`;
       let baseline = baselineCache.current.get(cacheKey);
       if (!baseline) {
-        baseline = await engine.analyze(decisionFen, { depth: 10, multiPv: 3 });
+        baseline = await analyzePosition(decisionFen, { multiPv: 3 });
         baselineCache.current.set(cacheKey, baseline);
       }
-      const after = await engine.analyze(fenAfter, { depth: 10, multiPv: 1 });
+      const after = await analyzePosition(fenAfter, { multiPv: 1 });
       if (token !== attemptToken.current) return true;
 
-      const nextFeedback = buildTrainingFeedback({
+      if (!initialEvaluation.current) {
+        initialEvaluation.current = baseline;
+        initialPlayerCp.current = evaluationForPlayer(baseline.whiteCp, exercise.playerColor);
+      }
+      const decisionFeedback = buildTrainingFeedback({
         fen: decisionFen,
         playerColor: exercise.playerColor,
         exercise,
@@ -184,54 +217,74 @@ export function TrainingBoard({
         baseline,
         after,
       });
-      const nextPlayerMoves = playerMoves + 1;
-      setFeedbackFen(decisionFen);
-      setFeedback(nextFeedback);
-      setPosition(decisionFen);
+      const totalLossCp = Math.max(
+        0,
+        (initialPlayerCp.current ?? decisionFeedback.afterPlayerCp) - decisionFeedback.afterPlayerCp,
+      );
+      largestLossCp.current = Math.max(
+        largestLossCp.current,
+        decisionFeedback.lossCp,
+        totalLossCp,
+      );
       setPlayerMoves(nextPlayerMoves);
-      setAttemptMoves(nextMoves);
+      setAttemptMoves(movesAfterPlayer);
 
-      const thresholdReached = exercise.successThresholdCp === undefined
-        || nextFeedback.afterPlayerCp >= exercise.successThresholdCp;
-      const failed = nextFeedback.lossCp > 180;
-      const sequenceFinished = exercise.mode === "one-move"
-        || nextPlayerMoves >= exercise.maxPlayerMoves
-        || !after.bestMove
-        || after.bestMove === "(none)";
-
-      if (failed) {
-        finish("failed", nextFeedback.lossCp, nextMoves);
-      } else if (sequenceFinished) {
-        finish(thresholdReached ? "success" : "partial", nextFeedback.lossCp, nextMoves);
-      } else {
-        setPendingReply({ fen: fenAfter, uci: after.bestMove });
+      const decision = decideSequence({
+        exercise,
+        playerMoves: nextPlayerMoves,
+        decisionLossCp: decisionFeedback.lossCp,
+        totalLossCp,
+        afterPlayerCp: decisionFeedback.afterPlayerCp,
+        isGameOver: chess.isGameOver(),
+        isCheckmate: chess.isCheckmate(),
+        promoted: Boolean(move.promotion),
+        captured: Boolean(move.captured),
+      });
+      if (decision.finished && decision.result) {
+        finishSequence({
+          status: decision.result,
+          lossCp: largestLossCp.current,
+          moves: movesAfterPlayer,
+          afterPlayerCp: decisionFeedback.afterPlayerCp,
+        });
+        return true;
       }
+
+      const replyUci = referenceReply(exercise, movesAfterPlayer) || after.bestMove;
+      if (!replyUci || replyUci === "(none)") {
+        finishSequence({
+          status: "partial",
+          lossCp: largestLossCp.current,
+          moves: movesAfterPlayer,
+          afterPlayerCp: decisionFeedback.afterPlayerCp,
+        });
+        return true;
+      }
+
+      setThinkingStage("reply");
+      await waitForReplyAnimation();
+      if (token !== attemptToken.current) return true;
+      const replyPosition = new Chess(fenAfter);
+      try {
+        replyPosition.move({
+          from: replyUci.slice(0, 2) as Square,
+          to: replyUci.slice(2, 4) as Square,
+          promotion: replyUci.slice(4, 5) || "q",
+        });
+      } catch {
+        throw new Error("La réponse de référence n’est plus légale dans cette variante.");
+      }
+      const movesAfterReply = [...movesAfterPlayer, replyUci];
+      setPosition(replyPosition.fen());
+      setAttemptMoves(movesAfterReply);
+      setThinkingStage(null);
     } catch {
       if (token !== attemptToken.current) return true;
       setPosition(decisionFen);
-      const fallback: TrainingFeedback = {
-        grade: "mistake",
-        tone: "warning",
-        title: "Le moteur n’a pas répondu",
-        body: "Ton coup était légal, mais l’évaluation locale a été interrompue.",
-        bestMove: exercise.bestMove,
-        bestMoveSan: uciToSan(decisionFen, exercise.bestMove),
-        playedMove: playedUci,
-        playedMoveSan: move.san,
-        bestLineSan: "",
-        playedLineSan: "",
-        lossCp: 0,
-        afterPlayerCp: exercise.baselinePlayerCp,
-        candidates: [],
-        idea: exercise.concept,
-        principalLineUci: [],
-        planArrows: exercise.planArrows ?? [],
-        planSquares: exercise.planSquares ?? [],
-      };
-      setFeedbackFen(decisionFen);
-      setFeedback(fallback);
-    } finally {
-      if (token === attemptToken.current) setThinking(false);
+      setPlayerMoves(playerMoves);
+      setAttemptMoves(attemptMoves);
+      setThinkingStage(null);
+      setEngineError("Le moteur local a été interrompu. Ton coup n’est pas compté : tu peux le rejouer.");
     }
     return true;
   }
@@ -260,12 +313,14 @@ export function TrainingBoard({
       borderRadius: "12%",
     },
   ]));
+  const playerTurn = new Chess(position).turn() === (exercise.playerColor === "white" ? "w" : "b");
+  const boardInteractive = !thinkingStage && !feedback && !result && playerTurn;
 
   const options: ChessboardOptions = {
     id: `chesspath-training-${exercise.id}`,
     position: displayedPosition,
     boardOrientation: exercise.playerColor,
-    allowDragging: !thinking && !feedback && !result,
+    allowDragging: boardInteractive,
     allowDrawingArrows: true,
     showNotation: true,
     animationDurationInMs: 180,
@@ -283,7 +338,7 @@ export function TrainingBoard({
     squareStyles: feedback ? planSquares : {},
     canDragPiece: ({ piece }) => {
       const expected = exercise.playerColor === "white" ? "w" : "b";
-      return !thinking && !feedback && !result && piece.pieceType.toLowerCase().startsWith(expected);
+      return boardInteractive && piece.pieceType.toLowerCase().startsWith(expected);
     },
     onPieceDrop: ({ sourceSquare, targetSquare }) => {
       void attemptMove(sourceSquare, targetSquare);
@@ -305,7 +360,7 @@ export function TrainingBoard({
           <div className="board-frame"><Chessboard options={options} /></div>
           <div className="board-actions">
             <button type="button" onClick={() => resetBoard()}><RotateCcw size={16} /> Recommencer</button>
-            <span>{exercise.mode === "one-move" ? "Décision ciblée" : `Séquence · jusqu’à ${exercise.maxPlayerMoves} coups joueur`}</span>
+            <span>{exercise.mode === "one-move" ? "Décision ciblée" : `Séquence · ${playerMoves}/${exercise.maxPlayerMoves} coups joués`}</span>
           </div>
         </div>
 
@@ -318,22 +373,21 @@ export function TrainingBoard({
           <h1>{exercise.title}</h1>
           <p className="exercise-prompt">{exercise.prompt}</p>
 
-          {thinking ? (
-            <div className="thinking-card" aria-live="polite"><Search size={22} /><div><strong>Stockfish vérifie ton choix…</strong><span>Position complète · même profondeur avant/après · MultiPV.</span></div></div>
+          {thinkingStage ? (
+            <div className="thinking-card" aria-live="polite"><Search size={22} /><div><strong>{thinkingStage === "checking" ? "Stockfish vérifie toute la position…" : "L’adversaire répond automatiquement…"}</strong><span>{thinkingStage === "checking" ? "Ton coup reste sur l’échiquier pendant l’analyse." : "Prépare déjà ta continuation."}</span></div></div>
           ) : feedback ? (
             <div className={`feedback-card ${feedback.tone}`} aria-live="polite">
               <span className="feedback-icon">{feedback.tone === "warning" ? "!" : <Check size={20} />}</span>
-              <div><small>Retour ChessPath</small><h2>{feedback.title}</h2><p>{feedback.body}</p></div>
-              <div className="why-block"><small>Pourquoi ?</small><p>{feedback.idea}</p></div>
-              <div className="move-comparison">
-                <div><span>Ton coup</span><strong>{feedback.playedMoveSan}</strong></div>
-                <div><span>Ligne principale</span><strong>{feedback.bestMoveSan}</strong></div>
-                <div><span>Perte réelle</span><strong>{formatLoss(feedback.lossCp)}</strong></div>
+              <div><small>Bilan de la séquence</small><h2>{feedback.title}</h2><p>{feedback.body}</p></div>
+              <div className="why-block"><small>Concept travaillé</small><p>{feedback.idea}</p></div>
+              <div className="move-comparison sequence-summary">
+                <div><span>Ta séquence</span><strong>{feedback.playedMoveSan || "—"}</strong></div>
+                <div><span>Départ de la ligne clé</span><strong>{feedback.bestMoveSan}</strong></div>
+                <div><span>Écart maximal</span><strong>{formatLoss(feedback.lossCp)}</strong></div>
               </div>
               {feedback.bestLineSan ? (
                 <div className="line-comparison">
-                  <div><span>Variante principale</span><p>{feedback.bestLineSan}</p></div>
-                  {feedback.playedLineSan ? <div><span>Après ton choix</span><p>{feedback.playedLineSan}</p></div> : null}
+                  <div><span>Variante clé</span><p>{feedback.bestLineSan}</p></div>
                   <button type="button" className="variant-toggle" onClick={() => setVariantStep(variantStep === null ? 0 : null)}>
                     {variantStep === null ? "Voir la variante sur l’échiquier" : "Fermer la variante"}
                   </button>
@@ -348,30 +402,29 @@ export function TrainingBoard({
               ) : null}
               {feedback.candidates.length > 1 ? (
                 <div className="candidate-lines">
-                  <span>Plusieurs bons coups reconnus</span>
+                  <span>Autres premiers coups reconnus</span>
                   <div>{feedback.candidates.map((candidate) => <p key={candidate.uci}><strong>{candidate.san}</strong><small>{formatEvaluation(candidate.playerCp)}</small></p>)}</div>
                 </div>
               ) : null}
-              {result ? (
-                <div className={`exercise-result ${result}`}>
-                  <strong>{result === "success" ? "Réussi" : result === "partial" ? "Partiellement réussi" : "À revoir"}</strong>
-                  <span>Ce que tu devais comprendre : {exercise.concept}</span>
-                </div>
-              ) : null}
+              <div className={`exercise-result ${result}`}>
+                <strong>{result === "success" ? "Réussi" : result === "partial" ? "À consolider" : "Échoué — reviendra plus tard"}</strong>
+                <span>{result === "failed" ? "Cette position est mémorisée pour une future séance espacée." : "La prochaine position réutilise le concept dans un autre contexte."}</span>
+              </div>
             </div>
+          ) : engineError ? (
+            <div className="engine-training-error" role="alert"><strong>Analyse interrompue</strong><p>{engineError}</p></div>
           ) : (
-            <div className="hint-card"><Sparkles size={20} /><p><strong>Avant de jouer</strong>{exercise.mode === "one-move" ? "Liste les échecs, les prises et les menaces." : "Calcule aussi la meilleure réponse adverse : l’exercice ne s’arrête pas forcément au premier coup."}</p></div>
+            <>
+              <div className="hint-card"><Sparkles size={20} /><p><strong>Avant de jouer</strong>{exercise.mode === "one-move" ? "Identifie le plan ou la décision clé." : "Calcule aussi la meilleure réponse adverse : la position continuera sans revenir en arrière."}</p></div>
+              {exercise.mode !== "one-move" ? <div className="sequence-status"><span>Objectif</span><strong>{playerMoves ? `Continue la séquence · coup ${playerMoves + 1}` : `Joue jusqu’au résultat concret · jusqu’à ${exercise.maxPlayerMoves} coups`}</strong></div> : null}
+            </>
           )}
 
           <div className="exercise-footer">
-            {exercise.gameUrl ? <a href={exercise.gameUrl} target="_blank" rel="noreferrer">Voir la partie source <ExternalLink size={14} /></a> : <span className="concept-source">Position pédagogique validée par le moteur</span>}
-            {pendingReply && !result ? (
-              <button type="button" className="primary-button" onClick={continueSequence}>Voir la réponse et continuer <ArrowRight size={17} /></button>
-            ) : (
-              <button type="button" className="primary-button" onClick={nextExercise} disabled={!result}>
-                {exercise.origin === "personal" ? "Nouvelle position sur ce thème" : "Exercice suivant"} <ArrowRight size={17} />
-              </button>
-            )}
+            {exercise.gameUrl ? <a href={exercise.gameUrl} target="_blank" rel="noreferrer">Voir la partie source <ExternalLink size={14} /></a> : <span className="concept-source">Position pédagogique vérifiée avec Stockfish</span>}
+            <button type="button" className="primary-button" onClick={nextExercise} disabled={!result}>
+              {exercise.origin === "personal" ? "Nouvelle position sur ce thème" : "Exercice suivant"} <ArrowRight size={17} />
+            </button>
           </div>
         </aside>
       </section>

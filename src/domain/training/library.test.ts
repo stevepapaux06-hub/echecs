@@ -6,11 +6,14 @@ describe("curated training library", () => {
   it("contains legal positions and legal reference moves", () => {
     for (const exercise of allConceptExercises()) {
       const chess = new Chess(exercise.fen);
-      expect(() => chess.move({
-        from: exercise.bestMove.slice(0, 2) as Square,
-        to: exercise.bestMove.slice(2, 4) as Square,
-        promotion: exercise.bestMove.slice(4, 5) || "q",
-      }), exercise.id).not.toThrow();
+      const line = exercise.solutionLine ?? [exercise.bestMove];
+      for (const uci of line) {
+        expect(() => chess.move({
+          from: uci.slice(0, 2) as Square,
+          to: uci.slice(2, 4) as Square,
+          promotion: uci.slice(4, 5) || "q",
+        }), `${exercise.id}: ${uci}`).not.toThrow();
+      }
     }
   });
 
@@ -20,6 +23,8 @@ describe("curated training library", () => {
     expect(exercises.some((exercise) => exercise.category === "tactic" && exercise.mode === "line")).toBe(true);
     expect(exercises.some((exercise) => exercise.category === "endgame" && exercise.mode === "playout")).toBe(true);
     expect(exercises.some((exercise) => exercise.category === "conversion" && exercise.mode === "playout")).toBe(true);
+    expect(exercises.filter((exercise) => exercise.category === "tactic").length).toBeGreaterThanOrEqual(2);
+    expect(exercises.filter((exercise) => exercise.category === "endgame").length).toBeGreaterThanOrEqual(2);
+    expect(exercises.filter((exercise) => exercise.category === "conversion").length).toBeGreaterThanOrEqual(2);
   });
 });
-

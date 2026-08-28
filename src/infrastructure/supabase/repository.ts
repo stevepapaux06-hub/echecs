@@ -5,6 +5,7 @@ import type {
   DiagnosticMetrics,
   ParsedGame,
   PlayerProfile,
+  TrainingAttemptRecord,
   TrainingExercise,
 } from "@/domain/chess/types";
 import type { Json } from "./database.types";
@@ -48,6 +49,7 @@ export type PersistentProfile = {
   games: SavedGame[];
   weaknesses: WeaknessRecord[];
   attempts: number;
+  trainingAttempts: TrainingAttemptRecord[];
 };
 
 function json(value: unknown): Json {
@@ -101,7 +103,11 @@ export async function loadPersistentProfile(user: User): Promise<PersistentProfi
     supabase.from("analyses").select("*").order("created_at", { ascending: false }),
     supabase.from("games").select("id,external_id,source,played_at,time_class,result,parsed_game").order("played_at", { ascending: false }).limit(100),
     supabase.from("weaknesses").select("*").order("last_seen_at", { ascending: false }),
-    supabase.from("exercise_attempts").select("id", { count: "exact", head: true }),
+    supabase
+      .from("exercise_attempts")
+      .select("exercise_key,theme,result,loss_cp,moves,created_at", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
   const firstError = profileResult.error || analysesResult.error || gamesResult.error || weaknessesResult.error || attemptsResult.error;
   if (firstError) throw firstError;
@@ -141,6 +147,14 @@ export async function loadPersistentProfile(user: User): Promise<PersistentProfi
       status: row.status,
     })),
     attempts: attemptsResult.count ?? 0,
+    trainingAttempts: (attemptsResult.data ?? []).map((row) => ({
+      exerciseId: row.exercise_key,
+      theme: row.theme,
+      result: row.result as TrainingAttemptRecord["result"],
+      lossCp: row.loss_cp,
+      moves: Array.isArray(row.moves) ? row.moves.filter((move): move is string => typeof move === "string") : [],
+      createdAt: row.created_at,
+    })),
   };
 }
 

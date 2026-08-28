@@ -60,6 +60,30 @@ const COPY: Record<TrainingType, { title: string; prompt: string; concept: strin
   },
 };
 
+function exerciseShape(
+  type: TrainingType,
+  category: DiagnosticCategory,
+  baselinePlayerCp: number,
+): Pick<TrainingExercise, "mode" | "maxPlayerMoves" | "successThresholdCp"> {
+  if (category === "strategy" || category === "opening") {
+    return { mode: "one-move", maxPlayerMoves: 1 };
+  }
+  if (type === "conversion") {
+    return {
+      mode: "playout",
+      maxPlayerMoves: 4,
+      successThresholdCp: Math.max(150, baselinePlayerCp - 180),
+    };
+  }
+  if (type === "endgame") {
+    return { mode: "playout", maxPlayerMoves: 4, successThresholdCp: baselinePlayerCp - 150 };
+  }
+  if (type === "defense") {
+    return { mode: "line", maxPlayerMoves: 3, successThresholdCp: baselinePlayerCp - 80 };
+  }
+  return { mode: "line", maxPlayerMoves: 2 };
+}
+
 export function generateExercises(
   games: AnalyzedGame[],
   metrics: DiagnosticMetrics,
@@ -83,11 +107,13 @@ export function generateExercises(
     const type = getType(move.playerCpBefore, move.phase);
     const relatedToPrimary = primaryPositions.has(`${game.id}:${move.ply}`);
     const category = relatedToPrimary ? metrics.primaryTheme.category : categoryForType(type);
+    const shape = exerciseShape(type, category, move.playerCpBefore);
+    const solutionLine = move.before.lines[0]?.pv.slice(0, shape.maxPlayerMoves * 2 - 1);
     return {
       id: `${game.id}-${move.ply}-${index}`,
       type,
       origin: "personal",
-      mode: "one-move",
+      mode: shape.mode,
       theme: relatedToPrimary ? metrics.primaryTheme.id : type,
       category,
       title: COPY[type].title,
@@ -102,7 +128,9 @@ export function generateExercises(
       gameUrl: game.url,
       opponent: game.opponent,
       concept: COPY[type].concept,
-      maxPlayerMoves: 1,
+      maxPlayerMoves: shape.maxPlayerMoves,
+      solutionLine: solutionLine?.length ? solutionLine : [move.before.bestMove],
+      successThresholdCp: shape.successThresholdCp,
     };
   });
 

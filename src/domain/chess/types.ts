@@ -217,9 +217,24 @@ export type TrainingExercise = {
   opponent?: string;
   concept: string;
   maxPlayerMoves: number;
+  /**
+   * Curated UCI reference line. It is never used to reject a sound alternative:
+   * Stockfish still evaluates the position after every player move. The line only
+   * supplies a deterministic opponent reply when the player follows the lesson.
+   */
+  solutionLine?: string[];
   successThresholdCp?: number;
   planArrows?: PlanArrow[];
   planSquares?: PlanSquare[];
+};
+
+export type TrainingAttemptRecord = {
+  exerciseId: string;
+  theme: string;
+  result: "success" | "partial" | "failed";
+  lossCp: number | null;
+  moves: string[];
+  createdAt: string;
 };
 
 export type CompleteAnalysis = {

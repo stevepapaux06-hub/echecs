@@ -227,3 +227,83 @@ export function buildTrainingFeedback({
     planSquares: exercise.planSquares ?? [],
   };
 }
+
+export function buildSequenceFeedback({
+  exercise,
+  initial,
+  moves,
+  result,
+  lossCp,
+  afterPlayerCp,
+}: {
+  exercise: TrainingExercise;
+  initial: EngineEvaluation;
+  moves: string[];
+  result: "success" | "partial" | "failed";
+  lossCp: number;
+  afterPlayerCp: number;
+}): TrainingFeedback {
+  const principal = exercise.solutionLine?.length
+    ? exercise.solutionLine
+    : initial.lines[0]?.pv.slice(0, Math.max(2, exercise.maxPlayerMoves * 2 - 1)) ?? [];
+  const bestMove = principal[0] || initial.bestMove || exercise.bestMove;
+  const firstPlayedMove = moves[0] ?? "";
+  const candidates = initial.lines
+    .filter((line) => line.pv[0])
+    .slice(0, 3)
+    .map((line) => ({
+      uci: line.pv[0],
+      san: uciToSan(exercise.fen, line.pv[0]),
+      playerCp: evaluationForPlayer(line.whiteCp, exercise.playerColor),
+      pvSan: uciLineToSan(exercise.fen, line.pv),
+    }));
+  const inferredArrows: PlanArrow[] = principal.length
+    ? [
+        { from: principal[0].slice(0, 2), to: principal[0].slice(2, 4), color: "primary" },
+        ...(principal[2] ? [{
+          from: principal[2].slice(0, 2),
+          to: principal[2].slice(2, 4),
+          color: "secondary" as const,
+        }] : []),
+      ]
+    : [];
+
+  const copy = result === "success"
+    ? {
+        title: "Séquence réussie",
+        body: exercise.type === "tactic"
+          ? "Tu as calculé au-delà du premier coup et obtenu le gain concret."
+          : exercise.type === "defense"
+            ? "Tu as neutralisé la menace sans créer une nouvelle faiblesse immédiate."
+            : "Tu as conservé l’idée essentielle jusqu’au terme utile de l’exercice.",
+      }
+    : result === "partial"
+      ? {
+          title: "Idée comprise, technique à consolider",
+          body: "La suite reste jouable, mais elle n’atteint pas encore clairement l’objectif de la position.",
+        }
+      : {
+          title: "Séquence à revoir",
+          body: "L’exercice s’arrête ici : le dernier choix change réellement l’évaluation de la position.",
+        };
+
+  return {
+    grade: result === "success" ? "excellent" : result === "partial" ? "playable" : "mistake",
+    tone: result === "success" ? "great" : result === "partial" ? "good" : "warning",
+    title: copy.title,
+    body: copy.body,
+    bestMove,
+    bestMoveSan: uciToSan(exercise.fen, bestMove),
+    playedMove: firstPlayedMove,
+    playedMoveSan: uciLineToSan(exercise.fen, moves, moves.length),
+    bestLineSan: uciLineToSan(exercise.fen, principal, principal.length),
+    playedLineSan: "",
+    lossCp,
+    afterPlayerCp,
+    candidates,
+    idea: exercise.concept || describeMoveIdea(exercise.fen, bestMove, exercise.type),
+    principalLineUci: principal,
+    planArrows: exercise.planArrows?.length ? exercise.planArrows : inferredArrows,
+    planSquares: exercise.planSquares ?? [],
+  };
+}

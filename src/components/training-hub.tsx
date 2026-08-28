@@ -1,9 +1,8 @@
 "use client";
 
 import { ArrowRight, BrainCircuit, Clock3, Crown, Crosshair, Shield, Sparkles, Target } from "lucide-react";
-import type { DiagnosticCategory, TrainingExercise } from "@/domain/chess/types";
-
-type TrainingFilter = "recommended" | "mix" | DiagnosticCategory;
+import type { TrainingAttemptRecord, TrainingExercise } from "@/domain/chess/types";
+import { buildTrainingSession, type TrainingFilter } from "@/domain/training/session";
 
 const FILTERS: Array<{ id: TrainingFilter; label: string }> = [
   { id: "recommended", label: "Recommandé pour moi" },
@@ -18,15 +17,17 @@ const FILTERS: Array<{ id: TrainingFilter; label: string }> = [
 export function TrainingHub({
   exercises,
   priority,
+  attempts,
   onStart,
   onAnalyze,
 }: {
   exercises: TrainingExercise[];
   priority?: string;
+  attempts: TrainingAttemptRecord[];
   onStart: (exercises: TrainingExercise[]) => void;
   onAnalyze: () => void;
 }) {
-  const recommended = exercises.slice(0, 7);
+  const recommended = buildTrainingSession(exercises, attempts, "recommended");
   const counts = {
     personal: recommended.filter((exercise) => exercise.origin === "personal").length,
     concept: recommended.filter((exercise) => exercise.origin === "concept").length,
@@ -34,8 +35,7 @@ export function TrainingHub({
   };
 
   function sessionFor(filter: TrainingFilter): TrainingExercise[] {
-    if (filter === "recommended" || filter === "mix") return recommended;
-    return exercises.filter((exercise) => exercise.category === filter).slice(0, 7);
+    return buildTrainingSession(exercises, attempts, filter);
   }
 
   return (
