@@ -47,6 +47,8 @@ import { TrainingBoard } from "./training-board";
 import { TrainingHub } from "./training-hub";
 
 type Screen = AppSection | "loading" | "dashboard" | "training";
+type AuthEntryMode = "sign-in" | "forgot";
+type AuthNotice = { kind: "success" | "error"; message: string };
 
 function readableError(reason: unknown, fallback: string): string {
   if (reason instanceof Error && reason.message) return reason.message;
@@ -73,6 +75,23 @@ async function readApiResponse<T>(response: Response, fallback: string): Promise
     throw new Error(typeof message === "string" && message ? message : `${fallback} (HTTP ${response.status}).`);
   }
   return data as T;
+}
+
+function currentAuthParams(): URLSearchParams {
+  const url = new URL(window.location.href);
+  const params = new URLSearchParams(url.search);
+  const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
+  hash.forEach((value, key) => params.set(key, value));
+  return params;
+}
+
+function clearAuthUrlParameters(clearHash: boolean) {
+  const url = new URL(window.location.href);
+  for (const key of ["auth", "password", "error", "error_code", "error_description"]) {
+    url.searchParams.delete(key);
+  }
+  if (clearHash) url.hash = "";
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
 const pillars = [
@@ -303,9 +322,12 @@ export function ChessPathApp() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [authEntryMode, setAuthEntryMode] = useState<AuthEntryMode>("sign-in");
+  const [authNotice, setAuthNotice] = useState<AuthNotice | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const engineRef = useRef<StockfishClient | null>(null);
   const profileRequestRef = useRef(0);
+  const activeUserIdRef = useRef<string | null>(null);
 
   async function refreshProfile(targetUser: User | null) {
     const requestId = ++profileRequestRef.current;
@@ -333,14 +355,59 @@ export function ChessPathApp() {
   useEffect(() => {
     let active = true;
     let unsubscribe = () => {};
+    const authParams = currentAuthParams();
+    const authErrorCode = authParams.get("error_code");
+    const authUrlError = authParams.get("error") || authParams.get("error_description");
+    const callbackType = authParams.get("type");
+    const requestedAuthMode = authParams.get("auth");
+
+    if (authErrorCode || authUrlError) {
+      setAuthNotice({ kind: "error", message: "Ce lien a expiré ou a déjà été utilisé." });
+      setAuthEntryMode("sign-in");
+      setScreen("profile");
+      clearAuthUrlParameters(true);
+    } else if (requestedAuthMode === "forgot" || requestedAuthMode === "login") {
+      setAuthEntryMode(requestedAuthMode === "forgot" ? "forgot" : "sign-in");
+      setScreen("profile");
+      if (authParams.get("password") === "updated") {
+        setAuthNotice({ kind: "success", message: "Mot de passe modifié. Tu peux maintenant te connecter." });
+      }
+      clearAuthUrlParameters(false);
+    }
+
     try {
       const supabase = getSupabaseClient();
       const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
         if (!active) return;
         const current = session?.user ?? null;
+        const nextUserId = current?.id ?? null;
+        const previousUserId = activeUserIdRef.current;
+        const accountChanged = previousUserId !== nextUserId;
+
+        if (accountChanged && (previousUserId !== null || event === "SIGNED_OUT")) {
+          profileRequestRef.current += 1;
+          setPersistent(null);
+          setProfileError(null);
+          setProfileLoading(Boolean(current));
+          setResult(null);
+          setTrainingExercises([]);
+          setSaveStatus(null);
+          setError(null);
+        }
+        activeUserIdRef.current = nextUserId;
         setUser(current);
         if (event === "PASSWORD_RECOVERY") {
           setPasswordRecovery(true);
+          setScreen("profile");
+        }
+        if (event === "SIGNED_IN" && (callbackType === "signup" || callbackType === "email")) {
+          setPasswordRecovery(false);
+          setAuthNotice({ kind: "success", message: "Adresse email confirmée. Ton compte ChessPath est prêt." });
+          setScreen("profile");
+        }
+        if (event === "SIGNED_OUT") {
+          setPasswordRecovery(false);
+          setAuthEntryMode("sign-in");
           setScreen("profile");
         }
         // Supabase auth callbacks must stay synchronous. Profile queries are
@@ -367,6 +434,7 @@ export function ChessPathApp() {
 
   function navigate(section: AppSection) {
     setError(null);
+    setAuthNotice(null);
     setScreen(section);
   }
 
@@ -535,6 +603,6 @@ export function ChessPathApp() {
   if (screen === "analyze") return <AnalyzeScreen username={persistent?.chess?.username} error={error} onAnalyze={(request) => void startAnalysis(request)} {...navProps} />;
   if (screen === "training-hub") return <main className="app-page"><AppNav active="training-hub" {...navProps} /><TrainingHub exercises={hubExercises} attempts={persistent?.trainingAttempts ?? []} priority={result?.metrics.priorityTitle ?? persistent?.analyses[0]?.metrics.priorityTitle} onStart={(items) => void startTraining(items)} onAnalyze={() => navigate("analyze")} /></main>;
   if (screen === "progress") return <main className="app-page"><AppNav active="progress" {...navProps} /><ProgressView profile={persistent} onProfile={() => navigate("profile")} /></main>;
-  if (screen === "profile") return <main className="app-page"><AppNav active="profile" {...navProps} />{saveStatus ? <p className="global-notice">{saveStatus}</p> : null}{error ? <p className="global-notice error">{error}</p> : null}<ProfileView user={user} profile={persistent} loading={profileLoading} profileError={profileError} passwordRecovery={passwordRecovery} onPasswordRecovered={() => setPasswordRecovery(false)} onRetryProfile={() => refreshProfile(user)} onSync={synchronize} onLinkChess={linkChessAccount} onUnlinkChess={unlinkChessAccount} onOpenAnalysis={openAnalysis} /></main>;
+  if (screen === "profile") return <main className="app-page"><AppNav active="profile" {...navProps} />{authNotice ? <p className={`global-notice ${authNotice.kind === "error" ? "error" : ""}`} role={authNotice.kind === "error" ? "alert" : "status"}>{authNotice.message}</p> : null}{saveStatus ? <p className="global-notice">{saveStatus}</p> : null}{error ? <p className="global-notice error">{error}</p> : null}<ProfileView key={user?.id ?? "guest"} user={user} profile={persistent} loading={profileLoading} profileError={profileError} initialAuthMode={authEntryMode} passwordRecovery={passwordRecovery} onPasswordRecovered={() => setPasswordRecovery(false)} onRetryProfile={() => refreshProfile(user)} onSync={synchronize} onLinkChess={linkChessAccount} onUnlinkChess={unlinkChessAccount} onOpenAnalysis={openAnalysis} /></main>;
   return <HomeScreen profile={persistent} error={error} onAnalyze={(request) => void startAnalysis(request)} onNavigate={navigate} />;
 }

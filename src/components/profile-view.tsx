@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import {
   ArrowLeft,
@@ -16,8 +16,10 @@ import {
   UserRound,
 } from "lucide-react";
 import type { AnalysisHistoryItem, PersistentProfile } from "@/infrastructure/supabase/repository";
+import { AuthUserError } from "@/infrastructure/supabase/auth-errors";
 import {
   requestPasswordReset,
+  resendConfirmationEmail,
   signInWithPassword,
   signOut,
   signUpWithPassword,
@@ -40,6 +42,7 @@ export function ProfileView({
   profile,
   loading,
   profileError,
+  initialAuthMode = "sign-in",
   passwordRecovery,
   onPasswordRecovered,
   onRetryProfile,
@@ -52,6 +55,7 @@ export function ProfileView({
   profile: PersistentProfile | null;
   loading: boolean;
   profileError: string | null;
+  initialAuthMode?: AuthMode;
   passwordRecovery: boolean;
   onPasswordRecovered: () => void;
   onRetryProfile: () => Promise<void>;
@@ -60,27 +64,33 @@ export function ProfileView({
   onUnlinkChess: () => Promise<void>;
   onOpenAnalysis: (analysis: AnalysisHistoryItem) => void;
 }) {
-  const [mode, setMode] = useState<AuthMode>("sign-in");
+  const [mode, setMode] = useState<AuthMode>(initialAuthMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [authMessage, setAuthMessage] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
+  const [canResendConfirmation, setCanResendConfirmation] = useState(false);
   const [chessUsername, setChessUsername] = useState(profile?.chess?.username ?? "");
   const [editingChess, setEditingChess] = useState(!profile?.chess);
   const [profileActionError, setProfileActionError] = useState<string | null>(null);
   const [profileActionBusy, setProfileActionBusy] = useState(false);
+  const authRequestRef = useRef(false);
+  const profileActionRef = useRef(false);
 
   function changeMode(nextMode: AuthMode) {
     setMode(nextMode);
     setAuthError(null);
     setAuthMessage(null);
+    setCanResendConfirmation(false);
     setPassword("");
     setPasswordConfirmation("");
   }
 
   async function submitAuth() {
+    if (authRequestRef.current) return;
+    authRequestRef.current = true;
     setAuthBusy(true);
     setAuthError(null);
     setAuthMessage(null);
@@ -88,45 +98,73 @@ export function ProfileView({
       const normalizedEmail = email.trim().toLowerCase();
       if (mode === "forgot") {
         await requestPasswordReset(normalizedEmail);
-        setAuthMessage("Si ce compte existe, un lien de réinitialisation vient d’être envoyé.");
+        setAuthMessage("Si un compte correspond à cette adresse, tu recevras un lien pour réinitialiser ton mot de passe.");
       } else if (mode === "sign-up") {
-        if (password.length < 8) throw new Error("Choisis un mot de passe d’au moins 8 caractères.");
+        if (!password) throw new Error("Saisis un mot de passe.");
         if (password !== passwordConfirmation) throw new Error("Les deux mots de passe ne correspondent pas.");
         const connected = await signUpWithPassword(normalizedEmail, password);
         if (!connected) {
-          setAuthMessage("Compte créé. Confirme ton adresse e-mail, puis connecte-toi avec ton mot de passe.");
+          setCanResendConfirmation(true);
+          setAuthMessage("Si cette adresse nécessite une confirmation, un email a été envoyé. Si tu as déjà un compte, connecte-toi ou utilise Mot de passe oublié.");
         }
       } else {
         await signInWithPassword(normalizedEmail, password);
+        setCanResendConfirmation(false);
       }
     } catch (reason) {
+      setCanResendConfirmation(reason instanceof AuthUserError && reason.code === "email_not_confirmed");
       setAuthError(errorMessage(reason, "La connexion n’a pas pu aboutir."));
     } finally {
+      authRequestRef.current = false;
+      setAuthBusy(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    if (authRequestRef.current) return;
+    authRequestRef.current = true;
+    setAuthBusy(true);
+    setAuthError(null);
+    setAuthMessage(null);
+    try {
+      await resendConfirmationEmail(email.trim().toLowerCase());
+      setAuthMessage("Si cette adresse attend une confirmation, un nouvel email a été envoyé.");
+    } catch (reason) {
+      setAuthError(errorMessage(reason, "L’email de confirmation n’a pas pu être renvoyé."));
+    } finally {
+      authRequestRef.current = false;
       setAuthBusy(false);
     }
   }
 
   async function submitNewPassword() {
+    if (authRequestRef.current) return;
+    authRequestRef.current = true;
     setAuthBusy(true);
     setAuthError(null);
     setAuthMessage(null);
     try {
-      if (password.length < 8) throw new Error("Choisis un mot de passe d’au moins 8 caractères.");
+      if (!password) throw new Error("Saisis un nouveau mot de passe.");
       if (password !== passwordConfirmation) throw new Error("Les deux mots de passe ne correspondent pas.");
       await updatePassword(password);
+      await signOut();
       window.history.replaceState({}, "", window.location.pathname);
       onPasswordRecovered();
       setPassword("");
       setPasswordConfirmation("");
-      setAuthMessage("Ton nouveau mot de passe est enregistré.");
+      setMode("sign-in");
+      setAuthMessage("Mot de passe modifié. Tu peux maintenant te connecter.");
     } catch (reason) {
       setAuthError(errorMessage(reason, "Le mot de passe n’a pas pu être modifié."));
     } finally {
+      authRequestRef.current = false;
       setAuthBusy(false);
     }
   }
 
   async function runProfileAction(action: () => Promise<void>, fallback: string) {
+    if (profileActionRef.current) return;
+    profileActionRef.current = true;
     setProfileActionBusy(true);
     setProfileActionError(null);
     try {
@@ -134,6 +172,7 @@ export function ProfileView({
     } catch (reason) {
       setProfileActionError(errorMessage(reason, fallback));
     } finally {
+      profileActionRef.current = false;
       setProfileActionBusy(false);
     }
   }
@@ -149,9 +188,9 @@ export function ProfileView({
         <form onSubmit={(event) => { event.preventDefault(); void submitNewPassword(); }} className="auth-card">
           <KeyRound size={28} />
           <label htmlFor="new-password">Nouveau mot de passe</label>
-          <input id="new-password" type="password" minLength={8} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+          <input id="new-password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
           <label htmlFor="confirm-new-password">Confirmer le mot de passe</label>
-          <input id="confirm-new-password" type="password" minLength={8} autoComplete="new-password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} required />
+          <input id="confirm-new-password" type="password" autoComplete="new-password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} required />
           <button className="primary-button" type="submit" disabled={authBusy}>{authBusy ? "Enregistrement…" : "Enregistrer mon mot de passe"} <ArrowRight size={16} /></button>
           {authMessage ? <p className="auth-success" role="status">{authMessage}</p> : null}
           {authError ? <p className="form-error" role="alert">{authError}</p> : null}
@@ -182,20 +221,21 @@ export function ProfileView({
           {!forgot ? (
             <>
               <label htmlFor="auth-password">Mot de passe</label>
-              <input id="auth-password" type="password" minLength={signingUp ? 8 : undefined} autoComplete={signingUp ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} required />
+              <input id="auth-password" type="password" autoComplete={signingUp ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} required />
             </>
           ) : null}
           {signingUp ? (
             <>
               <label htmlFor="auth-password-confirmation">Confirmer le mot de passe</label>
-              <input id="auth-password-confirmation" type="password" minLength={8} autoComplete="new-password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} required />
+              <input id="auth-password-confirmation" type="password" autoComplete="new-password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} required />
             </>
           ) : null}
           <button className="primary-button" type="submit" disabled={authBusy}>
             {authBusy ? "Un instant…" : forgot ? "Envoyer le lien" : signingUp ? "Créer mon compte" : "Se connecter"} <ArrowRight size={16} />
           </button>
-          {!forgot ? <button className="auth-link" type="button" onClick={() => changeMode("forgot")}>Mot de passe oublié ?</button> : null}
-          <button className="auth-link" type="button" onClick={() => changeMode(signingUp || forgot ? "sign-in" : "sign-up")}>
+          {canResendConfirmation ? <button className="auth-link" type="button" onClick={() => void resendConfirmation()} disabled={authBusy}>Renvoyer l’email de confirmation</button> : null}
+          {!forgot ? <button className="auth-link" type="button" onClick={() => changeMode("forgot")} disabled={authBusy}>Mot de passe oublié ?</button> : null}
+          <button className="auth-link" type="button" onClick={() => changeMode(signingUp || forgot ? "sign-in" : "sign-up")} disabled={authBusy}>
             {signingUp || forgot ? <><ArrowLeft size={13} /> Retour à la connexion</> : "Pas encore de compte ? Créer mon profil"}
           </button>
           {authMessage ? <p className="auth-success" role="status">{authMessage}</p> : null}

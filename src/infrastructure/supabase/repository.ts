@@ -9,6 +9,7 @@ import type {
   TrainingExercise,
 } from "@/domain/chess/types";
 import type { Json } from "./database.types";
+import { normalizeAuthError } from "./auth-errors";
 import { getSupabaseClient } from "./client";
 
 export type AnalysisHistoryItem = {
@@ -56,39 +57,8 @@ function json(value: unknown): Json {
   return JSON.parse(JSON.stringify(value)) as Json;
 }
 
-function authErrorMessage(reason: unknown): string {
-  const error = reason && typeof reason === "object" ? reason as Record<string, unknown> : null;
-  const code = typeof error?.code === "string" ? error.code : "";
-  const message = reason instanceof Error
-    ? reason.message
-    : typeof error?.message === "string"
-      ? error.message
-      : "";
-  const normalized = `${code} ${message}`.toLowerCase();
-
-  if (normalized.includes("invalid_credentials") || normalized.includes("invalid login credentials")) {
-    return "E-mail ou mot de passe incorrect.";
-  }
-  if (normalized.includes("email_not_confirmed") || normalized.includes("email not confirmed")) {
-    return "Confirme d’abord ton adresse e-mail, puis reconnecte-toi.";
-  }
-  if (normalized.includes("over_email_send_rate_limit") || normalized.includes("rate limit")) {
-    return "Trop de demandes ont été envoyées. Attends une minute avant de réessayer.";
-  }
-  if (normalized.includes("weak_password") || normalized.includes("password should be")) {
-    return "Choisis un mot de passe d’au moins 8 caractères.";
-  }
-  if (normalized.includes("user_already_exists") || normalized.includes("already registered")) {
-    return "Un compte existe déjà avec cet e-mail. Connecte-toi ou utilise « Mot de passe oublié ».";
-  }
-  if (normalized.includes("fetch") || normalized.includes("network")) {
-    return "La connexion au service de compte a échoué. Vérifie ton réseau puis réessaie.";
-  }
-  return message || "Le service de connexion n’a pas pu terminer cette action.";
-}
-
 function throwAuthError(reason: unknown): never {
-  throw new Error(authErrorMessage(reason));
+  throw normalizeAuthError(reason);
 }
 
 export async function signInWithPassword(email: string, password: string): Promise<void> {
@@ -117,7 +87,20 @@ export async function signUpWithPassword(email: string, password: string): Promi
 export async function requestPasswordReset(email: string): Promise<void> {
   try {
     const { error } = await getSupabaseClient().auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
+      redirectTo: new URL("/reset-password", window.location.origin).toString(),
+    });
+    if (error) throwAuthError(error);
+  } catch (reason) {
+    throwAuthError(reason);
+  }
+}
+
+export async function resendConfirmationEmail(email: string): Promise<void> {
+  try {
+    const { error } = await getSupabaseClient().auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: window.location.origin },
     });
     if (error) throwAuthError(error);
   } catch (reason) {
