@@ -1,7 +1,10 @@
 import { Chess, type Move, type Square } from "chess.js";
 import type {
   EngineEvaluation,
+  PlanArrow,
+  PlanSquare,
   PlayerColor,
+  TrainingExercise,
   TrainingType,
 } from "@/domain/chess/types";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
@@ -29,6 +32,10 @@ export type TrainingFeedback = {
   lossCp: number;
   afterPlayerCp: number;
   candidates: CandidateMove[];
+  idea: string;
+  principalLineUci: string[];
+  planArrows: PlanArrow[];
+  planSquares: PlanSquare[];
 };
 
 const PIECE_NAMES: Record<Move["piece"], string> = {
@@ -146,7 +153,7 @@ function copyForGrade(grade: MoveGrade, foundCandidate: boolean): { title: strin
 export function buildTrainingFeedback({
   fen,
   playerColor,
-  exerciseType,
+  exercise,
   playedMove,
   playedMoveSan,
   baseline,
@@ -154,7 +161,7 @@ export function buildTrainingFeedback({
 }: {
   fen: string;
   playerColor: PlayerColor;
-  exerciseType: TrainingType;
+  exercise: TrainingExercise;
   playedMove: string;
   playedMoveSan: string;
   baseline: EngineEvaluation;
@@ -183,6 +190,19 @@ export function buildTrainingFeedback({
       pvSan: uciLineToSan(fen, line.pv),
     }));
 
+  const inferredIdea = describeMoveIdea(fen, bestMove, exercise.type);
+  const principalLineUci = principal?.pv.slice(0, 6) ?? [];
+  const inferredArrows: PlanArrow[] = principalLineUci.length
+    ? [
+        { from: principalLineUci[0].slice(0, 2), to: principalLineUci[0].slice(2, 4), color: "primary" },
+        ...(principalLineUci[2] ? [{
+          from: principalLineUci[2].slice(0, 2),
+          to: principalLineUci[2].slice(2, 4),
+          color: "secondary" as const,
+        }] : []),
+      ]
+    : [];
+
   return {
     grade,
     tone: grade === "excellent" || grade === "very-good"
@@ -191,7 +211,7 @@ export function buildTrainingFeedback({
         ? "good"
         : "warning",
     title: copy.title,
-    body: `${copy.lead} ${describeMoveIdea(fen, bestMove, exerciseType)}`,
+    body: copy.lead,
     bestMove,
     bestMoveSan: uciToSan(fen, bestMove),
     playedMove,
@@ -201,5 +221,9 @@ export function buildTrainingFeedback({
     lossCp,
     afterPlayerCp,
     candidates,
+    idea: exercise.concept || inferredIdea,
+    principalLineUci,
+    planArrows: exercise.planArrows?.length ? exercise.planArrows : inferredArrows,
+    planSquares: exercise.planSquares ?? [],
   };
 }

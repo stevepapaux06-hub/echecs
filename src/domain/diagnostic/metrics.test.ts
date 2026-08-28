@@ -50,6 +50,8 @@ function move(phase: GamePhase, before: number, after: number): AnalyzedMove {
 function game(id: string, outcome: "win" | "draw" | "loss", moves: AnalyzedMove[]): AnalyzedGame {
   return {
     id,
+    source: "chesscom",
+    rawPgn: "",
     url: `https://example.com/${id}`,
     playedAt: 1,
     timeClass: "rapid",

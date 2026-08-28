@@ -5,6 +5,7 @@ import type {
   GamePhase,
   PhaseMetric,
 } from "@/domain/chess/types";
+import { detectDiagnosticThemes } from "./themes";
 
 const PHASE_LABELS: Record<GamePhase, string> = {
   opening: "Ouverture",
@@ -114,7 +115,20 @@ export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
   else if (worstPhase.phase === "middlegame" && worstPhase.averageLossCp >= 65) priority = "middlegame";
   else if (defenseOpportunities >= 2 && (defenseRecoveryRate ?? 100) < 40) priority = "defense";
 
-  const [priorityTitle, prioritySummary] = priorityCopy(priority, worstPhase);
+  const [fallbackTitle, fallbackSummary] = priorityCopy(priority, worstPhase);
+  const themes = detectDiagnosticThemes(games);
+  const matchedTheme = priority === "conversion"
+    ? themes.find((theme) => theme.id === "conversion")
+    : priority === "defense"
+      ? themes.find((theme) => theme.id === "defense")
+      : priority === "endgame"
+        ? themes.find((theme) => theme.category === "endgame")
+        : priority === "middlegame"
+          ? themes.find((theme) => theme.category === "strategy")
+          : undefined;
+  const primaryTheme = matchedTheme ?? themes[0]!;
+  const priorityTitle = primaryTheme.title || fallbackTitle;
+  const prioritySummary = primaryTheme.summary || fallbackSummary;
   const strengths = [
     `${bestPhase.label} : seulement ${bestPhase.averageLossCp} centipions perdus en moyenne sur les décisions examinées.`,
   ];
@@ -128,6 +142,9 @@ export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
     `${importantErrors.length} grosse${importantErrors.length > 1 ? "s" : ""} perte${importantErrors.length > 1 ? "s" : ""} d’évaluation détectée${importantErrors.length > 1 ? "s" : ""}.`,
     `${worstPhase.label} : phase la plus coûteuse sur cet échantillon (${worstPhase.averageLossCp} cp par décision).`,
   ];
+  if (primaryTheme) {
+    weaknesses[0] = `${primaryTheme.title} : ${primaryTheme.issueCount} problème${primaryTheme.issueCount > 1 ? "s" : ""} sur ${primaryTheme.sampleSize} exemple${primaryTheme.sampleSize > 1 ? "s" : ""} pertinent${primaryTheme.sampleSize > 1 ? "s" : ""}.`;
+  }
 
   const focusItems = [
     priority === "conversion"
@@ -161,5 +178,7 @@ export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
     strengths,
     weaknesses,
     focusItems,
+    themes,
+    primaryTheme,
   };
 }

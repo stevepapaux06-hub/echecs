@@ -2,6 +2,14 @@ export type PlayerColor = "white" | "black";
 export type MoveColor = "w" | "b";
 export type GamePhase = "opening" | "middlegame" | "endgame";
 export type GameOutcome = "win" | "draw" | "loss";
+export type GameCadence = "all" | "rapid" | "blitz" | "bullet" | "daily";
+export type AnalysisSource = "chesscom" | "pgn" | "saved";
+
+export type AnalysisSelection = {
+  source: AnalysisSource;
+  requestedGames: number;
+  cadence: GameCadence;
+};
 
 export type MoveSnapshot = {
   ply: number;
@@ -18,7 +26,9 @@ export type MoveSnapshot = {
 
 export type ParsedGame = {
   id: string;
-  url: string;
+  source: "chesscom" | "pgn";
+  url?: string;
+  rawPgn: string;
   playedAt: number;
   timeClass: string;
   timeControl: string;
@@ -37,12 +47,14 @@ export type PlayerProfile = {
   displayName: string;
   title?: string;
   rating?: number;
+  ratings?: Partial<Record<Exclude<GameCadence, "all">, number>>;
 };
 
 export type AnalysisPayload = {
   profile: PlayerProfile;
   games: ParsedGame[];
   warnings: string[];
+  selection: AnalysisSelection;
 };
 
 export type EngineScore = {
@@ -117,6 +129,27 @@ export type DiagnosticPriority =
   | "endgame"
   | "middlegame";
 
+export type DiagnosticConfidence = "low" | "medium" | "high";
+export type DiagnosticCategory =
+  | "tactic"
+  | "strategy"
+  | "endgame"
+  | "opening"
+  | "conversion"
+  | "defense";
+
+export type DiagnosticTheme = {
+  id: string;
+  category: DiagnosticCategory;
+  title: string;
+  summary: string;
+  confidence: DiagnosticConfidence;
+  sampleSize: number;
+  issueCount: number;
+  evidence: string[];
+  positionIds: string[];
+};
+
 export type DiagnosticMetrics = {
   gamesAnalyzed: number;
   positionsAnalyzed: number;
@@ -137,29 +170,62 @@ export type DiagnosticMetrics = {
   strengths: string[];
   weaknesses: string[];
   focusItems: string[];
+  themes: DiagnosticTheme[];
+  primaryTheme: DiagnosticTheme;
 };
 
-export type TrainingType = "conversion" | "defense" | "endgame" | "mistake";
+export type TrainingType =
+  | "conversion"
+  | "defense"
+  | "endgame"
+  | "mistake"
+  | "tactic"
+  | "strategy"
+  | "opening";
+export type TrainingOrigin = "personal" | "concept";
+export type TrainingMode = "one-move" | "line" | "playout";
+
+export type PlanArrow = {
+  from: string;
+  to: string;
+  color: "primary" | "secondary" | "warning";
+  label?: string;
+};
+
+export type PlanSquare = {
+  square: string;
+  color: "primary" | "secondary" | "warning";
+};
 
 export type TrainingExercise = {
   id: string;
   type: TrainingType;
+  origin: TrainingOrigin;
+  mode: TrainingMode;
+  theme: string;
+  category: DiagnosticCategory;
   title: string;
   prompt: string;
   sourceLabel: string;
   fen: string;
   playerColor: PlayerColor;
   bestMove: string;
-  playedMove: string;
+  playedMove?: string;
   baselinePlayerCp: number;
   phase: GamePhase;
-  gameUrl: string;
-  opponent: string;
+  gameUrl?: string;
+  opponent?: string;
+  concept: string;
+  maxPlayerMoves: number;
+  successThresholdCp?: number;
+  planArrows?: PlanArrow[];
+  planSquares?: PlanSquare[];
 };
 
 export type CompleteAnalysis = {
   profile: PlayerProfile;
   warnings: string[];
+  selection: AnalysisSelection;
   games: AnalyzedGame[];
   metrics: DiagnosticMetrics;
   exercises: TrainingExercise[];

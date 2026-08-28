@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import { Chess, type Square } from "chess.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { EngineEvaluation, EngineLine } from "@/domain/chess/types";
+import { allConceptExercises } from "../../domain/training/library";
 import { buildEngineEvaluation, parseUciInfoLine } from "./uci";
 
 type NodeStockfish = {
@@ -111,4 +112,54 @@ describe("Stockfish reference positions", () => {
     expect(result.mate).toBe(1);
     expect(chess.isCheckmate()).toBe(true);
   });
+
+  it("normalizes a forced mate for Black from White's perspective", async () => {
+    const fen = "8/8/8/8/8/6k1/5q2/7K b - - 0 1";
+    const result = await analyze(fen);
+    expect(result.mate).toBe(-1);
+    expect(result.whiteCp).toBeLessThan(-90_000);
+  });
+
+  it("accounts for compensation instead of returning the raw material count", async () => {
+    // White owns a queen, two rooks and two pawns against a queen. The exposed
+    // king gives Black enough activity that the engine discounts that nominal
+    // material edge instead of echoing a material-only score.
+    const fen = "8/8/8/8/8/5k2/RR3qPP/Q6K b - - 0 1";
+    const result = await analyze(fen);
+    expect(result.whiteCp).toBeGreaterThan(500);
+    expect(result.whiteCp).toBeLessThan(1_200);
+  });
+
+  it("recognizes a technically winning position with only one extra pawn", async () => {
+    const fen = "2k5/8/8/3PK3/8/8/8/8 w - - 0 1";
+    const result = await analyze(fen, { depth: 12 });
+    expect(result.whiteCp).toBeGreaterThan(250);
+  });
+
+  it("validates every curated teaching move against Stockfish", async () => {
+    for (const exercise of allConceptExercises()) {
+      const before = await analyze(exercise.fen, { depth: 9, multiPv: 3 });
+      const chess = new Chess(exercise.fen);
+      const played = chess.move({
+        from: exercise.bestMove.slice(0, 2) as Square,
+        to: exercise.bestMove.slice(2, 4) as Square,
+        promotion: exercise.bestMove.slice(4, 5) || "q",
+      });
+      expect(played, `${exercise.id} must stay legal`).not.toBeNull();
+
+      const after = await analyze(chess.fen(), { depth: 9 });
+      const beforePlayerCp = exercise.playerColor === "white" ? before.whiteCp : -before.whiteCp;
+      const afterPlayerCp = exercise.playerColor === "white" ? after.whiteCp : -after.whiteCp;
+      if (exercise.baselinePlayerCp >= 200) {
+        expect(
+          beforePlayerCp,
+          `${exercise.id} is presented as a winning position`,
+        ).toBeGreaterThan(150);
+      }
+      expect(
+        beforePlayerCp - afterPlayerCp,
+        `${exercise.id} should preserve the engine evaluation`,
+      ).toBeLessThanOrEqual(150);
+    }
+  }, 60_000);
 });

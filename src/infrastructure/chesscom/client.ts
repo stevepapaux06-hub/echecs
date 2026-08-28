@@ -1,6 +1,10 @@
 import "server-only";
 
-import type { AnalysisPayload, PlayerProfile } from "@/domain/chess/types";
+import type {
+  AnalysisPayload,
+  GameCadence,
+  PlayerProfile,
+} from "@/domain/chess/types";
 import { parseChessComGame, type ChessComGame } from "@/domain/chess/pgn";
 
 const API_ROOT = "https://api.chess.com/pub";
@@ -47,16 +51,20 @@ async function getJson<T>(url: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function pickRating(stats: ChessComStats): number | undefined {
-  return (
-    stats.chess_rapid?.last?.rating ??
-    stats.chess_blitz?.last?.rating ??
-    stats.chess_bullet?.last?.rating ??
-    stats.chess_daily?.last?.rating
-  );
+function pickRatings(stats: ChessComStats): NonNullable<PlayerProfile["ratings"]> {
+  return {
+    rapid: stats.chess_rapid?.last?.rating,
+    blitz: stats.chess_blitz?.last?.rating,
+    bullet: stats.chess_bullet?.last?.rating,
+    daily: stats.chess_daily?.last?.rating,
+  };
 }
 
-export async function getRecentGames(username: string, limit = 12): Promise<AnalysisPayload> {
+export async function getRecentGames(
+  username: string,
+  limit = 10,
+  cadence: GameCadence = "all",
+): Promise<AnalysisPayload> {
   // Requests are intentionally serial: Chess.com's PubAPI documents that serial
   // access avoids the rate limits that can affect parallel calls.
   const profileData = await getJson<ChessComProfile>(`${API_ROOT}/player/${username}`);
@@ -73,12 +81,15 @@ export async function getRecentGames(username: string, limit = 12): Promise<Anal
   for (const archiveUrl of archiveList.archives.toReversed()) {
     const archive = await getJson<{ games: ChessComGame[] }>(archiveUrl);
     const eligible = archive.games
-      .filter((game) => game.rules === "chess" && STANDARD_SPEEDS.has(game.time_class) && game.pgn)
+      .filter((game) =>
+        game.rules === "chess"
+        && STANDARD_SPEEDS.has(game.time_class)
+        && (cadence === "all" || game.time_class === cadence)
+        && game.pgn,
+      )
       .toReversed();
     rawGames.push(...eligible);
-    if (rawGames.length >= limit || rawGames.length > 0 && archiveUrl !== archiveList.archives.at(-1)) {
-      break;
-    }
+    if (rawGames.length >= limit) break;
   }
 
   const games = rawGames
@@ -97,18 +108,32 @@ export async function getRecentGames(username: string, limit = 12): Promise<Anal
   }
 
   const warnings: string[] = [];
+  if (games.length < limit) {
+    warnings.push(
+      `Chess.com ne fournit que ${games.length} partie${games.length > 1 ? "s" : ""} ${cadence === "all" ? "standard" : cadence} exploitable${games.length > 1 ? "s" : ""} sur les archives disponibles.`,
+    );
+  }
   if (games.length < 6) {
     warnings.push(
       `Le diagnostic repose sur ${games.length} partie${games.length > 1 ? "s" : ""} : il reste indicatif.`,
     );
   }
 
+  const ratings = pickRatings(stats);
   const profile: PlayerProfile = {
     username: profileData.username,
     displayName: profileData.name || profileData.username,
     title: profileData.title,
-    rating: pickRating(stats),
+    rating: cadence === "all"
+      ? ratings.rapid ?? ratings.blitz ?? ratings.bullet ?? ratings.daily
+      : ratings[cadence],
+    ratings,
   };
 
-  return { profile, games, warnings };
+  return {
+    profile,
+    games,
+    warnings,
+    selection: { source: "chesscom", requestedGames: limit, cadence },
+  };
 }

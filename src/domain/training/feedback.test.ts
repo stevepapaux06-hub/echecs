@@ -1,6 +1,6 @@
 import { Chess, type Square } from "chess.js";
 import { describe, expect, it } from "vitest";
-import type { EngineEvaluation, EngineLine } from "@/domain/chess/types";
+import type { EngineEvaluation, EngineLine, TrainingExercise } from "@/domain/chess/types";
 import { buildTrainingFeedback, gradeMove, uciLineToSan } from "./feedback";
 
 function evaluation(fen: string, whiteCp: number, variations: string[][]): EngineEvaluation {
@@ -43,6 +43,27 @@ function afterMove(fen: string, uci: string): string {
   return chess.fen();
 }
 
+function exercise(fen: string, playerColor: "white" | "black", type: "mistake" | "conversion"): TrainingExercise {
+  return {
+    id: "test",
+    type,
+    origin: "personal",
+    mode: "one-move",
+    theme: "test",
+    category: type === "conversion" ? "conversion" : "tactic",
+    title: "Test",
+    prompt: "Test",
+    sourceLabel: "Test",
+    fen,
+    playerColor,
+    bestMove: "",
+    baselinePlayerCp: 0,
+    phase: "middlegame",
+    concept: "Comprendre l’idée.",
+    maxPlayerMoves: 1,
+  };
+}
+
 describe("training feedback", () => {
   it("uses evaluation loss, not strict equality with the first move", () => {
     expect(gradeMove(20)).toBe("excellent");
@@ -65,7 +86,7 @@ describe("training feedback", () => {
     const feedback = buildTrainingFeedback({
       fen,
       playerColor: "white",
-      exerciseType: "mistake",
+      exercise: exercise(fen, "white", "mistake"),
       playedMove,
       playedMoveSan: "Kf1",
       baseline,
@@ -87,7 +108,7 @@ describe("training feedback", () => {
     const feedback = buildTrainingFeedback({
       fen,
       playerColor: "black",
-      exerciseType: "conversion",
+      exercise: exercise(fen, "black", "conversion"),
       playedMove,
       playedMoveSan: "e5",
       baseline,
