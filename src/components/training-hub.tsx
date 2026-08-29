@@ -2,7 +2,11 @@
 
 import { ArrowRight, BrainCircuit, Clock3, Crown, Crosshair, Shield, Sparkles, Target } from "lucide-react";
 import type { TrainingAttemptRecord, TrainingExercise } from "@/domain/chess/types";
-import { buildTrainingSession, type TrainingFilter } from "@/domain/training/session";
+import {
+  buildTrainingSession,
+  sharesPreciseConcept,
+  type TrainingFilter,
+} from "@/domain/training/session";
 
 const FILTERS: Array<{ id: TrainingFilter; label: string }> = [
   { id: "recommended", label: "Recommandé pour moi" },
@@ -33,6 +37,21 @@ export function TrainingHub({
     concept: recommended.filter((exercise) => exercise.origin === "concept").length,
     multi: recommended.filter((exercise) => exercise.mode !== "one-move").length,
   };
+  const firstPersonal = recommended.find((exercise) => exercise.origin === "personal");
+  const hasConceptBridge = Boolean(firstPersonal && recommended.some((exercise) => (
+    exercise.origin === "concept" && sharesPreciseConcept(firstPersonal, exercise)
+  )));
+  const recommendationLabel = counts.personal > 0
+    ? "Recommandé pour moi"
+    : "Séance pédagogique";
+  const recommendationTitle = counts.personal > 0
+    ? priority || "Séance issue de tes parties"
+    : "Séance équilibrée ChessPath";
+  const recommendationCopy = counts.personal === 0
+    ? "Une sélection de positions pédagogiques vérifiées avec Stockfish, sans prétendre qu’elles proviennent de tes erreurs."
+    : hasConceptBridge
+      ? "Une erreur personnelle ouvre la séance, puis une nouvelle position te demande d’appliquer exactement le même concept."
+      : "La séance part de tes positions personnelles, puis varie les décisions sans prétendre répéter un concept absent de la bibliothèque.";
 
   function sessionFor(filter: TrainingFilter): TrainingExercise[] {
     return buildTrainingSession(exercises, attempts, filter);
@@ -47,16 +66,16 @@ export function TrainingHub({
 
       <article className="recommended-session">
         <div>
-          <span className="recommended-badge"><Sparkles size={14} /> Recommandé pour moi</span>
-          <h2>{priority || "Séance équilibrée ChessPath"}</h2>
-          <p>Une erreur personnelle ouvre la séance, puis une nouvelle position te demande d’appliquer le même concept dans un contexte différent.</p>
+          <span className="recommended-badge"><Sparkles size={14} /> {recommendationLabel}</span>
+          <h2>{recommendationTitle}</h2>
+          <p>{recommendationCopy}</p>
           <div className="session-composition">
             <span>{counts.personal} erreur{counts.personal > 1 ? "s" : ""} personnelle{counts.personal > 1 ? "s" : ""}</span>
             <span>{counts.concept} nouvelle{counts.concept > 1 ? "s" : ""} position{counts.concept > 1 ? "s" : ""}</span>
             <span>{counts.multi} séquence{counts.multi > 1 ? "s" : ""} multi-coups</span>
           </div>
         </div>
-        <button className="lime-button" type="button" onClick={() => onStart(sessionFor("recommended"))} disabled={!exercises.length}>
+        <button className="lime-button" type="button" onClick={() => onStart(sessionFor("recommended"))} disabled={!recommended.length}>
           Commencer la séance <ArrowRight size={17} />
         </button>
       </article>

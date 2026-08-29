@@ -6,6 +6,21 @@ import type {
 
 export type TrainingFilter = "recommended" | "mix" | DiagnosticCategory;
 
+export function preciseConcept(exercise: TrainingExercise): string {
+  return exercise.pedagogy?.conceptSlug || exercise.conceptSlug || `legacy-${exercise.id}`;
+}
+
+export function sharesPreciseConcept(
+  first: TrainingExercise,
+  second: TrainingExercise,
+): boolean {
+  return preciseConcept(first) === preciseConcept(second);
+}
+
+export function nextExerciseIndex(current: number, total: number): number | null {
+  return current + 1 < total ? current + 1 : null;
+}
+
 function latestAttempts(attempts: TrainingAttemptRecord[]): Map<string, TrainingAttemptRecord> {
   const latest = new Map<string, TrainingAttemptRecord>();
   for (const attempt of [...attempts].toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))) {
@@ -25,7 +40,7 @@ function uniquePositions(exercises: TrainingExercise[]): TrainingExercise[] {
 
 /**
  * Builds a deterministic spaced-practice session:
- * personal position → different position on the same theme → fresh material →
+ * personal position → different position on the same precise concept → fresh material →
  * a previously failed review. A recently solved exact FEN is postponed while a
  * different position from the same category is available.
  */
@@ -47,24 +62,26 @@ export function buildTrainingSession(
 
   const personal = fresh.filter((exercise) => exercise.origin === "personal");
   const primary = personal[0] ?? fresh[0] ?? partial[0] ?? failed[0];
-  const sameTheme = primary
-    ? fresh.filter((exercise) => exercise.id !== primary.id && exercise.theme === primary.theme)
+  const sameConcept = primary
+    ? fresh.filter((exercise) => (
+        exercise.id !== primary.id && sharesPreciseConcept(exercise, primary)
+      ))
     : [];
   const sameCategory = primary
     ? fresh.filter((exercise) => (
         exercise.id !== primary.id
         && exercise.category === primary.category
-        && !sameTheme.some((candidate) => candidate.id === exercise.id)
+        && !sameConcept.some((candidate) => candidate.id === exercise.id)
       ))
     : [];
   const diverse = fresh.filter((exercise) => (
     exercise.id !== primary?.id
-    && !sameTheme.some((candidate) => candidate.id === exercise.id)
+    && !sameConcept.some((candidate) => candidate.id === exercise.id)
     && !sameCategory.some((candidate) => candidate.id === exercise.id)
   ));
 
-  const conceptBridge = [...sameTheme, ...sameCategory].slice(0, 2);
-  const remainingFresh = [...sameTheme, ...sameCategory, ...diverse].filter((exercise) => (
+  const conceptBridge = sameConcept.slice(0, 2);
+  const remainingFresh = [...sameConcept, ...sameCategory, ...diverse].filter((exercise) => (
     !conceptBridge.some((candidate) => candidate.id === exercise.id)
   ));
   const ordered = uniquePositions([

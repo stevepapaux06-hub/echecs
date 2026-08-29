@@ -1,7 +1,8 @@
 import { Chess, type Square } from "chess.js";
 import { describe, expect, it } from "vitest";
 import type { EngineEvaluation, EngineLine, TrainingExercise } from "@/domain/chess/types";
-import { buildTrainingFeedback, gradeMove, uciLineToSan } from "./feedback";
+import { allConceptExercises } from "./library";
+import { buildSequenceFeedback, buildTrainingFeedback, gradeMove, uciLineToSan } from "./feedback";
 
 function evaluation(fen: string, whiteCp: number, variations: string[][]): EngineEvaluation {
   const sideToMove = fen.split(" ")[1] as "w" | "b";
@@ -50,6 +51,7 @@ function exercise(fen: string, playerColor: "white" | "black", type: "mistake" |
     origin: "personal",
     mode: "one-move",
     theme: "test",
+    conceptSlug: "test-concept",
     category: type === "conversion" ? "conversion" : "tactic",
     title: "Test",
     prompt: "Test",
@@ -122,5 +124,22 @@ describe("training feedback", () => {
   it("renders a short legal PV in SAN", () => {
     const start = new Chess().fen();
     expect(uciLineToSan(start, ["e2e4", "e7e5", "g1f3"])).toBe("e4 e5 Nf3");
+  });
+
+  it("explains that a sound move with another idea does not master the concept", () => {
+    const opening = allConceptExercises().find((candidate) => (
+      candidate.id === "concept-opening-develop-with-tempo"
+    ))!;
+    const initial = evaluation(opening.fen, 20, [["g1f3"], ["b1c3"]]);
+    const feedback = buildSequenceFeedback({
+      exercise: opening,
+      initial,
+      moves: ["b1c3"],
+      result: "partial",
+      lossCp: 10,
+      afterPlayerCp: 10,
+      pedagogicalMove: "good-alternative",
+    });
+    expect(feedback.body).toContain("est bon, mais il ne correspond pas à l’idée travaillée ici");
   });
 });

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { TrainingAttemptRecord, TrainingExercise } from "@/domain/chess/types";
 import { allConceptExercises } from "./library";
-import { buildTrainingSession } from "./session";
+import {
+  buildTrainingSession,
+  nextExerciseIndex,
+  sharesPreciseConcept,
+} from "./session";
 
 const now = "2026-08-28T10:00:00.000Z";
 
@@ -25,7 +29,8 @@ describe("personalized training session", () => {
   it("starts from a personal error then changes to a genuinely different position", () => {
     const session = buildTrainingSession([personal, sameTheme, ...concepts], [], "recommended");
     expect(session[0].origin).toBe("personal");
-    expect(session[1].theme).toBe("forks");
+    expect(sharesPreciseConcept(session[0], session[1])).toBe(true);
+    expect(session[1].conceptSlug).toBe(session[0].conceptSlug);
     expect(session[1].fen).not.toBe(session[0].fen);
   });
 
@@ -44,5 +49,22 @@ describe("personalized training session", () => {
     );
     expect(session.findIndex((exercise) => exercise.id === failed.id)).toBeGreaterThan(0);
     expect(session.some((exercise) => exercise.id === failed.id)).toBe(true);
+  });
+
+  it("never wraps a seven-position session back to the first exercise", () => {
+    const progress: string[] = [];
+    let index: number | null = 0;
+    while (index !== null) {
+      progress.push(`${index + 1}/7`);
+      index = nextExerciseIndex(index, 7);
+    }
+    expect(progress).toEqual(["1/7", "2/7", "3/7", "4/7", "5/7", "6/7", "7/7"]);
+  });
+
+  it("does not call two exercises the same concept merely because their categories match", () => {
+    const rook = concepts.find((exercise) => exercise.conceptSlug === "rook-open-file")!;
+    const outpost = concepts.find((exercise) => exercise.conceptSlug === "knight-outpost")!;
+    expect(rook.category).toBe(outpost.category);
+    expect(sharesPreciseConcept(rook, outpost)).toBe(false);
   });
 });

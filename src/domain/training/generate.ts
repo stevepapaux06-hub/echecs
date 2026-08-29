@@ -5,6 +5,7 @@ import type {
   TrainingExercise,
   TrainingType,
 } from "@/domain/chess/types";
+import { evaluationForPlayer } from "../../infrastructure/engine/uci";
 import { conceptExercisesFor } from "./library";
 
 function getType(playerCp: number, phase: string): TrainingType {
@@ -115,6 +116,7 @@ export function generateExercises(
       origin: "personal",
       mode: shape.mode,
       theme: relatedToPrimary ? metrics.primaryTheme.id : type,
+      conceptSlug: relatedToPrimary ? metrics.primaryTheme.id : type,
       category,
       title: COPY[type].title,
       prompt: COPY[type].prompt,
@@ -124,6 +126,16 @@ export function generateExercises(
       bestMove: move.before.bestMove,
       playedMove: move.uci,
       baselinePlayerCp: move.playerCpBefore,
+      playedMovePlayerCp: move.playerCpAfter,
+      lossCp: move.lossCp,
+      engineCandidates: move.before.lines
+        .filter((line) => line.pv[0])
+        .slice(0, 3)
+        .map((line) => ({
+          uci: line.pv[0],
+          playerCp: evaluationForPlayer(line.whiteCp, game.playerColor),
+          pv: line.pv.slice(0, 6),
+        })),
       phase: move.phase,
       gameUrl: game.url,
       opponent: game.opponent,

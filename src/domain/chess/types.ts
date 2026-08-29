@@ -184,6 +184,27 @@ export type TrainingType =
   | "opening";
 export type TrainingOrigin = "personal" | "concept";
 export type TrainingMode = "one-move" | "line" | "playout";
+export type PedagogyExerciseType = "move" | "plan" | "defense" | "conversion" | "principle";
+
+export type TrainingCandidateLine = {
+  uci: string;
+  playerCp: number;
+  pv: string[];
+};
+
+export type PedagogyAnnotation = {
+  promptVersion: string;
+  cacheKey: string;
+  pedagogicalScore: number;
+  conceptSlug: string;
+  conceptLabel: string;
+  exerciseType: PedagogyExerciseType;
+  rootCause: string;
+  learningGoal: string;
+  question: string;
+  /** First moves selected by the coach from Stockfish-validated candidates only. */
+  conceptMoveUcis: string[];
+};
 
 export type PlanArrow = {
   from: string;
@@ -203,6 +224,8 @@ export type TrainingExercise = {
   origin: TrainingOrigin;
   mode: TrainingMode;
   theme: string;
+  /** Precise pedagogical concept. Unlike `theme`, this is never a broad category. */
+  conceptSlug: string;
   category: DiagnosticCategory;
   title: string;
   prompt: string;
@@ -212,6 +235,10 @@ export type TrainingExercise = {
   bestMove: string;
   playedMove?: string;
   baselinePlayerCp: number;
+  playedMovePlayerCp?: number;
+  lossCp?: number;
+  engineCandidates?: TrainingCandidateLine[];
+  pedagogy?: PedagogyAnnotation;
   phase: GamePhase;
   gameUrl?: string;
   opponent?: string;

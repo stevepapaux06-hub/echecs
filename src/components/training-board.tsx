@@ -20,7 +20,14 @@ import {
   buildTrainingFeedback,
   type TrainingFeedback,
 } from "@/domain/training/feedback";
-import { decideSequence, referenceReply, type TrainingResult } from "@/domain/training/sequence";
+import {
+  classifyPedagogicalMove,
+  decideSequence,
+  referenceReply,
+  type PedagogicalMoveResult,
+  type TrainingResult,
+} from "@/domain/training/sequence";
+import { nextExerciseIndex, sharesPreciseConcept } from "@/domain/training/session";
 import type { StockfishClient } from "@/infrastructure/engine/stockfish-client";
 import { evaluationForPlayer } from "@/infrastructure/engine/uci";
 import { Brand } from "./brand";
@@ -98,6 +105,7 @@ export function TrainingBoard({
   const initialEvaluation = useRef<EngineEvaluation | null>(null);
   const initialPlayerCp = useRef<number | null>(null);
   const largestLossCp = useRef(0);
+  const firstMovePedagogy = useRef<PedagogicalMoveResult | null>(null);
   const attemptToken = useRef(0);
   const exercise = exercises[index];
 
@@ -116,21 +124,15 @@ export function TrainingBoard({
     initialEvaluation.current = null;
     initialPlayerCp.current = null;
     largestLossCp.current = 0;
-  }
-
-  function findNextOnTheme(): number {
-    for (let offset = 1; offset <= exercises.length; offset += 1) {
-      const candidate = (index + offset) % exercises.length;
-      if (
-        exercises[candidate].theme === exercise.theme
-        || exercises[candidate].category === exercise.category
-      ) return candidate;
-    }
-    return (index + 1) % exercises.length;
+    firstMovePedagogy.current = null;
   }
 
   function nextExercise() {
-    const next = findNextOnTheme();
+    const next = nextExerciseIndex(index, exercises.length);
+    if (next === null) {
+      onBack();
+      return;
+    }
     setIndex(next);
     resetBoard(next);
   }
@@ -167,6 +169,7 @@ export function TrainingBoard({
       result: status,
       lossCp,
       afterPlayerCp,
+      pedagogicalMove: firstMovePedagogy.current ?? "concept",
     }));
     setThinkingStage(null);
     setResult(status);
@@ -228,6 +231,13 @@ export function TrainingBoard({
       );
       setPlayerMoves(nextPlayerMoves);
       setAttemptMoves(movesAfterPlayer);
+      if (!firstMovePedagogy.current) {
+        firstMovePedagogy.current = classifyPedagogicalMove(
+          exercise,
+          playedUci,
+          decisionFeedback.lossCp,
+        );
+      }
 
       const decision = decideSequence({
         exercise,
@@ -239,6 +249,7 @@ export function TrainingBoard({
         isCheckmate: chess.isCheckmate(),
         promoted: Boolean(move.promotion),
         captured: Boolean(move.captured),
+        pedagogicalMove: firstMovePedagogy.current,
       });
       if (decision.finished && decision.result) {
         finishSequence({
@@ -315,6 +326,11 @@ export function TrainingBoard({
   ]));
   const playerTurn = new Chess(position).turn() === (exercise.playerColor === "white" ? "w" : "b");
   const boardInteractive = !thinkingStage && !feedback && !result && playerTurn;
+  const followingIndex = nextExerciseIndex(index, exercises.length);
+  const followingExercise = followingIndex === null ? null : exercises[followingIndex];
+  const sameConceptNext = Boolean(
+    followingExercise && sharesPreciseConcept(exercise, followingExercise),
+  );
 
   const options: ChessboardOptions = {
     id: `chesspath-training-${exercise.id}`,
@@ -408,7 +424,13 @@ export function TrainingBoard({
               ) : null}
               <div className={`exercise-result ${result}`}>
                 <strong>{result === "success" ? "Réussi" : result === "partial" ? "À consolider" : "Échoué — reviendra plus tard"}</strong>
-                <span>{result === "failed" ? "Cette position est mémorisée pour une future séance espacée." : "La prochaine position réutilise le concept dans un autre contexte."}</span>
+                <span>{result === "failed"
+                  ? "Cette position est mémorisée pour une future séance espacée."
+                  : sameConceptNext
+                    ? "La prochaine position réutilise exactement ce concept dans un autre contexte."
+                    : followingExercise
+                      ? "La séance continue avec une nouvelle décision."
+                      : "Cette séance est terminée."}</span>
               </div>
             </div>
           ) : engineError ? (
@@ -423,7 +445,11 @@ export function TrainingBoard({
           <div className="exercise-footer">
             {exercise.gameUrl ? <a href={exercise.gameUrl} target="_blank" rel="noreferrer">Voir la partie source <ExternalLink size={14} /></a> : <span className="concept-source">Position pédagogique vérifiée avec Stockfish</span>}
             <button type="button" className="primary-button" onClick={nextExercise} disabled={!result}>
-              {exercise.origin === "personal" ? "Nouvelle position sur ce thème" : "Exercice suivant"} <ArrowRight size={17} />
+              {followingExercise
+                ? sameConceptNext
+                  ? "Nouvelle position sur ce concept"
+                  : "Exercice suivant"
+                : "Terminer la séance"} <ArrowRight size={17} />
             </button>
           </div>
         </aside>

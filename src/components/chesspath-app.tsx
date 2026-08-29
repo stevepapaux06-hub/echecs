@@ -26,6 +26,7 @@ import type {
 import { analyzePayload } from "@/domain/chess/analyze";
 import { parsePgnCollection } from "@/domain/chess/pgn";
 import { allConceptExercises } from "@/domain/training/library";
+import { coachTrainingExercises } from "@/domain/training/pedagogy";
 import { StockfishClient } from "@/infrastructure/engine/stockfish-client";
 import { getSupabaseClient } from "@/infrastructure/supabase/client";
 import {
@@ -97,7 +98,7 @@ function clearAuthUrlParameters(clearHash: boolean) {
 const pillars = [
   ["01", "Analyse", "De 1 à 100 parties, filtrées par cadence ou importées en PGN."],
   ["02", "Diagnostic", "Des thèmes récurrents avec exemples et niveau de confiance."],
-  ["03", "Entraînement", "Tes erreurs, puis de nouvelles positions sur le même concept."],
+  ["03", "Entraînement", "Tes erreurs, puis des positions pédagogiques lorsque le concept correspond."],
 ];
 
 function HomeScreen({
@@ -304,7 +305,7 @@ function Dashboard({
       </section>
 
       <section className="focus-section"><div><p className="eyebrow"><span /> Le plan ChessPath</p><h2>Les 3 choses qui devraient<br />te faire progresser maintenant.</h2></div><ol className="focus-list">{metrics.focusItems.map((item, index) => <li key={item}><span>0{index + 1}</span><p>{item}</p></li>)}</ol></section>
-      <section className="training-cta"><div><BrainCircuit size={30} /><div><span>Prochaine étape</span><h2>Transforme le diagnostic en réflexes.</h2><p>Une position personnelle, puis une nouvelle position sur le même concept.</p></div></div><button type="button" className="lime-button" onClick={onTrain} disabled={!result.exercises.length}>Entraîne-moi <ArrowRight size={18} /></button></section>
+      <section className="training-cta"><div><BrainCircuit size={30} /><div><span>Prochaine étape</span><h2>Transforme le diagnostic en réflexes.</h2><p>Des positions personnelles sélectionnées pour leur valeur pédagogique, puis des exercices fiables lorsque le concept correspond.</p></div></div><button type="button" className="lime-button" onClick={onTrain} disabled={!result.exercises.length}>Entraîne-moi <ArrowRight size={18} /></button></section>
     </main>
   );
 }
@@ -456,15 +457,30 @@ export function ChessPathApp() {
       setLoadingLabel(label);
       setProgress(total > 0 ? Math.min(96, 20 + completed / total * 76) : 96);
     });
+    setLoadingLabel("Le coach sélectionne les moments vraiment utiles");
+    setProgress(97);
+    let completedAnalysis = analysis;
+    try {
+      completedAnalysis = {
+        ...analysis,
+        exercises: await coachTrainingExercises({
+          exercises: analysis.exercises,
+          profile: analysis.profile,
+          engine,
+        }),
+      };
+    } catch {
+      // OpenAI is an optional pedagogical layer. Stockfish exercises remain usable.
+    }
     setLoadingLabel("Construction de ton diagnostic");
     setProgress(100);
-    setResult(analysis);
-    setTrainingExercises(analysis.exercises);
+    setResult(completedAnalysis);
+    setTrainingExercises(completedAnalysis.exercises);
 
     if (user) {
       setSaveStatus("Sauvegarde de cette analyse dans ton profil…");
       try {
-        await saveCompleteAnalysis(user.id, payload, analysis);
+        await saveCompleteAnalysis(user.id, payload, completedAnalysis);
         setSaveStatus("Analyse, parties, faiblesses et exercices sauvegardés dans ton profil.");
         await refreshProfile(user);
       } catch (saveError) {

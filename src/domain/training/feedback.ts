@@ -8,6 +8,7 @@ import type {
   TrainingType,
 } from "@/domain/chess/types";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
+import type { PedagogicalMoveResult } from "./sequence";
 
 export type MoveGrade = "excellent" | "very-good" | "playable" | "inaccuracy" | "mistake";
 
@@ -235,6 +236,7 @@ export function buildSequenceFeedback({
   result,
   lossCp,
   afterPlayerCp,
+  pedagogicalMove = "concept",
 }: {
   exercise: TrainingExercise;
   initial: EngineEvaluation;
@@ -242,12 +244,19 @@ export function buildSequenceFeedback({
   result: "success" | "partial" | "failed";
   lossCp: number;
   afterPlayerCp: number;
+  pedagogicalMove?: PedagogicalMoveResult;
 }): TrainingFeedback {
-  const principal = exercise.solutionLine?.length
-    ? exercise.solutionLine
-    : initial.lines[0]?.pv.slice(0, Math.max(2, exercise.maxPlayerMoves * 2 - 1)) ?? [];
-  const bestMove = principal[0] || initial.bestMove || exercise.bestMove;
   const firstPlayedMove = moves[0] ?? "";
+  const coachedLine = pedagogicalMove === "concept"
+    ? initial.lines.find((line) => line.pv[0] === firstPlayedMove)?.pv
+    : undefined;
+  const principal = coachedLine?.length
+    ? coachedLine.slice(0, Math.max(2, exercise.maxPlayerMoves * 2 - 1))
+    : exercise.solutionLine?.length
+      ? exercise.solutionLine
+      : initial.lines[0]?.pv.slice(0, Math.max(2, exercise.maxPlayerMoves * 2 - 1)) ?? [];
+  const bestMove = principal[0] || initial.bestMove || exercise.bestMove;
+  const playedSequenceSan = uciLineToSan(exercise.fen, moves, moves.length) || "ton choix";
   const candidates = initial.lines
     .filter((line) => line.pv[0])
     .slice(0, 3)
@@ -268,24 +277,27 @@ export function buildSequenceFeedback({
       ]
     : [];
 
+  const rootCause = exercise.pedagogy?.rootCause;
+  const learningGoal = exercise.pedagogy?.learningGoal || exercise.concept;
   const copy = result === "success"
     ? {
         title: "Séquence réussie",
-        body: exercise.type === "tactic"
-          ? "Tu as calculé au-delà du premier coup et obtenu le gain concret."
-          : exercise.type === "defense"
-            ? "Tu as neutralisé la menace sans créer une nouvelle faiblesse immédiate."
-            : "Tu as conservé l’idée essentielle jusqu’au terme utile de l’exercice.",
+        body: `Avec ${playedSequenceSan}, tu as trouvé l’idée travaillée et conservé sa valeur concrète. ${learningGoal}`,
       }
-    : result === "partial"
+    : result === "partial" && pedagogicalMove === "good-alternative"
       ? {
-          title: "Idée comprise, technique à consolider",
-          body: "La suite reste jouable, mais elle n’atteint pas encore clairement l’objectif de la position.",
+          title: "Bon coup, autre idée",
+          body: `${playedSequenceSan} est bon, mais il ne correspond pas à l’idée travaillée ici. ${learningGoal}`,
         }
-      : {
-          title: "Séquence à revoir",
-          body: "L’exercice s’arrête ici : le dernier choix change réellement l’évaluation de la position.",
-        };
+      : result === "partial"
+        ? {
+            title: "Idée comprise, technique à consolider",
+            body: `${playedSequenceSan} reste jouable, mais n’atteint pas encore clairement l’objectif. ${learningGoal}`,
+          }
+        : {
+            title: "Séquence à revoir",
+            body: `${playedSequenceSan} change réellement l’évaluation de la position. ${rootCause || learningGoal}`,
+          };
 
   return {
     grade: result === "success" ? "excellent" : result === "partial" ? "playable" : "mistake",
@@ -295,7 +307,7 @@ export function buildSequenceFeedback({
     bestMove,
     bestMoveSan: uciToSan(exercise.fen, bestMove),
     playedMove: firstPlayedMove,
-    playedMoveSan: uciLineToSan(exercise.fen, moves, moves.length),
+    playedMoveSan: playedSequenceSan,
     bestLineSan: uciLineToSan(exercise.fen, principal, principal.length),
     playedLineSan: "",
     lossCp,

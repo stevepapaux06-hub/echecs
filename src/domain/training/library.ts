@@ -15,9 +15,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "tactic",
     origin: "concept",
     mode: "line",
+    conceptSlug: "knight-fork",
     category: "tactic",
-    title: "La fourchette ne s’arrête pas au premier coup",
-    prompt: "Trouve le saut de cavalier, puis joue jusqu’à obtenir le gain concret.",
+    title: "Une ressource concrète",
+    prompt: "Quelle idée forcing choisirais-tu ici ? Calcule aussi la réponse adverse.",
     fen: "q3k3/8/8/1N6/8/8/8/5RK1 w - - 0 1",
     playerColor: "white",
     bestMove: "b5c7",
@@ -41,9 +42,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "tactic",
     origin: "concept",
     mode: "one-move",
+    conceptSlug: "aligned-piece-with-king",
     category: "tactic",
-    title: "Une pièce alignée avec son roi",
-    prompt: "Une réponse forcing règle immédiatement la position. Laquelle ?",
+    title: "Une décision forcing",
+    prompt: "Quelle idée concrète choisirais-tu ici ?",
     fen: "4k3/4q3/8/8/8/8/4R3/R3K3 w Q - 0 1",
     playerColor: "white",
     bestMove: "e2e7",
@@ -60,9 +62,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "strategy",
     origin: "concept",
     mode: "one-move",
+    conceptSlug: "rook-open-file",
     category: "strategy",
-    title: "Donne une colonne à ta tour",
-    prompt: "Trouve le placement simple qui rend ta tour immédiatement plus active.",
+    title: "Choisis un plan d’activité",
+    prompt: "Quel plan choisirais-tu ici ?",
     fen: "4k3/pp3ppp/8/8/8/8/PP3PPP/R5K1 w - - 0 1",
     playerColor: "white",
     bestMove: "a1d1",
@@ -82,9 +85,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "strategy",
     origin: "concept",
     mode: "one-move",
+    conceptSlug: "knight-outpost",
     category: "strategy",
-    title: "Installe une pièce sur une case forte",
-    prompt: "Quelle case centrale donne au cavalier le plus d’activité durable ?",
+    title: "Améliore ta position",
+    prompt: "Quelle décision améliorerait durablement l’une de tes pièces ?",
     fen: "4k3/pp3ppp/8/8/8/3N4/PP3PPP/6K1 w - - 0 1",
     playerColor: "white",
     bestMove: "d3e5",
@@ -101,9 +105,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "opening",
     origin: "concept",
     mode: "one-move",
+    conceptSlug: "development-with-tempo",
     category: "opening",
-    title: "Développe avec une menace utile",
-    prompt: "Quel coup développe une pièce tout en mettant immédiatement le centre adverse sous pression ?",
+    title: "Une priorité d’ouverture",
+    prompt: "Quelle décision d’ouverture remplit le plus d’objectifs à la fois ?",
     fen: "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
     playerColor: "white",
     bestMove: "g1f3",
@@ -123,9 +128,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "endgame",
     origin: "concept",
     mode: "playout",
+    conceptSlug: "king-opposition",
     category: "endgame",
-    title: "Fais passer le roi devant le pion",
-    prompt: "Convertis cette finale sans pousser automatiquement le pion. Joue quelques coups contre le moteur.",
+    title: "Conduis cette finale",
+    prompt: "Quel plan choisirais-tu pour faire progresser cette position ? Joue plusieurs coups.",
     fen: "2k5/8/8/3PK3/8/8/8/8 w - - 0 1",
     playerColor: "white",
     bestMove: "e5e6",
@@ -146,9 +152,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "conversion",
     origin: "concept",
     mode: "playout",
+    conceptSlug: "rook-activity",
     category: "conversion",
-    title: "Active la tour avant de pousser",
-    prompt: "Tu as l’avantage matériel. Garde les pions adverses sous contrôle et simplifie la conversion.",
+    title: "Transforme l’avantage",
+    prompt: "Comment limiterais-tu le contre-jeu avant de progresser ?",
     fen: "8/5pk1/6p1/8/8/5P2/5KPP/3R4 w - - 0 1",
     playerColor: "white",
     bestMove: "d1d6",
@@ -169,9 +176,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "defense",
     origin: "concept",
     mode: "line",
+    conceptSlug: "exchange-active-piece",
     category: "defense",
-    title: "Cherche du contre-jeu actif",
-    prompt: "La tour adverse est active. Neutralise-la, puis stabilise la finale.",
+    title: "Trouve une ressource défensive",
+    prompt: "Quelle décision réduit le plus le danger immédiat ?",
     fen: "6k1/5ppp/8/8/2p5/3r4/5PPP/3R2K1 w - - 0 1",
     playerColor: "white",
     bestMove: "d1d3",
@@ -189,9 +197,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "tactic",
     origin: "concept",
     mode: "line",
+    conceptSlug: "knight-fork",
     category: "tactic",
-    title: "Même motif, nouveaux repères",
-    prompt: "Le roi et la dame sont séparés. Trouve la fourchette, puis prends réellement la cible.",
+    title: "Une ressource concrète",
+    prompt: "Quelle idée forcing choisirais-tu ici ? Calcule jusqu’au résultat concret.",
     fen: "3q4/4k3/8/4N3/8/8/8/6KR w - - 0 1",
     playerColor: "white",
     bestMove: "e5c6",
@@ -212,9 +221,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "strategy",
     origin: "concept",
     mode: "one-move",
+    conceptSlug: "king-safety-and-rook-activity",
     category: "strategy",
-    title: "Relie le roi sûr à la colonne ouverte",
-    prompt: "Quel coup met le roi à l’abri tout en rapprochant une tour de la colonne centrale ?",
+    title: "Coordonne tes pièces",
+    prompt: "Quelle décision améliorerait plusieurs éléments de ta position à la fois ?",
     fen: "r3r1k1/pp1n1ppp/2p5/3p4/3P4/2P1PN2/PP3PPP/R3R1K1 w - - 0 1",
     playerColor: "white",
     bestMove: "e1c1",
@@ -231,9 +241,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "endgame",
     origin: "concept",
     mode: "playout",
+    conceptSlug: "king-opposition",
     category: "endgame",
-    title: "Construis l’opposition",
-    prompt: "Ne cherche pas un seul coup : accompagne ton pion avec le roi jusqu’à obtenir le passage.",
+    title: "Conduis cette finale",
+    prompt: "Quel plan choisirais-tu ? Joue plusieurs coups jusqu’à clarifier le résultat.",
     fen: "8/8/4k3/8/4K3/8/4P3/8 w - - 0 1",
     playerColor: "white",
     bestMove: "e2e3",
@@ -251,9 +262,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "opening",
     origin: "concept",
     mode: "one-move",
+    conceptSlug: "prepare-central-break",
     category: "opening",
-    title: "Prépare le centre dans l’Italienne",
-    prompt: "Quel coup prépare d4 sans exposer le centre immédiatement ?",
+    title: "Comprends la structure",
+    prompt: "Quelle décision prépare le mieux la suite de ton développement ?",
     fen: "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
     playerColor: "white",
     bestMove: "c2c3",
@@ -270,9 +282,10 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "conversion",
     origin: "concept",
     mode: "playout",
+    conceptSlug: "cut-off-king",
     category: "conversion",
-    title: "Coupe le roi avant d’avancer",
-    prompt: "Ta tour et ton pion gagnent, mais seulement si le roi adverse reste coupé. Joue la technique.",
+    title: "Transforme l’avantage",
+    prompt: "Quel plan rendrait la progression la plus sûre ? Joue plusieurs coups.",
     fen: "8/8/8/4k3/8/4K3/4P3/3R4 w - - 0 1",
     playerColor: "white",
     bestMove: "d1d2",
@@ -295,24 +308,41 @@ for (const exercise of CONCEPT_LIBRARY) {
 
 export function conceptExercisesFor(
   category: TrainingExercise["category"],
-  theme: string,
+  conceptSlug: string,
   limit = 2,
 ): TrainingExercise[] {
-  const direct = CONCEPT_LIBRARY.filter((exercise) => exercise.category === category);
-  const fallbacks = CONCEPT_LIBRARY.filter((exercise) => exercise.category !== category);
-  return [...direct, ...fallbacks].slice(0, limit).map((exercise) => ({
+  const exact = CONCEPT_LIBRARY.filter((exercise) => exercise.conceptSlug === conceptSlug);
+  const sameCategory = CONCEPT_LIBRARY.filter((exercise) => (
+    exercise.category === category && exercise.conceptSlug !== conceptSlug
+  ));
+  const selected = exact.length ? exact : sameCategory;
+  return selected.slice(0, limit).map((exercise) => ({
     ...exercise,
     id: `concept-${exercise.key}`,
-    theme,
-    sourceLabel: "Nouvelle position · même concept",
+    theme: exercise.conceptSlug,
+    sourceLabel: exercise.conceptSlug === conceptSlug
+      ? "Nouvelle position · même concept"
+      : "Position pédagogique ChessPath",
   }));
+}
+
+export function conceptExercisesForSlug(conceptSlug: string, limit = 2): TrainingExercise[] {
+  return CONCEPT_LIBRARY
+    .filter((exercise) => exercise.conceptSlug === conceptSlug)
+    .slice(0, limit)
+    .map((exercise) => ({
+      ...exercise,
+      id: `concept-${exercise.key}`,
+      theme: exercise.conceptSlug,
+      sourceLabel: "Nouvelle position · même concept",
+    }));
 }
 
 export function allConceptExercises(): TrainingExercise[] {
   return CONCEPT_LIBRARY.map((exercise) => ({
     ...exercise,
     id: `concept-${exercise.key}`,
-    theme: exercise.category,
+    theme: exercise.conceptSlug,
     sourceLabel: "Bibliothèque pédagogique ChessPath",
   }));
 }

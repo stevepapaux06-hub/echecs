@@ -1,6 +1,7 @@
 import type { TrainingExercise } from "@/domain/chess/types";
 
 export type TrainingResult = "success" | "partial" | "failed";
+export type PedagogicalMoveResult = "concept" | "good-alternative" | "error";
 
 export type SequenceDecision = {
   finished: boolean;
@@ -22,6 +23,22 @@ export function referenceReply(
   return line[playedPlies.length] ?? null;
 }
 
+/**
+ * Stockfish first decides whether the move is objectively sound. Only then do
+ * we check whether it demonstrates the precise concept selected by the coach.
+ */
+export function classifyPedagogicalMove(
+  exercise: TrainingExercise,
+  playedMove: string,
+  decisionLossCp: number,
+): PedagogicalMoveResult {
+  if (decisionLossCp > 100) return "error";
+  const conceptMoves = exercise.pedagogy?.conceptMoveUcis?.length
+    ? exercise.pedagogy.conceptMoveUcis
+    : [exercise.solutionLine?.[0] || exercise.bestMove].filter(Boolean);
+  return conceptMoves.includes(playedMove) ? "concept" : "good-alternative";
+}
+
 export function decideSequence({
   exercise,
   playerMoves,
@@ -32,6 +49,7 @@ export function decideSequence({
   isCheckmate,
   promoted,
   captured,
+  pedagogicalMove = "concept",
 }: {
   exercise: TrainingExercise;
   playerMoves: number;
@@ -42,7 +60,11 @@ export function decideSequence({
   isCheckmate: boolean;
   promoted: boolean;
   captured: boolean;
+  pedagogicalMove?: PedagogicalMoveResult;
 }): SequenceDecision {
+  if (pedagogicalMove === "error") {
+    return { finished: true, result: "failed", reason: "mistake" };
+  }
   // A true tactical/evaluative error ends the attempt immediately. Small
   // inaccuracies remain playable so a technical exercise can still unfold.
   if (decisionLossCp > 180 || totalLossCp > 240) {
@@ -64,27 +86,41 @@ export function decideSequence({
   if (exercise.mode === "one-move") {
     return {
       finished: true,
-      result: decisionLossCp <= 100 && targetReached ? "success" : "partial",
+      result: pedagogicalMove === "concept" && targetReached ? "success" : "partial",
       reason: "target",
     };
   }
 
   if (promoted && (exercise.type === "endgame" || exercise.type === "conversion")) {
-    return { finished: true, result: targetReached ? "success" : "partial", reason: "target" };
+    return {
+      finished: true,
+      result: targetReached && pedagogicalMove === "concept" ? "success" : "partial",
+      reason: "target",
+    };
   }
 
   if (exercise.type === "tactic" && captured && playerMoves >= 2) {
-    return { finished: true, result: targetReached ? "success" : "partial", reason: "target" };
+    return {
+      finished: true,
+      result: targetReached && pedagogicalMove === "concept" ? "success" : "partial",
+      reason: "target",
+    };
   }
 
   if (exercise.type === "defense" && playerMoves >= 2 && targetReached) {
-    return { finished: true, result: "success", reason: "target" };
+    return {
+      finished: true,
+      result: pedagogicalMove === "concept" ? "success" : "partial",
+      reason: "target",
+    };
   }
 
   if (playerMoves >= exercise.maxPlayerMoves) {
     return {
       finished: true,
-      result: targetReached && totalLossCp <= 140 ? "success" : "partial",
+      result: targetReached && totalLossCp <= 140 && pedagogicalMove === "concept"
+        ? "success"
+        : "partial",
       reason: "length",
     };
   }

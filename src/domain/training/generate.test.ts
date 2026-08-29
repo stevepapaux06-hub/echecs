@@ -95,6 +95,8 @@ describe("personal exercise generation", () => {
     const personal = generateExercises([game], metrics)[0];
     expect(personal.origin).toBe("personal");
     expect(personal.fen).toBe(fen);
+    expect(personal.sourceLabel).toBe("Ta partie contre Camille");
+    expect(personal.gameUrl).toBeUndefined();
     expect(personal.mode).toBe("line");
     expect(personal.maxPlayerMoves).toBe(2);
     expect(personal.solutionLine).toEqual(["d1d2", "e8f7", "d2d7"]);
