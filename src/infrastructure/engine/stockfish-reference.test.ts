@@ -137,7 +137,13 @@ describe("Stockfish reference positions", () => {
   });
 
   it("validates every curated teaching move against Stockfish", async () => {
-    for (const exercise of allConceptExercises()) {
+    const all = allConceptExercises();
+    const curated = all.filter((exercise) => exercise.source !== "lichess");
+    const lichessByConcept = new Map<string, (typeof all)[number]>();
+    for (const exercise of all.filter((candidate) => candidate.source === "lichess")) {
+      if (!lichessByConcept.has(exercise.conceptSlug)) lichessByConcept.set(exercise.conceptSlug, exercise);
+    }
+    for (const exercise of [...curated, ...lichessByConcept.values()]) {
       const before = await analyze(exercise.fen, { depth: 9, multiPv: 3 });
       const chess = new Chess(exercise.fen);
       const played = chess.move({

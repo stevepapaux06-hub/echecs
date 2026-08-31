@@ -26,7 +26,6 @@ import type {
 import { analyzePayload } from "@/domain/chess/analyze";
 import { parsePgnCollection } from "@/domain/chess/pgn";
 import { allConceptExercises } from "@/domain/training/library";
-import { coachTrainingExercises } from "@/domain/training/pedagogy";
 import { StockfishClient } from "@/infrastructure/engine/stockfish-client";
 import { getSupabaseClient } from "@/infrastructure/supabase/client";
 import {
@@ -270,7 +269,7 @@ function Dashboard({
         <article className="main-priority">
           <div className="priority-label"><Crosshair size={17} /> Priorité actuelle · confiance {confidenceLabel(metrics.primaryTheme.confidence)}</div>
           <div><h2>{metrics.priorityTitle}</h2><p>{metrics.prioritySummary}</p></div>
-          <div className="evidence-line"><span>{metrics.primaryTheme.issueCount}/{metrics.primaryTheme.sampleSize} exemples concernés</span><span>{metrics.gamesAnalyzed} parties</span><span>Stockfish complet</span></div>
+          <div className="evidence-line"><span>{metrics.primaryTheme.successCount ?? Math.max(0, metrics.primaryTheme.sampleSize - metrics.primaryTheme.issueCount)}/{metrics.primaryTheme.sampleSize} occasions réussies</span><span>{metrics.gamesAnalyzed} parties</span><span>Pattern Engine + Stockfish</span></div>
         </article>
         <div className="metric-grid">
           <MetricCard icon={<Target size={18} />} label="Conversion" value={metrics.conversionRate === null ? "—" : `${metrics.conversionRate}%`} detail={`${metrics.convertedWins}/${metrics.conversionOpportunities} avantages transformés`} />
@@ -288,7 +287,7 @@ function Dashboard({
         </article>
         <article className="panel theme-panel">
           <div className="panel-heading"><div><span>Thèmes récurrents</span><h2>Ce que l’échantillon permet d’affirmer.</h2></div><small>{metrics.themes.length} thème{metrics.themes.length > 1 ? "s" : ""}</small></div>
-          <div className="theme-list">{metrics.themes.slice(0, 5).map((theme) => <div key={theme.id}><span>{theme.category}</span><strong>{theme.title}</strong><small>{theme.issueCount}/{theme.sampleSize} exemples · confiance {confidenceLabel(theme.confidence)}</small></div>)}</div>
+          <div className="theme-list">{metrics.themes.slice(0, 5).map((theme) => <div key={theme.id}><span>{theme.category}</span><strong>{theme.title}</strong><small>{theme.successCount ?? Math.max(0, theme.sampleSize - theme.issueCount)}/{theme.sampleSize} occasions réussies · confiance {confidenceLabel(theme.confidence)}</small></div>)}</div>
         </article>
       </section>
 
@@ -457,21 +456,11 @@ export function ChessPathApp() {
       setLoadingLabel(label);
       setProgress(total > 0 ? Math.min(96, 20 + completed / total * 76) : 96);
     });
-    setLoadingLabel("Le coach sélectionne les moments vraiment utiles");
+    setLoadingLabel("Le Pattern Engine sélectionne les moments vraiment utiles");
     setProgress(97);
-    let completedAnalysis = analysis;
-    try {
-      completedAnalysis = {
-        ...analysis,
-        exercises: await coachTrainingExercises({
-          exercises: analysis.exercises,
-          profile: analysis.profile,
-          engine,
-        }),
-      };
-    } catch {
-      // OpenAI is an optional pedagogical layer. Stockfish exercises remain usable.
-    }
+    // The optional OpenAI pedagogy module remains available in the codebase,
+    // but Pattern Engine V1 deliberately performs no paid AI call.
+    const completedAnalysis = analysis;
     setLoadingLabel("Construction de ton diagnostic");
     setProgress(100);
     setResult(completedAnalysis);

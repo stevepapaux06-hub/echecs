@@ -16,6 +16,7 @@ export type CandidateMove = {
   uci: string;
   san: string;
   playerCp: number;
+  whiteCentricCp: number;
   pvSan: string;
 };
 
@@ -188,6 +189,7 @@ export function buildTrainingFeedback({
       uci: line.pv[0],
       san: uciToSan(fen, line.pv[0]),
       playerCp: evaluationForPlayer(line.whiteCp, playerColor),
+      whiteCentricCp: line.whiteCp,
       pvSan: uciLineToSan(fen, line.pv),
     }));
 
@@ -264,6 +266,7 @@ export function buildSequenceFeedback({
       uci: line.pv[0],
       san: uciToSan(exercise.fen, line.pv[0]),
       playerCp: evaluationForPlayer(line.whiteCp, exercise.playerColor),
+      whiteCentricCp: line.whiteCp,
       pvSan: uciLineToSan(exercise.fen, line.pv),
     }));
   const inferredArrows: PlanArrow[] = principal.length

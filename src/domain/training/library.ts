@@ -1,5 +1,9 @@
 import { Chess } from "chess.js";
 import type { TrainingExercise } from "@/domain/chess/types";
+import { classifyPhase } from "../chess/phase";
+import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
+import { LICHESS_TRAINING_SEED } from "./lichess-seed";
+import type { TrainingPosition } from "./positions";
 
 type ConceptExercise = Omit<
   TrainingExercise,
@@ -15,7 +19,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "tactic",
     origin: "concept",
     mode: "line",
-    conceptSlug: "knight-fork",
+    conceptSlug: "fork",
     category: "tactic",
     title: "Une ressource concrète",
     prompt: "Quelle idée forcing choisirais-tu ici ? Calcule aussi la réponse adverse.",
@@ -42,7 +46,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "tactic",
     origin: "concept",
     mode: "one-move",
-    conceptSlug: "aligned-piece-with-king",
+    conceptSlug: "pin",
     category: "tactic",
     title: "Une décision forcing",
     prompt: "Quelle idée concrète choisirais-tu ici ?",
@@ -62,7 +66,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "strategy",
     origin: "concept",
     mode: "one-move",
-    conceptSlug: "rook-open-file",
+    conceptSlug: "open_file",
     category: "strategy",
     title: "Choisis un plan d’activité",
     prompt: "Quel plan choisirais-tu ici ?",
@@ -85,7 +89,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "strategy",
     origin: "concept",
     mode: "one-move",
-    conceptSlug: "knight-outpost",
+    conceptSlug: "outpost",
     category: "strategy",
     title: "Améliore ta position",
     prompt: "Quelle décision améliorerait durablement l’une de tes pièces ?",
@@ -105,7 +109,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "opening",
     origin: "concept",
     mode: "one-move",
-    conceptSlug: "development-with-tempo",
+    conceptSlug: "development",
     category: "opening",
     title: "Une priorité d’ouverture",
     prompt: "Quelle décision d’ouverture remplit le plus d’objectifs à la fois ?",
@@ -128,7 +132,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "endgame",
     origin: "concept",
     mode: "playout",
-    conceptSlug: "king-opposition",
+    conceptSlug: "opposition",
     category: "endgame",
     title: "Conduis cette finale",
     prompt: "Quel plan choisirais-tu pour faire progresser cette position ? Joue plusieurs coups.",
@@ -152,7 +156,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "conversion",
     origin: "concept",
     mode: "playout",
-    conceptSlug: "rook-activity",
+    conceptSlug: "rook_activity",
     category: "conversion",
     title: "Transforme l’avantage",
     prompt: "Comment limiterais-tu le contre-jeu avant de progresser ?",
@@ -176,7 +180,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "defense",
     origin: "concept",
     mode: "line",
-    conceptSlug: "exchange-active-piece",
+    conceptSlug: "defensive_resource",
     category: "defense",
     title: "Trouve une ressource défensive",
     prompt: "Quelle décision réduit le plus le danger immédiat ?",
@@ -197,7 +201,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "tactic",
     origin: "concept",
     mode: "line",
-    conceptSlug: "knight-fork",
+    conceptSlug: "fork",
     category: "tactic",
     title: "Une ressource concrète",
     prompt: "Quelle idée forcing choisirais-tu ici ? Calcule jusqu’au résultat concret.",
@@ -221,8 +225,8 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "strategy",
     origin: "concept",
     mode: "one-move",
-    conceptSlug: "king-safety-and-rook-activity",
-    category: "strategy",
+    conceptSlug: "king_safety",
+    category: "opening",
     title: "Coordonne tes pièces",
     prompt: "Quelle décision améliorerait plusieurs éléments de ta position à la fois ?",
     fen: "r3r1k1/pp1n1ppp/2p5/3p4/3P4/2P1PN2/PP3PPP/R3R1K1 w - - 0 1",
@@ -241,7 +245,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "endgame",
     origin: "concept",
     mode: "playout",
-    conceptSlug: "king-opposition",
+    conceptSlug: "opposition",
     category: "endgame",
     title: "Conduis cette finale",
     prompt: "Quel plan choisirais-tu ? Joue plusieurs coups jusqu’à clarifier le résultat.",
@@ -262,8 +266,8 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "opening",
     origin: "concept",
     mode: "one-move",
-    conceptSlug: "prepare-central-break",
-    category: "opening",
+    conceptSlug: "pawn_break",
+    category: "strategy",
     title: "Comprends la structure",
     prompt: "Quelle décision prépare le mieux la suite de ton développement ?",
     fen: "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
@@ -282,7 +286,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     type: "conversion",
     origin: "concept",
     mode: "playout",
-    conceptSlug: "cut-off-king",
+    conceptSlug: "restrict_counterplay",
     category: "conversion",
     title: "Transforme l’avantage",
     prompt: "Quel plan rendrait la progression la plus sûre ? Joue plusieurs coups.",
@@ -306,19 +310,85 @@ for (const exercise of CONCEPT_LIBRARY) {
   new Chess(exercise.fen);
 }
 
+function exerciseFromLichess(position: TrainingPosition): TrainingExercise {
+  const concept = conceptDefinition(position.conceptSlug);
+  const playerMoves = Math.max(1, Math.min(3, Math.ceil(position.solutionMoves.length / 2)));
+  const fullmove = Number(position.fen.split(/\s+/)[5] ?? 1);
+  return {
+    id: position.id,
+    type: position.category === "defense" ? "defense" : "tactic",
+    origin: "concept",
+    mode: position.solutionMoves.length <= 1 ? "one-move" : "line",
+    theme: position.conceptSlug,
+    conceptSlug: position.conceptSlug,
+    secondaryConceptSlug: position.secondaryConceptSlug,
+    category: position.category,
+    title: concept?.labelFr ?? "Tactique Lichess",
+    prompt: "Trouve la suite concrète, puis vérifie la meilleure réponse adverse.",
+    sourceLabel: `Lichess Puzzle · ${concept?.labelFr ?? position.conceptSlug}`,
+    fen: position.fen,
+    playerColor: position.playerColor,
+    bestMove: position.solutionMoves[0],
+    baselinePlayerCp: 0,
+    phase: classifyPhase(position.fen, Math.max(1, fullmove * 2 - 1)),
+    gameUrl: position.sourceUrl,
+    concept: concept?.shortDescription ?? "Calculer la ressource jusqu’à son résultat concret.",
+    maxPlayerMoves: playerMoves,
+    solutionLine: position.solutionMoves,
+    difficulty: position.difficulty,
+    source: "lichess",
+    sourceId: position.sourceGameId,
+    qualityScore: position.qualityScore,
+    isVerified: position.isVerified,
+  };
+}
+
+const LICHESS_LIBRARY = LICHESS_TRAINING_SEED.map(exerciseFromLichess);
+
+function curatedExercise(exercise: ConceptExercise): TrainingExercise {
+  return {
+    ...exercise,
+    id: `concept-${exercise.key}`,
+    theme: exercise.conceptSlug,
+    sourceLabel: exercise.sourceLabel ?? "Bibliothèque pédagogique ChessPath",
+    source: exercise.source ?? "chesspath_curated",
+    isVerified: exercise.isVerified ?? true,
+  };
+}
+
+function exercisePool(): TrainingExercise[] {
+  return [...CONCEPT_LIBRARY.map(curatedExercise), ...LICHESS_LIBRARY];
+}
+
+function byAdaptedDifficulty(exercises: TrainingExercise[], userRating?: number): TrainingExercise[] {
+  return exercises.toSorted((first, second) => {
+    if (userRating) {
+      const firstDistance = first.difficulty === undefined ? Number.MAX_SAFE_INTEGER : Math.abs(first.difficulty - userRating);
+      const secondDistance = second.difficulty === undefined ? Number.MAX_SAFE_INTEGER : Math.abs(second.difficulty - userRating);
+      if (firstDistance !== secondDistance) return firstDistance - secondDistance;
+      const firstSlightlyHarder = Number((first.difficulty ?? 0) >= userRating);
+      const secondSlightlyHarder = Number((second.difficulty ?? 0) >= userRating);
+      if (firstSlightlyHarder !== secondSlightlyHarder) return secondSlightlyHarder - firstSlightlyHarder;
+    }
+    return (second.qualityScore ?? 0) - (first.qualityScore ?? 0) || first.id.localeCompare(second.id);
+  });
+}
+
 export function conceptExercisesFor(
   category: TrainingExercise["category"],
   conceptSlug: string,
   limit = 2,
+  userRating?: number,
 ): TrainingExercise[] {
-  const exact = CONCEPT_LIBRARY.filter((exercise) => exercise.conceptSlug === conceptSlug);
-  const sameCategory = CONCEPT_LIBRARY.filter((exercise) => (
+  conceptSlug = normalizeConceptSlug(conceptSlug);
+  const pool = exercisePool();
+  const exact = pool.filter((exercise) => exercise.conceptSlug === conceptSlug);
+  const sameCategory = pool.filter((exercise) => (
     exercise.category === category && exercise.conceptSlug !== conceptSlug
   ));
-  const selected = exact.length ? exact : sameCategory;
+  const selected = byAdaptedDifficulty(exact.length ? exact : sameCategory, userRating);
   return selected.slice(0, limit).map((exercise) => ({
     ...exercise,
-    id: `concept-${exercise.key}`,
     theme: exercise.conceptSlug,
     sourceLabel: exercise.conceptSlug === conceptSlug
       ? "Nouvelle position · même concept"
@@ -326,23 +396,18 @@ export function conceptExercisesFor(
   }));
 }
 
-export function conceptExercisesForSlug(conceptSlug: string, limit = 2): TrainingExercise[] {
-  return CONCEPT_LIBRARY
+export function conceptExercisesForSlug(conceptSlug: string, limit = 2, userRating?: number): TrainingExercise[] {
+  conceptSlug = normalizeConceptSlug(conceptSlug);
+  return byAdaptedDifficulty(exercisePool()
     .filter((exercise) => exercise.conceptSlug === conceptSlug)
-    .slice(0, limit)
+    , userRating).slice(0, limit)
     .map((exercise) => ({
       ...exercise,
-      id: `concept-${exercise.key}`,
       theme: exercise.conceptSlug,
       sourceLabel: "Nouvelle position · même concept",
     }));
 }
 
 export function allConceptExercises(): TrainingExercise[] {
-  return CONCEPT_LIBRARY.map((exercise) => ({
-    ...exercise,
-    id: `concept-${exercise.key}`,
-    theme: exercise.conceptSlug,
-    sourceLabel: "Bibliothèque pédagogique ChessPath",
-  }));
+  return exercisePool();
 }

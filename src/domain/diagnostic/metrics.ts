@@ -5,6 +5,7 @@ import type {
   GamePhase,
   PhaseMetric,
 } from "@/domain/chess/types";
+import type { ConceptSlug } from "@/domain/knowledge/concepts";
 import { detectDiagnosticThemes } from "./themes";
 
 const PHASE_LABELS: Record<GamePhase, string> = {
@@ -117,6 +118,24 @@ export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
 
   const [fallbackTitle, fallbackSummary] = priorityCopy(priority, worstPhase);
   const themes = detectDiagnosticThemes(games);
+  const conceptAggregates = new Map<ConceptSlug, { opportunities: number; successes: number; confidenceTotal: number }>();
+  for (const move of allMoves) {
+    for (const pattern of move.patterns ?? []) {
+      if (!pattern.opportunity || pattern.confidence < 0.8) continue;
+      const aggregate = conceptAggregates.get(pattern.conceptSlug) ?? { opportunities: 0, successes: 0, confidenceTotal: 0 };
+      aggregate.opportunities += 1;
+      aggregate.successes += Number(pattern.success);
+      aggregate.confidenceTotal += pattern.confidence;
+      conceptAggregates.set(pattern.conceptSlug, aggregate);
+    }
+  }
+  const conceptStats = [...conceptAggregates.entries()].map(([conceptSlug, aggregate]) => ({
+    conceptSlug,
+    opportunities: aggregate.opportunities,
+    successes: aggregate.successes,
+    failures: aggregate.opportunities - aggregate.successes,
+    confidence: confidenceForConcept(aggregate.opportunities, aggregate.confidenceTotal / aggregate.opportunities),
+  }));
   const matchedTheme = priority === "conversion"
     ? themes.find((theme) => theme.id === "conversion")
     : priority === "defense"
@@ -180,5 +199,12 @@ export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
     focusItems,
     themes,
     primaryTheme,
+    conceptStats,
   };
+}
+
+function confidenceForConcept(opportunities: number, averageDetectionConfidence: number): "low" | "medium" | "high" {
+  if (opportunities >= 8 && averageDetectionConfidence >= 0.9) return "high";
+  if (opportunities >= 3 && averageDetectionConfidence >= 0.84) return "medium";
+  return "low";
 }

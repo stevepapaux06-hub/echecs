@@ -3,11 +3,12 @@ import type {
   TrainingAttemptRecord,
   TrainingExercise,
 } from "@/domain/chess/types";
+import { normalizeConceptSlug } from "../knowledge/concepts";
 
 export type TrainingFilter = "recommended" | "mix" | DiagnosticCategory;
 
 export function preciseConcept(exercise: TrainingExercise): string {
-  return exercise.pedagogy?.conceptSlug || exercise.conceptSlug || `legacy-${exercise.id}`;
+  return normalizeConceptSlug(exercise.pedagogy?.conceptSlug || exercise.conceptSlug || `legacy-${exercise.id}`);
 }
 
 export function sharesPreciseConcept(

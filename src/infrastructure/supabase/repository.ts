@@ -11,6 +11,8 @@ import type {
 import type { Json } from "./database.types";
 import { normalizeAuthError } from "./auth-errors";
 import { getSupabaseClient } from "./client";
+import { addGameConceptSample, addTrainingConceptAttempt, type ConceptStatCounters } from "../../domain/diagnostic/concept-stats";
+import { normalizeConceptSlug } from "../../domain/knowledge/concepts";
 
 export type AnalysisHistoryItem = {
   id: string;
@@ -51,7 +53,49 @@ export type PersistentProfile = {
   weaknesses: WeaknessRecord[];
   attempts: number;
   trainingAttempts: TrainingAttemptRecord[];
+  conceptStats: ConceptStatsRecord[];
 };
+
+export type ConceptStatsRecord = {
+  conceptSlug: string;
+  opportunities: number;
+  successes: number;
+  failures: number;
+  trainingAttempts: number;
+  trainingSuccesses: number;
+  gameOpportunities: number;
+  gameSuccesses: number;
+  masteryScore: number | null;
+  lastSeenAt: string | null;
+  lastTrainedAt: string | null;
+};
+
+function missingOptionalTable(error: { code?: string; message?: string } | null): boolean {
+  return Boolean(error && (error.code === "42P01" || error.code === "PGRST205"));
+}
+
+function countersFromRow(row: {
+  opportunities: number;
+  successes: number;
+  failures: number;
+  training_attempts: number;
+  training_successes: number;
+  game_opportunities: number;
+  game_successes: number;
+  mastery_score: number | null;
+} | null | undefined): ConceptStatCounters | undefined {
+  if (!row) return undefined;
+  return {
+    opportunities: row.opportunities,
+    successes: row.successes,
+    failures: row.failures,
+    trainingAttempts: row.training_attempts,
+    trainingSuccesses: row.training_successes,
+    gameOpportunities: row.game_opportunities,
+    gameSuccesses: row.game_successes,
+    masteryScore: row.mastery_score,
+  };
+}
 
 function json(value: unknown): Json {
   return JSON.parse(JSON.stringify(value)) as Json;
@@ -151,7 +195,7 @@ function profileFromRow(row: {
 
 export async function loadPersistentProfile(user: User): Promise<PersistentProfile> {
   const supabase = getSupabaseClient();
-  const [profileResult, analysesResult, gamesResult, weaknessesResult, attemptsResult] = await Promise.all([
+  const [profileResult, analysesResult, gamesResult, weaknessesResult, attemptsResult, conceptStatsResult] = await Promise.all([
     supabase.from("chess_profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("analyses").select("*").order("created_at", { ascending: false }),
     supabase.from("games").select("id,external_id,source,played_at,time_class,result,parsed_game").order("played_at", { ascending: false }).limit(100),
@@ -161,9 +205,11 @@ export async function loadPersistentProfile(user: User): Promise<PersistentProfi
       .select("exercise_key,theme,result,loss_cp,moves,created_at", { count: "exact" })
       .order("created_at", { ascending: false })
       .limit(200),
+    supabase.from("concept_stats").select("*"),
   ]);
   const firstError = profileResult.error || analysesResult.error || gamesResult.error || weaknessesResult.error || attemptsResult.error;
   if (firstError) throw firstError;
+  if (conceptStatsResult.error && !missingOptionalTable(conceptStatsResult.error)) throw conceptStatsResult.error;
 
   return {
     user,
@@ -207,6 +253,19 @@ export async function loadPersistentProfile(user: User): Promise<PersistentProfi
       lossCp: row.loss_cp,
       moves: Array.isArray(row.moves) ? row.moves.filter((move): move is string => typeof move === "string") : [],
       createdAt: row.created_at,
+    })),
+    conceptStats: (conceptStatsResult.data ?? []).map((row) => ({
+      conceptSlug: row.concept_slug,
+      opportunities: row.opportunities,
+      successes: row.successes,
+      failures: row.failures,
+      trainingAttempts: row.training_attempts,
+      trainingSuccesses: row.training_successes,
+      gameOpportunities: row.game_opportunities,
+      gameSuccesses: row.game_successes,
+      masteryScore: row.mastery_score,
+      lastSeenAt: row.last_seen_at,
+      lastTrainedAt: row.last_trained_at,
     })),
   };
 }
@@ -310,7 +369,7 @@ export async function saveCompleteAnalysis(
     .single();
   if (analysisError) throw analysisError;
 
-  const [previousWeaknessesResult, attemptsResult] = await Promise.all([
+  const [previousWeaknessesResult, attemptsResult, previousConceptStatsResult] = await Promise.all([
     supabase
       .from("weaknesses")
       .select("theme,sample_size,issue_count,status")
@@ -319,9 +378,16 @@ export async function saveCompleteAnalysis(
       .from("exercise_attempts")
       .select("theme,result")
       .eq("user_id", userId),
+    supabase
+      .from("concept_stats")
+      .select("*")
+      .eq("user_id", userId),
   ]);
   if (previousWeaknessesResult.error) throw previousWeaknessesResult.error;
   if (attemptsResult.error) throw attemptsResult.error;
+  if (previousConceptStatsResult.error && !missingOptionalTable(previousConceptStatsResult.error)) {
+    throw previousConceptStatsResult.error;
+  }
 
   const previousByTheme = new Map(
     (previousWeaknessesResult.data ?? []).map((weakness) => [weakness.theme, weakness]),
@@ -379,11 +445,37 @@ export async function saveCompleteAnalysis(
     if (error) throw error;
   }
 
+  if (!previousConceptStatsResult.error && result.metrics.conceptStats?.length) {
+    const previousByConcept = new Map((previousConceptStatsResult.data ?? []).map((row) => [row.concept_slug, row]));
+    const now = new Date().toISOString();
+    const conceptRows = result.metrics.conceptStats.map((stat) => {
+      const previous = previousByConcept.get(stat.conceptSlug);
+      const counters = addGameConceptSample(countersFromRow(previous), stat);
+      return {
+        user_id: userId,
+        concept_slug: stat.conceptSlug,
+        opportunities: counters.opportunities,
+        successes: counters.successes,
+        failures: counters.failures,
+        training_attempts: counters.trainingAttempts,
+        training_successes: counters.trainingSuccesses,
+        game_opportunities: counters.gameOpportunities,
+        game_successes: counters.gameSuccesses,
+        mastery_score: counters.masteryScore,
+        last_seen_at: now,
+        last_trained_at: previous?.last_trained_at ?? null,
+        updated_at: now,
+      };
+    });
+    const { error } = await supabase.from("concept_stats").upsert(conceptRows, { onConflict: "user_id,concept_slug" });
+    if (error) throw error;
+  }
+
   const exerciseRows = result.exercises.map((exercise) => ({
     user_id: userId,
     analysis_id: analysis.id,
     exercise_key: exercise.id,
-    theme: exercise.theme,
+    theme: exercise.conceptSlug,
     origin: exercise.origin,
     fen: exercise.fen,
     payload: json(exercise),
@@ -410,22 +502,54 @@ export async function saveExerciseAttempt(
   moves: string[],
 ): Promise<void> {
   const supabase = getSupabaseClient();
-  const { data: saved } = await supabase
-    .from("exercises")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("exercise_key", exercise.id)
-    .maybeSingle();
+  const conceptSlug = normalizeConceptSlug(exercise.conceptSlug || exercise.theme);
+  const [savedResult, conceptStatsResult] = await Promise.all([
+    supabase
+      .from("exercises")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("exercise_key", exercise.id)
+      .maybeSingle(),
+    supabase
+      .from("concept_stats")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("concept_slug", conceptSlug)
+      .maybeSingle(),
+  ]);
   const { error } = await supabase.from("exercise_attempts").insert({
     user_id: userId,
-    exercise_id: saved?.id ?? null,
+    exercise_id: savedResult.data?.id ?? null,
     exercise_key: exercise.id,
-    theme: exercise.theme,
+    theme: conceptSlug,
     result,
     loss_cp: Math.round(lossCp),
     moves: json(moves),
   });
   if (error) throw error;
+  if (conceptStatsResult.error) {
+    if (missingOptionalTable(conceptStatsResult.error)) return;
+    throw conceptStatsResult.error;
+  }
+  const previous = conceptStatsResult.data;
+  const counters = addTrainingConceptAttempt(countersFromRow(previous), result === "success");
+  const now = new Date().toISOString();
+  const { error: statsError } = await supabase.from("concept_stats").upsert({
+    user_id: userId,
+    concept_slug: conceptSlug,
+    opportunities: counters.opportunities,
+    successes: counters.successes,
+    failures: counters.failures,
+    training_attempts: counters.trainingAttempts,
+    training_successes: counters.trainingSuccesses,
+    game_opportunities: counters.gameOpportunities,
+    game_successes: counters.gameSuccesses,
+    mastery_score: counters.masteryScore,
+    last_seen_at: previous?.last_seen_at ?? null,
+    last_trained_at: now,
+    updated_at: now,
+  }, { onConflict: "user_id,concept_slug" });
+  if (statsError) throw statsError;
 }
 
 export function reopenAnalysis(

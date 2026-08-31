@@ -85,4 +85,30 @@ describe("calculateMetrics", () => {
     const metrics = calculateMetrics([game("1", "draw", [move("opening", 20, 10)])]);
     expect(metrics.conversionRate).toBeNull();
   });
+
+  it("counts reliable opportunities and successes by exact concept slug", () => {
+    const success = move("middlegame", 20, 20);
+    success.patterns = [{
+      conceptSlug: "fork",
+      fen: success.fenBefore,
+      ply: success.ply,
+      confidence: 0.95,
+      opportunity: true,
+      success: true,
+      source: "pattern_engine_stockfish_validated",
+      moveUci: "g1f3",
+    }];
+    const failure = move("middlegame", 20, -180);
+    failure.patterns = [{ ...success.patterns[0], success: false, ply: failure.ply }];
+
+    const metrics = calculateMetrics([game("patterns", "loss", [success, failure])]);
+    expect(metrics.conceptStats).toContainEqual({
+      conceptSlug: "fork",
+      opportunities: 2,
+      successes: 1,
+      failures: 1,
+      confidence: "low",
+    });
+    expect(metrics.primaryTheme).toMatchObject({ id: "fork", sampleSize: 2, successCount: 1, issueCount: 1 });
+  });
 });

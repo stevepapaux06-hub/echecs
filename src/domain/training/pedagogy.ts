@@ -271,6 +271,7 @@ async function addStockfishCandidates(
         .map((line) => ({
           uci: line.pv[0],
           playerCp: evaluationForPlayer(line.whiteCp, exercise.playerColor),
+          whiteCentricCp: line.whiteCp,
           pv: line.pv.slice(0, 6),
         })),
     };

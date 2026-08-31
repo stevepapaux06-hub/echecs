@@ -4,6 +4,7 @@ import {
   buildEngineEvaluation,
   buildTerminalEvaluation,
   evaluationForPlayer,
+  formatWhiteCentricEvaluation,
   parseUciInfoLine,
   scoreToComparableCp,
   sideToMoveFromFen,
@@ -13,6 +14,11 @@ const WHITE_TO_MOVE = "4k3/8/8/8/8/8/8/4K3 w - - 0 1";
 const BLACK_TO_MOVE = "4k3/8/8/8/8/8/8/4K3 b - - 0 1";
 
 describe("UCI score normalization", () => {
+  it("formats every displayed evaluation from White's perspective", () => {
+    expect(formatWhiteCentricEvaluation(275)).toBe("+2.8");
+    expect(formatWhiteCentricEvaluation(-275)).toBe("−2.8");
+    expect(formatWhiteCentricEvaluation(0)).toBe("0.0");
+  });
   it("reads the side to move from FEN", () => {
     expect(sideToMoveFromFen(WHITE_TO_MOVE)).toBe("w");
     expect(sideToMoveFromFen(BLACK_TO_MOVE)).toBe("b");

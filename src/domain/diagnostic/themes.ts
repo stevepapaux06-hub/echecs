@@ -6,6 +6,7 @@ import type {
   DiagnosticConfidence,
   DiagnosticTheme,
 } from "@/domain/chess/types";
+import { conceptDefinition } from "../knowledge/concepts";
 
 type MoveEvidence = { game: AnalyzedGame; move: AnalyzedMove };
 
@@ -84,8 +85,49 @@ function themeFromMoves({
   };
 }
 
+function patternThemes(all: MoveEvidence[]): DiagnosticTheme[] {
+  const grouped = new Map<string, Array<{ item: MoveEvidence; success: boolean; confidence: number }>>();
+  for (const item of all) {
+    for (const pattern of item.move.patterns ?? []) {
+      if (!pattern.opportunity || pattern.confidence < 0.8) continue;
+      const values = grouped.get(pattern.conceptSlug) ?? [];
+      values.push({ item, success: pattern.success, confidence: pattern.confidence });
+      grouped.set(pattern.conceptSlug, values);
+    }
+  }
+  const themes: DiagnosticTheme[] = [];
+  for (const [slug, values] of grouped.entries()) {
+    const concept = conceptDefinition(slug);
+    if (!concept) continue;
+    const failures = values.filter((value) => !value.success).map((value) => value.item);
+    const successful = values.length - failures.length;
+    themes.push({
+      id: concept.conceptSlug,
+      category: concept.category,
+      title: concept.labelFr,
+      summary: concept.shortDescription,
+      confidence: confidence(values.length, failures.length),
+      sampleSize: values.length,
+      issueCount: failures.length,
+      successCount: successful,
+      evidence: errorEvidence(failures),
+      positionIds: failures.map(positionId),
+    });
+  }
+  return themes.toSorted((a, b) => {
+    const hasFailures = Number(b.issueCount > 0) - Number(a.issueCount > 0);
+    if (hasFailures) return hasFailures;
+    const rateA = a.issueCount / Math.max(1, a.sampleSize);
+    const rateB = b.issueCount / Math.max(1, b.sampleSize);
+    const specificity = (theme: DiagnosticTheme) => theme.id === "forcing_moves" ? 0 : 1;
+    return rateB - rateA || specificity(b) - specificity(a) || b.sampleSize - a.sampleSize;
+  });
+}
+
 export function detectDiagnosticThemes(games: AnalyzedGame[]): DiagnosticTheme[] {
   const all = games.flatMap((game) => game.analyzedMoves.map((move) => ({ game, move })));
+  const exactPatterns = patternThemes(all);
+  if (exactPatterns.length) return exactPatterns;
   const themes: DiagnosticTheme[] = [];
 
   const forcingRelevant = all.filter(({ move }) => moveIsForcing(move.fenBefore, move.before.bestMove));

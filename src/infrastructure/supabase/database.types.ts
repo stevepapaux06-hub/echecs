@@ -92,6 +92,60 @@ export type Database = {
         }
         Relationships: []
       }
+      concept_stats: {
+        Row: {
+          concept_slug: string
+          created_at: string
+          failures: number
+          game_opportunities: number
+          game_successes: number
+          id: string
+          last_seen_at: string | null
+          last_trained_at: string | null
+          mastery_score: number | null
+          opportunities: number
+          successes: number
+          training_attempts: number
+          training_successes: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          concept_slug: string
+          created_at?: string
+          failures?: number
+          game_opportunities?: number
+          game_successes?: number
+          id?: string
+          last_seen_at?: string | null
+          last_trained_at?: string | null
+          mastery_score?: number | null
+          opportunities?: number
+          successes?: number
+          training_attempts?: number
+          training_successes?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          concept_slug?: string
+          created_at?: string
+          failures?: number
+          game_opportunities?: number
+          game_successes?: number
+          id?: string
+          last_seen_at?: string | null
+          last_trained_at?: string | null
+          mastery_score?: number | null
+          opportunities?: number
+          successes?: number
+          training_attempts?: number
+          training_successes?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_attempts: {
         Row: {
           created_at: string
@@ -440,4 +494,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

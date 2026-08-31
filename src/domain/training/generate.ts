@@ -7,6 +7,34 @@ import type {
 } from "@/domain/chess/types";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
 import { conceptExercisesFor } from "./library";
+import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
+
+export const DEFAULT_TRAINING_FILTER_CONFIG = {
+  lostPositionThresholdCp: 200,
+  playableAgainThresholdCp: -150,
+} as const;
+
+/**
+ * Keeps the first pedagogically meaningful collapse, then suppresses its
+ * consequences until Stockfish says the position is genuinely playable again.
+ */
+export function filterLostPositionCascade<T extends { playerCpBefore: number; playerCpAfter: number }>(
+  moves: T[],
+  config: { lostPositionThresholdCp: number; playableAgainThresholdCp: number } = DEFAULT_TRAINING_FILTER_CONFIG,
+): T[] {
+  const kept: T[] = [];
+  let suppressConsequences = false;
+  for (const move of moves) {
+    if (suppressConsequences && move.playerCpBefore > config.playableAgainThresholdCp) {
+      suppressConsequences = false;
+    }
+    if (suppressConsequences) continue;
+    if (move.playerCpBefore <= -config.lostPositionThresholdCp) continue;
+    kept.push(move);
+    if (move.playerCpAfter <= -config.lostPositionThresholdCp) suppressConsequences = true;
+  }
+  return kept;
+}
 
 function getType(playerCp: number, phase: string): TrainingType {
   if (playerCp >= 200) return "conversion";
@@ -89,9 +117,10 @@ export function generateExercises(
   games: AnalyzedGame[],
   metrics: DiagnosticMetrics,
 ): TrainingExercise[] {
+  const primaryConceptSlug = normalizeConceptSlug(metrics.primaryTheme.id);
   const primaryPositions = new Set(metrics.primaryTheme.positionIds);
   const ranked = games
-    .flatMap((game) => game.analyzedMoves.map((move) => ({
+    .flatMap((game) => filterLostPositionCascade(game.analyzedMoves.toSorted((a, b) => a.ply - b.ply)).map((move) => ({
       game,
       move,
       positionId: `${game.id}:${move.ply}`,
@@ -107,7 +136,11 @@ export function generateExercises(
   const personal = candidates.map(({ game, move }, index): TrainingExercise => {
     const type = getType(move.playerCpBefore, move.phase);
     const relatedToPrimary = primaryPositions.has(`${game.id}:${move.ply}`);
-    const category = relatedToPrimary ? metrics.primaryTheme.category : categoryForType(type);
+    const detectedPattern = move.patterns?.find((pattern) => pattern.conceptSlug === primaryConceptSlug)
+      ?? move.patterns?.toSorted((a, b) => b.confidence - a.confidence)[0];
+    const conceptSlug = detectedPattern?.conceptSlug ?? (relatedToPrimary ? primaryConceptSlug : type);
+    const concept = conceptDefinition(conceptSlug);
+    const category = concept?.category ?? (relatedToPrimary ? metrics.primaryTheme.category : categoryForType(type));
     const shape = exerciseShape(type, category, move.playerCpBefore);
     const solutionLine = move.before.lines[0]?.pv.slice(0, shape.maxPlayerMoves * 2 - 1);
     return {
@@ -115,8 +148,8 @@ export function generateExercises(
       type,
       origin: "personal",
       mode: shape.mode,
-      theme: relatedToPrimary ? metrics.primaryTheme.id : type,
-      conceptSlug: relatedToPrimary ? metrics.primaryTheme.id : type,
+      theme: conceptSlug,
+      conceptSlug,
       category,
       title: COPY[type].title,
       prompt: COPY[type].prompt,
@@ -134,6 +167,7 @@ export function generateExercises(
         .map((line) => ({
           uci: line.pv[0],
           playerCp: evaluationForPlayer(line.whiteCp, game.playerColor),
+          whiteCentricCp: line.whiteCp,
           pv: line.pv.slice(0, 6),
         })),
       phase: move.phase,
@@ -143,13 +177,19 @@ export function generateExercises(
       maxPlayerMoves: shape.maxPlayerMoves,
       solutionLine: solutionLine?.length ? solutionLine : [move.before.bestMove],
       successThresholdCp: shape.successThresholdCp,
+      difficulty: game.playerRating || undefined,
+      source: "personal_game",
+      sourceId: game.id,
+      qualityScore: detectedPattern ? Math.round(detectedPattern.confidence * 100) : undefined,
+      isVerified: true,
     };
   });
 
   const concepts = conceptExercisesFor(
     metrics.primaryTheme.category,
-    metrics.primaryTheme.id,
+    primaryConceptSlug,
     2,
+    games[0]?.playerRating,
   );
 
   if (personal.length === 0) return concepts;

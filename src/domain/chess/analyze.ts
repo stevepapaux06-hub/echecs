@@ -9,6 +9,7 @@ import type {
 import { calculateMetrics } from "../diagnostic/metrics";
 import { generateExercises } from "../training/generate";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
+import { patternsForAnalyzedMove, structureForPosition } from "../patterns/engine";
 
 export type AnalysisProgress = {
   completed: number;
@@ -144,6 +145,13 @@ export async function analyzePayload(
     move.playerCpBefore = evaluationForPlayer(before.whiteCp, game.playerColor);
     move.playerCpAfter = evaluationForPlayer(after.whiteCp, game.playerColor);
     move.lossCp = Math.max(0, move.playerCpBefore - move.playerCpAfter);
+  }
+
+  for (const game of analyzedGames) {
+    for (const move of game.analyzedMoves) {
+      move.patterns = patternsForAnalyzedMove(move);
+      move.pawnStructure = structureForPosition(move.fenBefore);
+    }
   }
 
   const metrics = calculateMetrics(analyzedGames);

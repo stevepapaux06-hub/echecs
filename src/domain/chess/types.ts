@@ -108,6 +108,8 @@ export type AnalyzedMove = MoveSnapshot & {
   playerCpBefore: number;
   playerCpAfter: number;
   lossCp: number;
+  patterns?: import("@/domain/patterns/engine").PatternOccurrence[];
+  pawnStructure?: import("@/domain/knowledge/pawn-structures").PawnStructureRecognition;
 };
 
 export type AnalyzedGame = ParsedGame & {
@@ -146,8 +148,18 @@ export type DiagnosticTheme = {
   confidence: DiagnosticConfidence;
   sampleSize: number;
   issueCount: number;
+  /** Reliable successes for this exact concept. Missing on legacy saved analyses. */
+  successCount?: number;
   evidence: string[];
   positionIds: string[];
+};
+
+export type ConceptPerformance = {
+  conceptSlug: import("@/domain/knowledge/concepts").ConceptSlug;
+  opportunities: number;
+  successes: number;
+  failures: number;
+  confidence: DiagnosticConfidence;
 };
 
 export type DiagnosticMetrics = {
@@ -172,6 +184,8 @@ export type DiagnosticMetrics = {
   focusItems: string[];
   themes: DiagnosticTheme[];
   primaryTheme: DiagnosticTheme;
+  /** Exact Pattern Engine concepts only; absent on legacy saved analyses. */
+  conceptStats?: ConceptPerformance[];
 };
 
 export type TrainingType =
@@ -189,6 +203,8 @@ export type PedagogyExerciseType = "move" | "plan" | "defense" | "conversion" | 
 export type TrainingCandidateLine = {
   uci: string;
   playerCp: number;
+  /** Stable display value: positive means White is better, negative means Black is better. */
+  whiteCentricCp?: number;
   pv: string[];
 };
 
@@ -253,6 +269,12 @@ export type TrainingExercise = {
   successThresholdCp?: number;
   planArrows?: PlanArrow[];
   planSquares?: PlanSquare[];
+  secondaryConceptSlug?: import("@/domain/knowledge/concepts").ConceptSlug;
+  difficulty?: number;
+  source?: "personal_game" | "chesspath_curated" | "lichess";
+  sourceId?: string;
+  qualityScore?: number;
+  isVerified?: boolean;
 };
 
 export type TrainingAttemptRecord = {

@@ -1,6 +1,26 @@
 import { describe, expect, it } from "vitest";
 import type { AnalyzedGame, DiagnosticMetrics, EngineEvaluation } from "@/domain/chess/types";
-import { generateExercises } from "./generate";
+import { filterLostPositionCascade, generateExercises } from "./generate";
+
+describe("lost-position cascade filter", () => {
+  it("keeps the first collapse and suppresses its consequences", () => {
+    const moves = [
+      { id: "first", playerCpBefore: 0, playerCpAfter: -300 },
+      { id: "second", playerCpBefore: -300, playerCpAfter: -700 },
+      { id: "third", playerCpBefore: -700, playerCpAfter: -1_200 },
+    ];
+    expect(filterLostPositionCascade(moves).map((move) => move.id)).toEqual(["first"]);
+  });
+
+  it("re-arms when a genuine defensive resource restores a playable position", () => {
+    const moves = [
+      { id: "collapse", playerCpBefore: 0, playerCpAfter: -300 },
+      { id: "consequence", playerCpBefore: -500, playerCpAfter: -700 },
+      { id: "saved", playerCpBefore: -120, playerCpAfter: -500 },
+    ];
+    expect(filterLostPositionCascade(moves).map((move) => move.id)).toEqual(["collapse", "saved"]);
+  });
+});
 
 function evaluation(fen: string, whiteCp: number, pv: string[]): EngineEvaluation {
   const sideToMove = fen.split(" ")[1] as "w" | "b";

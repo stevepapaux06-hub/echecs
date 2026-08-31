@@ -62,8 +62,8 @@ describe("personalized training session", () => {
   });
 
   it("does not call two exercises the same concept merely because their categories match", () => {
-    const rook = concepts.find((exercise) => exercise.conceptSlug === "rook-open-file")!;
-    const outpost = concepts.find((exercise) => exercise.conceptSlug === "knight-outpost")!;
+    const rook = concepts.find((exercise) => exercise.conceptSlug === "open_file")!;
+    const outpost = concepts.find((exercise) => exercise.conceptSlug === "outpost")!;
     expect(rook.category).toBe(outpost.category);
     expect(sharesPreciseConcept(rook, outpost)).toBe(false);
   });

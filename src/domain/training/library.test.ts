@@ -1,6 +1,6 @@
 import { Chess, type Square } from "chess.js";
 import { describe, expect, it } from "vitest";
-import { allConceptExercises } from "./library";
+import { allConceptExercises, conceptExercisesFor } from "./library";
 
 describe("curated training library", () => {
   it("contains legal positions and legal reference moves", () => {
@@ -26,5 +26,24 @@ describe("curated training library", () => {
     expect(exercises.filter((exercise) => exercise.category === "tactic").length).toBeGreaterThanOrEqual(2);
     expect(exercises.filter((exercise) => exercise.category === "endgame").length).toBeGreaterThanOrEqual(2);
     expect(exercises.filter((exercise) => exercise.category === "conversion").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("selects the exact weakness slug and adapts rating when choices exist", () => {
+    const selected = conceptExercisesFor("tactic", "fork", 5, 1_500);
+    expect(selected).toHaveLength(5);
+    expect(selected.every((exercise) => exercise.conceptSlug === "fork")).toBe(true);
+    const rated = selected.filter((exercise) => exercise.difficulty !== undefined);
+    expect(rated.length).toBeGreaterThan(1);
+    const distances = rated.map((exercise) => Math.abs((exercise.difficulty ?? 0) - 1_500));
+    expect(distances).toEqual([...distances].toSorted((a, b) => a - b));
+  });
+
+  it("ships a small verified offline Lichess seed", () => {
+    const lichess = allConceptExercises().filter((exercise) => exercise.source === "lichess");
+    expect(lichess).toHaveLength(72);
+    expect(new Set(lichess.map((exercise) => exercise.conceptSlug))).toEqual(new Set([
+      "fork", "pin", "skewer", "loose_piece", "remove_defender", "opponent_threat",
+    ]));
+    expect(lichess.every((exercise) => exercise.isVerified && exercise.sourceId && exercise.difficulty)).toBe(true);
   });
 });

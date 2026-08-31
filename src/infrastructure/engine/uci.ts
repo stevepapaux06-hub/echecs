@@ -38,6 +38,14 @@ export function evaluationForPlayer(whiteCp: number, playerColor: PlayerColor): 
   return playerColor === "white" ? whiteCp : -whiteCp;
 }
 
+/** UI contract: + always favours White and - always favours Black. */
+export function formatWhiteCentricEvaluation(whiteCp: number): string {
+  if (Math.abs(whiteCp) >= 90_000) return whiteCp > 0 ? "+M" : "−M";
+  if (Math.abs(whiteCp) <= 20) return "0.0";
+  const pawns = Math.abs(whiteCp / 100).toFixed(1);
+  return whiteCp > 0 ? `+${pawns}` : `−${pawns}`;
+}
+
 /**
  * Stockfish legitimately returns `bestmove (none)` without a PV when a FEN is
  * already checkmate, stalemate, or another automatic draw. Resolve those

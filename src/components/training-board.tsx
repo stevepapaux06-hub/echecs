@@ -29,16 +29,10 @@ import {
 } from "@/domain/training/sequence";
 import { nextExerciseIndex, sharesPreciseConcept } from "@/domain/training/session";
 import type { StockfishClient } from "@/infrastructure/engine/stockfish-client";
-import { evaluationForPlayer } from "@/infrastructure/engine/uci";
+import { evaluationForPlayer, formatWhiteCentricEvaluation } from "@/infrastructure/engine/uci";
 import { Brand } from "./brand";
 
 type ThinkingStage = "checking" | "reply" | null;
-
-function formatEvaluation(cp: number): string {
-  if (Math.abs(cp) >= 90_000) return cp > 0 ? "gain forcé" : "mat proche";
-  const pawns = Math.abs(cp / 100).toFixed(1).replace(".0", "");
-  return cp > 20 ? `+${pawns}` : cp < -20 ? `−${pawns}` : "équilibre";
-}
 
 function formatLoss(cp: number): string {
   if (cp <= 20) return "≈ 0";
@@ -418,8 +412,8 @@ export function TrainingBoard({
               ) : null}
               {feedback.candidates.length > 1 ? (
                 <div className="candidate-lines">
-                  <span>Autres premiers coups reconnus</span>
-                  <div>{feedback.candidates.map((candidate) => <p key={candidate.uci}><strong>{candidate.san}</strong><small>{formatEvaluation(candidate.playerCp)}</small></p>)}</div>
+                  <span>Autres premiers coups · évaluation + Blanc / − Noir</span>
+                  <div>{feedback.candidates.map((candidate) => <p key={candidate.uci}><strong>{candidate.san}</strong><small>{formatWhiteCentricEvaluation(candidate.whiteCentricCp)}</small></p>)}</div>
                 </div>
               ) : null}
               <div className={`exercise-result ${result}`}>

@@ -127,14 +127,14 @@ describe("pedagogical coach", () => {
       exercises: [personalExercise()],
       profile,
       engine,
-      fetcher: coachedFetcher({ conceptSlug: "knight-fork", conceptMoves: ["g1f3"] }),
+      fetcher: coachedFetcher({ conceptSlug: "fork", conceptMoves: ["g1f3"] }),
       cache: memoryCache(),
     });
     expect(result[0].origin).toBe("personal");
     expect(result[0].sourceLabel).toBe("Ta partie contre Camille");
     expect(result[0].gameUrl).toBe("https://www.chess.com/game/live/42");
     expect(result).toHaveLength(3);
-    expect(result.slice(1).every((exercise) => exercise.conceptSlug === "knight-fork")).toBe(true);
+    expect(result.slice(1).every((exercise) => exercise.conceptSlug === "fork")).toBe(true);
     expect(result.slice(1).every((exercise) => exercise.fen !== result[0].fen)).toBe(true);
   });
 
