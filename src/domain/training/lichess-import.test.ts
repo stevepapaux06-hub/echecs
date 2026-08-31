@@ -14,6 +14,9 @@ describe("Lichess puzzle importer", () => {
       source: "lichess",
       sourceGameId: "00sJ9",
       qualityScore: 87,
+      popularity: 87,
+      plays: 325,
+      sourceThemes: ["advantage", "attraction", "fork", "middlegame", "sacrifice", "veryLong"],
       isVerified: true,
       solutionMoves: ["e8e1", "g1h2", "e1c1", "a1c1", "f4h6", "h2g1", "h6c1"],
     });
@@ -23,7 +26,8 @@ describe("Lichess puzzle importer", () => {
   it("maps only exact official themes and never broad tags", () => {
     expect(mapLichessThemesToConcepts(["fork", "pin", "advantage", "middlegame"]))
       .toEqual(["fork", "pin"]);
-    expect(mapLichessThemesToConcepts(["deflection", "advancedPawn"])).toEqual([]);
+    expect(mapLichessThemesToConcepts(["deflection", "middlegame"])).toEqual([]);
+    expect(mapLichessThemesToConcepts(["advancedPawn"])).toEqual(["passed_pawn"]);
   });
 
   it("indexes a fork weakness with fork positions only", () => {

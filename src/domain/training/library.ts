@@ -2,7 +2,7 @@ import { Chess } from "chess.js";
 import type { TrainingExercise } from "@/domain/chess/types";
 import { classifyPhase } from "../chess/phase";
 import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
-import { LICHESS_TRAINING_SEED } from "./lichess-seed";
+import LICHESS_BANK from "./lichess-bank.generated.json";
 import type { TrainingPosition } from "./positions";
 
 type ConceptExercise = Omit<
@@ -316,7 +316,11 @@ function exerciseFromLichess(position: TrainingPosition): TrainingExercise {
   const fullmove = Number(position.fen.split(/\s+/)[5] ?? 1);
   return {
     id: position.id,
-    type: position.category === "defense" ? "defense" : "tactic",
+    type: position.category === "defense"
+      ? "defense"
+      : position.category === "endgame"
+        ? "endgame"
+        : "tactic",
     origin: "concept",
     mode: position.solutionMoves.length <= 1 ? "one-move" : "line",
     theme: position.conceptSlug,
@@ -343,7 +347,15 @@ function exerciseFromLichess(position: TrainingPosition): TrainingExercise {
   };
 }
 
-const LICHESS_LIBRARY = LICHESS_TRAINING_SEED.map(exerciseFromLichess);
+const LICHESS_LIBRARY = (LICHESS_BANK.positions as TrainingPosition[]).map(exerciseFromLichess);
+
+export const LICHESS_LIBRARY_METADATA = {
+  source: LICHESS_BANK.source,
+  license: LICHESS_BANK.license,
+  generatedAt: LICHESS_BANK.generatedAt,
+  scannedRows: LICHESS_BANK.scannedRows,
+  positions: LICHESS_LIBRARY.length,
+} as const;
 
 function curatedExercise(exercise: ConceptExercise): TrainingExercise {
   return {
@@ -356,8 +368,13 @@ function curatedExercise(exercise: ConceptExercise): TrainingExercise {
   };
 }
 
+const EXERCISE_POOL = [
+  ...CONCEPT_LIBRARY.map(curatedExercise),
+  ...LICHESS_LIBRARY,
+];
+
 function exercisePool(): TrainingExercise[] {
-  return [...CONCEPT_LIBRARY.map(curatedExercise), ...LICHESS_LIBRARY];
+  return EXERCISE_POOL;
 }
 
 function byAdaptedDifficulty(exercises: TrainingExercise[], userRating?: number): TrainingExercise[] {
@@ -409,5 +426,5 @@ export function conceptExercisesForSlug(conceptSlug: string, limit = 2, userRati
 }
 
 export function allConceptExercises(): TrainingExercise[] {
-  return exercisePool();
+  return [...EXERCISE_POOL];
 }

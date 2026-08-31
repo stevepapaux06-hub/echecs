@@ -22,7 +22,10 @@ function positionId({ game, move }: MoveEvidence): string {
 
 function errorEvidence(items: MoveEvidence[], limit = 3): string[] {
   return items
-    .toSorted((a, b) => b.move.lossCp - a.move.lossCp)
+    .toSorted((a, b) => (
+      (b.move.pedagogical?.score ?? 0) - (a.move.pedagogical?.score ?? 0)
+      || b.move.lossCp - a.move.lossCp
+    ))
     .slice(0, limit)
     .map(({ game, move }) => {
       const moveNumber = Math.ceil(move.ply / 2);
@@ -114,47 +117,66 @@ function patternThemes(all: MoveEvidence[]): DiagnosticTheme[] {
       positionIds: failures.map(positionId),
     });
   }
+  const priority = (theme: DiagnosticTheme): number => {
+    const values = grouped.get(theme.id) ?? [];
+    const failures = values.filter((value) => !value.success);
+    if (!failures.length) return 0;
+    const failureRate = failures.length / Math.max(1, values.length);
+    const confidenceWeight = values.reduce((sum, value) => sum + value.confidence, 0) / Math.max(1, values.length);
+    const severity = failures.reduce((sum, value) => sum + (value.item.move.pedagogical?.score ?? 55), 0)
+      / failures.length / 100;
+    const newestGame = Math.max(...all.map((value) => value.game.playedAt), 0);
+    const newestFailure = Math.max(...failures.map((value) => value.item.game.playedAt), 0);
+    const ageDays = newestGame > 0 ? Math.max(0, (newestGame - newestFailure) / 86_400_000) : 0;
+    const recency = Math.max(0.7, 1 - ageDays / 180);
+    return failureRate
+      * Math.log2(values.length + 1)
+      * confidenceWeight
+      * (0.6 + severity * 0.4)
+      * recency;
+  };
   return themes.toSorted((a, b) => {
     const hasFailures = Number(b.issueCount > 0) - Number(a.issueCount > 0);
     if (hasFailures) return hasFailures;
-    const rateA = a.issueCount / Math.max(1, a.sampleSize);
-    const rateB = b.issueCount / Math.max(1, b.sampleSize);
     const specificity = (theme: DiagnosticTheme) => theme.id === "forcing_moves" ? 0 : 1;
-    return rateB - rateA || specificity(b) - specificity(a) || b.sampleSize - a.sampleSize;
+    return priority(b) - priority(a) || specificity(b) - specificity(a) || b.sampleSize - a.sampleSize;
   });
 }
 
 export function detectDiagnosticThemes(games: AnalyzedGame[]): DiagnosticTheme[] {
   const all = games.flatMap((game) => game.analyzedMoves.map((move) => ({ game, move })));
   const exactPatterns = patternThemes(all);
-  if (exactPatterns.length) return exactPatterns;
   const themes: DiagnosticTheme[] = [];
 
-  const forcingRelevant = all.filter(({ move }) => moveIsForcing(move.fenBefore, move.before.bestMove));
-  const forcingIssues = forcingRelevant.filter(({ move }) => move.lossCp >= 100);
-  const forcing = themeFromMoves({
-    id: "missed-forcing-moves",
-    category: "tactic",
-    title: "Coups forcing manqués",
-    summary: "Plusieurs décisions coûteuses surviennent alors qu’un échec, une prise ou une promotion méritait d’être calculé en priorité.",
-    relevant: forcingRelevant,
-    issues: forcingIssues,
-  });
-  if (forcing) themes.push(forcing);
+  // Exact Pattern Engine concepts replace the old broad tactical/strategic
+  // fallbacks, but must not hide independent conversion or defense evidence.
+  if (exactPatterns.length === 0) {
+    const forcingRelevant = all.filter(({ move }) => moveIsForcing(move.fenBefore, move.before.bestMove));
+    const forcingIssues = forcingRelevant.filter(({ move }) => move.lossCp >= 100);
+    const forcing = themeFromMoves({
+      id: "missed-forcing-moves",
+      category: "tactic",
+      title: "Coups forcing manqués",
+      summary: "Plusieurs décisions coûteuses surviennent alors qu’un échec, une prise ou une promotion méritait d’être calculé en priorité.",
+      relevant: forcingRelevant,
+      issues: forcingIssues,
+    });
+    if (forcing) themes.push(forcing);
 
-  const quietMiddlegame = all.filter(({ move }) =>
-    move.phase === "middlegame" && !moveIsForcing(move.fenBefore, move.before.bestMove),
-  );
-  const quietIssues = quietMiddlegame.filter(({ move }) => move.lossCp >= 120);
-  const strategy = themeFromMoves({
-    id: "quiet-middlegame-decisions",
-    category: "strategy",
-    title: "Décisions calmes au milieu de jeu",
-    summary: "Tes pertes ne viennent pas seulement des tactiques : plusieurs coups calmes du moteur améliorent l’activité sans forcer immédiatement.",
-    relevant: quietMiddlegame,
-    issues: quietIssues,
-  });
-  if (strategy) themes.push(strategy);
+    const quietMiddlegame = all.filter(({ move }) =>
+      move.phase === "middlegame" && !moveIsForcing(move.fenBefore, move.before.bestMove),
+    );
+    const quietIssues = quietMiddlegame.filter(({ move }) => move.lossCp >= 120);
+    const strategy = themeFromMoves({
+      id: "quiet-middlegame-decisions",
+      category: "strategy",
+      title: "Décisions calmes au milieu de jeu",
+      summary: "Tes pertes ne viennent pas seulement des tactiques : plusieurs coups calmes du moteur améliorent l’activité sans forcer immédiatement.",
+      relevant: quietMiddlegame,
+      issues: quietIssues,
+    });
+    if (strategy) themes.push(strategy);
+  }
 
   const endgameGroups = new Map<string, MoveEvidence[]>();
   for (const item of all.filter(({ move }) => move.phase === "endgame")) {
@@ -253,7 +275,7 @@ export function detectDiagnosticThemes(games: AnalyzedGame[]): DiagnosticTheme[]
     });
   }
 
-  if (themes.length === 0) {
+  if (themes.length === 0 && exactPatterns.length === 0) {
     const important = all.filter(({ move }) => move.lossCp >= 150);
     return [{
       id: "stability",
@@ -270,10 +292,22 @@ export function detectDiagnosticThemes(games: AnalyzedGame[]): DiagnosticTheme[]
     }];
   }
 
-  return themes.toSorted((a, b) => {
+  const secondary = themes.toSorted((a, b) => {
     const confidenceWeight = { low: 0.7, medium: 1, high: 1.25 };
     const scoreA = a.issueCount / Math.max(1, a.sampleSize) * Math.log2(a.sampleSize + 1) * confidenceWeight[a.confidence];
     const scoreB = b.issueCount / Math.max(1, b.sampleSize) * Math.log2(b.sampleSize + 1) * confidenceWeight[b.confidence];
     return scoreB - scoreA;
+  });
+  const ordered = [
+    ...exactPatterns.filter((theme) => theme.issueCount > 0),
+    ...secondary.filter((theme) => theme.issueCount > 0),
+    ...exactPatterns.filter((theme) => theme.issueCount === 0),
+    ...secondary.filter((theme) => theme.issueCount === 0),
+  ];
+  const seen = new Set<string>();
+  return ordered.filter((theme) => {
+    if (seen.has(theme.id)) return false;
+    seen.add(theme.id);
+    return true;
   });
 }

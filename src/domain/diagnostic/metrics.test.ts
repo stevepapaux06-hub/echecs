@@ -111,4 +111,28 @@ describe("calculateMetrics", () => {
     });
     expect(metrics.primaryTheme).toMatchObject({ id: "fork", sampleSize: 2, successCount: 1, issueCount: 1 });
   });
+
+  it("keeps exact patterns and conversion in the same diagnostic", () => {
+    const first = move("middlegame", 300, 80);
+    first.patterns = [{
+      conceptSlug: "fork",
+      fen: first.fenBefore,
+      ply: first.ply,
+      confidence: 0.95,
+      opportunity: true,
+      success: false,
+      source: "pattern_engine_stockfish_validated",
+      moveUci: "g1f3",
+    }];
+    const second = { ...move("middlegame", 250, 40), ply: 22 };
+    second.patterns = [{ ...first.patterns[0], ply: 22 }];
+
+    const metrics = calculateMetrics([
+      game("conversion-1", "loss", [first]),
+      game("conversion-2", "draw", [second]),
+    ]);
+
+    expect(metrics.themes.map((theme) => theme.id)).toEqual(expect.arrayContaining(["fork", "conversion"]));
+    expect(metrics.primaryTheme.id).toBe("conversion");
+  });
 });

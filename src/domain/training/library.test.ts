@@ -38,11 +38,11 @@ describe("curated training library", () => {
     expect(distances).toEqual([...distances].toSorted((a, b) => a - b));
   });
 
-  it("ships a small verified offline Lichess seed", () => {
+  it("ships a varied verified offline Lichess bank", () => {
     const lichess = allConceptExercises().filter((exercise) => exercise.source === "lichess");
-    expect(lichess).toHaveLength(72);
+    expect(lichess).toHaveLength(2_520);
     expect(new Set(lichess.map((exercise) => exercise.conceptSlug))).toEqual(new Set([
-      "fork", "pin", "skewer", "loose_piece", "remove_defender", "opponent_threat",
+      "fork", "pin", "skewer", "loose_piece", "remove_defender", "opponent_threat", "passed_pawn",
     ]));
     expect(lichess.every((exercise) => exercise.isVerified && exercise.sourceId && exercise.difficulty)).toBe(true);
   });

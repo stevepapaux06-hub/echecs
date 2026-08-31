@@ -35,7 +35,13 @@ describe("personalized training session", () => {
   });
 
   it("postpones a recently solved exact position when an alternative exists", () => {
-    const session = buildTrainingSession([personal, sameTheme, ...concepts], [attempt(personal.id, "success")], "mix");
+    const session = buildTrainingSession(
+      [personal, sameTheme, ...concepts],
+      [attempt(personal.id, "success")],
+      "mix",
+      7,
+      { now: Date.parse("2026-08-31T10:00:00.000Z") },
+    );
     expect(session[0].id).not.toBe(personal.id);
     expect(session.slice(0, -1).some((exercise) => exercise.id === personal.id)).toBe(false);
   });
@@ -46,6 +52,8 @@ describe("personalized training session", () => {
       [personal, sameTheme, ...concepts],
       [attempt(failed.id, "failed")],
       "recommended",
+      7,
+      { now: Date.parse("2026-08-31T10:00:00.000Z") },
     );
     expect(session.findIndex((exercise) => exercise.id === failed.id)).toBeGreaterThan(0);
     expect(session.some((exercise) => exercise.id === failed.id)).toBe(true);
@@ -66,5 +74,27 @@ describe("personalized training session", () => {
     const outpost = concepts.find((exercise) => exercise.conceptSlug === "outpost")!;
     expect(rook.category).toBe(outpost.category);
     expect(sharesPreciseConcept(rook, outpost)).toBe(false);
+  });
+
+  it("uses fresh positions in the next session instead of restarting the same seven", () => {
+    const pool = concepts.slice(0, 20);
+    const first = buildTrainingSession(pool, [], "mix", 7, { now: Date.parse(now) });
+    const completed = first.map((exercise) => attempt(exercise.id, "success"));
+    const second = buildTrainingSession(pool, completed, "mix", 7, { now: Date.parse(now) });
+    expect(second).toHaveLength(7);
+    expect(second.every((exercise) => !first.some((seen) => seen.id === exercise.id))).toBe(true);
+  });
+
+  it("moves difficulty upward after repeated success on the same concept", () => {
+    const forkPool = concepts.filter((exercise) => exercise.conceptSlug === "fork" && exercise.difficulty);
+    const successes = Array.from({ length: 4 }, (_, index) => ({
+      ...attempt(`old-${index}`, "success"),
+      theme: "fork",
+    }));
+    const session = buildTrainingSession(forkPool, successes, "tactic", 7, {
+      now: Date.parse(now),
+      userRating: 1_200,
+    });
+    expect(session[0].difficulty).toBeGreaterThanOrEqual(1_200);
   });
 });

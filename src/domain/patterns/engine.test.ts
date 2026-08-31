@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectMovePatterns } from "./engine";
+import { detectMovePatterns, patternCandidatesForPosition } from "./engine";
 
 describe("deterministic Pattern Engine", () => {
   it("recognizes an obvious knight fork", () => {
@@ -20,5 +20,14 @@ describe("deterministic Pattern Engine", () => {
   it("does not attach a high-confidence concept to an ambiguous quiet move", () => {
     const patterns = detectMovePatterns("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "a2a3");
     expect(patterns.filter((pattern) => pattern.confidence >= 0.8)).toEqual([]);
+  });
+
+  it("finds a reliable opportunity before Stockfish selects the position", () => {
+    const candidates = patternCandidatesForPosition("4k3/8/4q1r1/8/8/3N4/8/K7 w - - 0 1", {
+      phase: "middlegame",
+      ply: 30,
+    });
+    expect(candidates.some((candidate) => candidate.conceptSlug === "fork" && candidate.moveUci === "d3f4"))
+      .toBe(true);
   });
 });

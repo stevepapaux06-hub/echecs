@@ -23,6 +23,16 @@ function percentage(part: number, total: number): number | null {
   return total > 0 ? Math.round((part / total) * 100) : null;
 }
 
+function isImportantError(move: AnalyzedGame["analyzedMoves"][number]): boolean {
+  if (move.pedagogical) {
+    return move.playerCpAfter < move.playerCpBefore && move.pedagogical.score >= 75;
+  }
+
+  // Backward compatibility for analyses persisted before pedagogical scoring
+  // existed. Newly scanned games always use the state-aware score above.
+  return move.lossCp >= 150;
+}
+
 function priorityCopy(priority: DiagnosticPriority, worstPhase: PhaseMetric): [string, string] {
   switch (priority) {
     case "conversion":
@@ -55,7 +65,7 @@ function priorityCopy(priority: DiagnosticPriority, worstPhase: PhaseMetric): [s
 
 export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
   const allMoves = games.flatMap((game) => game.analyzedMoves);
-  const importantErrors = allMoves.filter((move) => move.lossCp >= 150);
+  const importantErrors = allMoves.filter(isImportantError);
 
   const phaseMetrics = (["opening", "middlegame", "endgame"] as GamePhase[]).map((phase) => {
     const moves = allMoves.filter((move) => move.phase === phase);
@@ -65,7 +75,7 @@ export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
       label: PHASE_LABELS[phase],
       positions: moves.length,
       averageLossCp: moves.length ? Math.round(totalLoss / moves.length) : 0,
-      importantErrors: moves.filter((move) => move.lossCp >= 150).length,
+      importantErrors: moves.filter(isImportantError).length,
     };
   });
 

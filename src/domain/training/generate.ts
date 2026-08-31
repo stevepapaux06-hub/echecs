@@ -14,6 +14,8 @@ export const DEFAULT_TRAINING_FILTER_CONFIG = {
   playableAgainThresholdCp: -150,
 } as const;
 
+const MAX_PERSONAL_RESERVE = 120;
+
 /**
  * Keeps the first pedagogically meaningful collapse, then suppresses its
  * consequences until Stockfish says the position is genuinely playable again.
@@ -25,11 +27,21 @@ export function filterLostPositionCascade<T extends { playerCpBefore: number; pl
   const kept: T[] = [];
   let suppressConsequences = false;
   for (const move of moves) {
+    const genuineRecovery = move.playerCpAfter >= config.playableAgainThresholdCp
+      && move.playerCpAfter - move.playerCpBefore >= 80;
+    if (suppressConsequences && genuineRecovery) {
+      kept.push(move);
+      suppressConsequences = false;
+      continue;
+    }
     if (suppressConsequences && move.playerCpBefore > config.playableAgainThresholdCp) {
       suppressConsequences = false;
     }
     if (suppressConsequences) continue;
-    if (move.playerCpBefore <= -config.lostPositionThresholdCp) continue;
+    if (move.playerCpBefore <= -config.lostPositionThresholdCp) {
+      if (genuineRecovery) kept.push(move);
+      continue;
+    }
     kept.push(move);
     if (move.playerCpAfter <= -config.lostPositionThresholdCp) suppressConsequences = true;
   }
@@ -49,6 +61,19 @@ function categoryForType(type: TrainingType): DiagnosticCategory {
   if (type === "strategy") return "strategy";
   if (type === "opening") return "opening";
   return "tactic";
+}
+
+function typeForMoment(
+  fallback: TrainingType,
+  category: DiagnosticCategory,
+  kind: string | undefined,
+): TrainingType {
+  if (kind === "conversion") return "conversion";
+  if (kind === "defensive_miss" || kind === "defensive_resource") return "defense";
+  if (category === "tactic" || category === "strategy" || category === "opening" || category === "endgame") {
+    return category;
+  }
+  return fallback;
 }
 
 const COPY: Record<TrainingType, { title: string; prompt: string; concept: string }> = {
@@ -128,23 +153,40 @@ export function generateExercises(
     .filter(({ move }) => move.before.bestMove)
     .toSorted((a, b) => {
       const priorityDifference = Number(primaryPositions.has(b.positionId)) - Number(primaryPositions.has(a.positionId));
-      return priorityDifference || b.move.lossCp - a.move.lossCp;
+      return priorityDifference
+        || (b.move.pedagogical?.score ?? 0) - (a.move.pedagogical?.score ?? 0)
+        || b.move.lossCp - a.move.lossCp;
     });
-  const personalMistakes = ranked.filter(({ move }) => move.lossCp >= 60);
-  const candidates = (personalMistakes.length ? personalMistakes : ranked).slice(0, 5);
+  const pedagogical = ranked.filter(({ move }) => move.pedagogical?.worthy);
+  const fallback = ranked.filter(({ move }) => move.lossCp >= 60).slice(0, 3);
+  const seenFens = new Set<string>();
+  const candidates = (pedagogical.length ? pedagogical : fallback)
+    .filter(({ move }) => {
+      if (seenFens.has(move.fenBefore)) return false;
+      seenFens.add(move.fenBefore);
+      return true;
+    })
+    .slice(0, MAX_PERSONAL_RESERVE);
 
-  const personal = candidates.map(({ game, move }, index): TrainingExercise => {
-    const type = getType(move.playerCpBefore, move.phase);
+  const personal = candidates.map(({ game, move }): TrainingExercise => {
+    const fallbackType = getType(move.playerCpBefore, move.phase);
     const relatedToPrimary = primaryPositions.has(`${game.id}:${move.ply}`);
-    const detectedPattern = move.patterns?.find((pattern) => pattern.conceptSlug === primaryConceptSlug)
-      ?? move.patterns?.toSorted((a, b) => b.confidence - a.confidence)[0];
-    const conceptSlug = detectedPattern?.conceptSlug ?? (relatedToPrimary ? primaryConceptSlug : type);
+    const patterns = move.patterns?.toSorted((a, b) => (
+      Number(a.success) - Number(b.success) || b.confidence - a.confidence
+    ));
+    const detectedPattern = patterns?.find((pattern) => (
+      !pattern.success && pattern.conceptSlug === primaryConceptSlug
+    )) ?? patterns?.find((pattern) => !pattern.success) ?? patterns?.[0];
+    const conceptSlug = detectedPattern?.conceptSlug ?? (relatedToPrimary ? primaryConceptSlug : fallbackType);
     const concept = conceptDefinition(conceptSlug);
-    const category = concept?.category ?? (relatedToPrimary ? metrics.primaryTheme.category : categoryForType(type));
+    const category = concept?.category ?? (relatedToPrimary ? metrics.primaryTheme.category : categoryForType(fallbackType));
+    const type = typeForMoment(fallbackType, category, move.pedagogical?.kind);
     const shape = exerciseShape(type, category, move.playerCpBefore);
     const solutionLine = move.before.lines[0]?.pv.slice(0, shape.maxPlayerMoves * 2 - 1);
     return {
-      id: `${game.id}-${move.ply}-${index}`,
+      // Stable across analyses: reordering the reserve cannot make a solved
+      // personal position look new again.
+      id: `personal-${game.id}-${move.ply}`,
       type,
       origin: "personal",
       mode: shape.mode,
@@ -180,7 +222,8 @@ export function generateExercises(
       difficulty: game.playerRating || undefined,
       source: "personal_game",
       sourceId: game.id,
-      qualityScore: detectedPattern ? Math.round(detectedPattern.confidence * 100) : undefined,
+      qualityScore: move.pedagogical?.score
+        ?? (detectedPattern ? Math.round(detectedPattern.confidence * 100) : undefined),
       isVerified: true,
     };
   });
@@ -188,7 +231,7 @@ export function generateExercises(
   const concepts = conceptExercisesFor(
     metrics.primaryTheme.category,
     primaryConceptSlug,
-    2,
+    Math.max(0, Math.min(2, 7 - personal.length)),
     games[0]?.playerRating,
   );
 

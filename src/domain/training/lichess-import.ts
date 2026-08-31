@@ -18,6 +18,7 @@ const THEME_TO_CONCEPTS: Readonly<Record<string, ConceptSlug[]>> = {
   // losing material or an advantage: opponent_threat is the training label,
   // while defensive_resource remains available as the secondary concept.
   defensiveMove: ["opponent_threat", "defensive_resource"],
+  advancedPawn: ["passed_pawn"],
 };
 
 const CONCEPT_PRIORITY: ConceptSlug[] = [
@@ -28,6 +29,7 @@ const CONCEPT_PRIORITY: ConceptSlug[] = [
   "remove_defender",
   "opponent_threat",
   "defensive_resource",
+  "passed_pawn",
 ];
 
 export function mapLichessThemesToConcepts(themes: string[]): ConceptSlug[] {
@@ -58,7 +60,7 @@ function csvFields(line: string): string[] {
 export function parseLichessPuzzleCsvLine(line: string): TrainingPosition | null {
   const fields = csvFields(line.trim());
   if (fields.length < 9 || fields[0] === "PuzzleId") return null;
-  const [puzzleId, initialFen, rawMoves, rawRating, , rawPopularity, , rawThemes, gameUrl] = fields;
+  const [puzzleId, initialFen, rawMoves, rawRating, , rawPopularity, rawPlays, rawThemes, gameUrl] = fields;
   const moves = rawMoves.trim().split(/\s+/).filter(Boolean);
   const concepts = mapLichessThemesToConcepts(rawThemes.trim().split(/\s+/).filter(Boolean));
   if (!puzzleId || moves.length < 2 || concepts.length === 0) return null;
@@ -84,6 +86,9 @@ export function parseLichessPuzzleCsvLine(line: string): TrainingPosition | null
       sourceUrl: gameUrl || `https://lichess.org/training/${puzzleId}`,
       solutionMoves: moves.slice(1),
       qualityScore: Number.isFinite(Number(rawPopularity)) ? Number(rawPopularity) : undefined,
+      popularity: Number.isFinite(Number(rawPopularity)) ? Number(rawPopularity) : undefined,
+      plays: Number.isFinite(Number(rawPlays)) ? Number(rawPlays) : undefined,
+      sourceThemes: rawThemes.trim().split(/\s+/).filter(Boolean),
       isVerified: true,
       playerColor: chess.turn() === "w" ? "white" : "black",
     };
@@ -94,16 +99,27 @@ export function parseLichessPuzzleCsvLine(line: string): TrainingPosition | null
 
 export function importLichessPuzzleCsv(
   content: string,
-  options: { perConcept?: number; minPopularity?: number; maxPositions?: number } = {},
+  options: {
+    perConcept?: number;
+    minPopularity?: number;
+    minPlays?: number;
+    minRating?: number;
+    maxRating?: number;
+    maxPositions?: number;
+  } = {},
 ): TrainingPosition[] {
   const perConcept = options.perConcept ?? 20;
   const minPopularity = options.minPopularity ?? 70;
+  const minPlays = options.minPlays ?? 0;
   const maxPositions = options.maxPositions ?? 200;
   const counts = new Map<ConceptSlug, number>();
   const positions: TrainingPosition[] = [];
   for (const line of content.split(/\r?\n/)) {
     const position = parseLichessPuzzleCsvLine(line);
     if (!position || (position.qualityScore ?? -100) < minPopularity) continue;
+    if ((position.plays ?? 0) < minPlays) continue;
+    if (options.minRating !== undefined && (position.difficulty ?? 0) < options.minRating) continue;
+    if (options.maxRating !== undefined && (position.difficulty ?? Number.MAX_SAFE_INTEGER) > options.maxRating) continue;
     if ((counts.get(position.conceptSlug) ?? 0) >= perConcept) continue;
     positions.push(position);
     counts.set(position.conceptSlug, (counts.get(position.conceptSlug) ?? 0) + 1);

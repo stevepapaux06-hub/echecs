@@ -20,6 +20,14 @@ describe("lost-position cascade filter", () => {
     ];
     expect(filterLostPositionCascade(moves).map((move) => move.id)).toEqual(["collapse", "saved"]);
   });
+
+  it("keeps a genuine recovery even when it starts from a lost position", () => {
+    const moves = [
+      { id: "collapse", playerCpBefore: 0, playerCpAfter: -350 },
+      { id: "resource", playerCpBefore: -350, playerCpAfter: -100 },
+    ];
+    expect(filterLostPositionCascade(moves).map((move) => move.id)).toEqual(["collapse", "resource"]);
+  });
 });
 
 function evaluation(fen: string, whiteCp: number, pv: string[]): EngineEvaluation {
@@ -120,5 +128,91 @@ describe("personal exercise generation", () => {
     expect(personal.mode).toBe("line");
     expect(personal.maxPlayerMoves).toBe(2);
     expect(personal.solutionLine).toEqual(["d1d2", "e8f7", "d2d7"]);
+  });
+
+  it("keeps a reserve larger than a seven-position session", () => {
+    const base = (() => {
+      const fen = "4k3/8/8/8/8/8/3q4/3QK3 w - - 0 1";
+      return {
+        ply: 17,
+        san: "Kf1",
+        uci: "e1f1",
+        from: "e1",
+        to: "f1",
+        color: "w" as const,
+        fenBefore: fen,
+        fenAfter: "4k3/8/8/8/8/8/3q4/3Q1K2 b - - 1 1",
+        phase: "middlegame" as const,
+        before: evaluation(fen, 100, ["d1d2", "e8f7", "d2d7"]),
+        after: evaluation("4k3/8/8/8/8/8/3q4/3Q1K2 b - - 1 1", -300, ["d2d1"]),
+        playerCpBefore: 100,
+        playerCpAfter: -300,
+        lossCp: 400,
+        pedagogical: {
+          beforeState: "slightly_better" as const,
+          afterState: "losing" as const,
+          score: 95,
+          kind: "collapse" as const,
+          reliablePatternConfidence: 0,
+          worthy: true,
+        },
+      };
+    })();
+    const game = {
+      id: "reserve-game",
+      source: "pgn" as const,
+      rawPgn: "",
+      playedAt: 0,
+      timeClass: "rapid",
+      timeControl: "600",
+      rated: false,
+      playerColor: "white" as const,
+      playerRating: 1300,
+      opponent: "Test",
+      opponentRating: 1300,
+      outcome: "loss" as const,
+      moves: [],
+      analyzedMoves: Array.from({ length: 12 }, (_, index) => ({
+        ...base,
+        ply: 17 + index * 2,
+        fenBefore: base.fenBefore.replace("0 1", `${index} ${index + 1}`),
+      })),
+    };
+    const theme = {
+      id: "stability",
+      category: "tactic" as const,
+      title: "Stabilité",
+      summary: "",
+      confidence: "medium" as const,
+      sampleSize: 12,
+      issueCount: 12,
+      evidence: [],
+      positionIds: [],
+    };
+    const metrics = {
+      gamesAnalyzed: 1,
+      positionsAnalyzed: 12,
+      importantErrors: 12,
+      importantErrorsPerGame: 12,
+      conversionOpportunities: 0,
+      convertedWins: 0,
+      conversionRate: null,
+      averageWinningRetention: null,
+      defenseOpportunities: 0,
+      recoveredPositions: 0,
+      savedGames: 0,
+      defenseRecoveryRate: null,
+      phaseMetrics: [],
+      priority: "stability" as const,
+      priorityTitle: "Stabilité",
+      prioritySummary: "",
+      strengths: [],
+      weaknesses: [],
+      focusItems: [],
+      themes: [theme],
+      primaryTheme: theme,
+    };
+    expect(generateExercises([game], metrics).filter((exercise) => exercise.origin === "personal").length)
+      .toBeGreaterThan(7);
   });
 });

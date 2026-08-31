@@ -204,7 +204,7 @@ export async function loadPersistentProfile(user: User): Promise<PersistentProfi
       .from("exercise_attempts")
       .select("exercise_key,theme,result,loss_cp,moves,created_at", { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(200),
+      .limit(1000),
     supabase.from("concept_stats").select("*"),
   ]);
   const firstError = profileResult.error || analysesResult.error || gamesResult.error || weaknessesResult.error || attemptsResult.error;

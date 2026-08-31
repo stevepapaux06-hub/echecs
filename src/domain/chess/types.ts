@@ -108,6 +108,8 @@ export type AnalyzedMove = MoveSnapshot & {
   playerCpBefore: number;
   playerCpAfter: number;
   lossCp: number;
+  /** State-aware learning value; unlike lossCp, this is not a raw engine delta. */
+  pedagogical?: import("@/domain/diagnostic/pedagogical-score").PedagogicalAssessment;
   patterns?: import("@/domain/patterns/engine").PatternOccurrence[];
   pawnStructure?: import("@/domain/knowledge/pawn-structures").PawnStructureRecognition;
 };

@@ -10,6 +10,8 @@ import { calculateMetrics } from "../diagnostic/metrics";
 import { generateExercises } from "../training/generate";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
 import { patternsForAnalyzedMove, structureForPosition } from "../patterns/engine";
+import { patternCandidatesForPosition } from "../patterns/engine";
+import { scorePedagogicalMoment } from "../diagnostic/pedagogical-score";
 
 export type AnalysisProgress = {
   completed: number;
@@ -21,24 +23,46 @@ export type PositionEvaluator = {
   evaluate: (fen: string, depth?: number) => Promise<EngineEvaluation>;
 };
 
-function analysisBudget(gameCount: number): { movesPerGame: number; firstDepth: number; deepPositions: number } {
-  if (gameCount <= 5) return { movesPerGame: 32, firstDepth: 8, deepPositions: 12 };
-  if (gameCount <= 10) return { movesPerGame: 24, firstDepth: 8, deepPositions: 12 };
-  if (gameCount <= 25) return { movesPerGame: 12, firstDepth: 7, deepPositions: 14 };
-  if (gameCount <= 50) return { movesPerGame: 7, firstDepth: 6, deepPositions: 16 };
-  return { movesPerGame: 4, firstDepth: 5, deepPositions: 18 };
+function analysisBudget(gameCount: number): {
+  movesPerGame: number;
+  patternPositionsPerGame: number;
+  firstDepth: number;
+  deepPositions: number;
+} {
+  if (gameCount <= 5) return { movesPerGame: 32, patternPositionsPerGame: 12, firstDepth: 8, deepPositions: 20 };
+  if (gameCount <= 10) return { movesPerGame: 24, patternPositionsPerGame: 10, firstDepth: 8, deepPositions: 30 };
+  if (gameCount <= 25) return { movesPerGame: 12, patternPositionsPerGame: 8, firstDepth: 7, deepPositions: 45 };
+  if (gameCount <= 50) return { movesPerGame: 7, patternPositionsPerGame: 6, firstDepth: 6, deepPositions: 60 };
+  return { movesPerGame: 4, patternPositionsPerGame: 4, firstDepth: 5, deepPositions: 80 };
 }
 
 function movesToAnalyze(
   moves: MoveSnapshot[],
   playerColor: "white" | "black",
   limit: number,
+  patternLimit: number,
 ): MoveSnapshot[] {
   const color = playerColor === "white" ? "w" : "b";
   const candidates = moves.filter((move) => move.color === color && move.ply >= 8 && move.ply <= 100);
   if (candidates.length <= limit) return candidates;
-  const step = (candidates.length - 1) / (limit - 1);
-  return Array.from({ length: limit }, (_, index) => candidates[Math.round(index * step)]);
+  const step = (candidates.length - 1) / Math.max(1, limit - 1);
+  const uniform = Array.from({ length: limit }, (_, index) => candidates[Math.round(index * step)]);
+  const patternDriven = candidates
+    .map((move) => ({
+      move,
+      patterns: patternCandidatesForPosition(move.fenBefore, { phase: move.phase, ply: move.ply }),
+    }))
+    .filter((item) => item.patterns.length > 0)
+    .toSorted((first, second) => (
+      Math.max(...second.patterns.map((pattern) => pattern.confidence))
+      - Math.max(...first.patterns.map((pattern) => pattern.confidence))
+      || Number(second.move.phase === "middlegame") - Number(first.move.phase === "middlegame")
+      || first.move.ply - second.move.ply
+    ))
+    .slice(0, patternLimit)
+    .map((item) => item.move);
+  const byPly = new Map([...uniform, ...patternDriven].map((move) => [move.ply, move]));
+  return [...byPly.values()].toSorted((first, second) => first.ply - second.ply);
 }
 
 export async function analyzePayload(
@@ -50,7 +74,12 @@ export async function analyzePayload(
   const budget = analysisBudget(games.length);
   const selected = games.map((game) => ({
     game,
-    moves: movesToAnalyze(game.moves, game.playerColor, budget.movesPerGame),
+    moves: movesToAnalyze(
+      game.moves,
+      game.playerColor,
+      budget.movesPerGame,
+      budget.patternPositionsPerGame,
+    ),
   }));
   let total = selected.reduce((sum, item) => sum + item.moves.length * 2, 0)
     + budget.deepPositions * 2;
@@ -119,13 +148,33 @@ export async function analyzePayload(
     analyzedGames.push({ ...game, analyzedMoves });
   }
 
-  // A second, deeper pass revisits only the decisions that materially changed
-  // the evaluation. This keeps a 100-game analysis feasible in the browser
-  // while making the positions used for diagnosis and training more reliable.
+  // Pattern candidates are attached before the deep pass so a stable 0.00
+  // position can request validation independently of an evaluation delta.
+  for (const game of analyzedGames) {
+    for (const move of game.analyzedMoves) {
+      move.patterns = patternsForAnalyzedMove(move);
+      move.pawnStructure = structureForPosition(move.fenBefore);
+      move.pedagogical = scorePedagogicalMoment({
+        beforeCp: move.playerCpBefore,
+        afterCp: move.playerCpAfter,
+        patterns: move.patterns,
+        phase: move.phase,
+        ply: move.ply,
+        playerRating: game.playerRating,
+      });
+    }
+  }
+
+  // A second, deeper pass follows pedagogical value rather than raw lossCp.
+  // This validates small-advantage conversions and stable pattern positions,
+  // while +10 -> +6 and already-lost cascades fall out naturally.
   const critical = analyzedGames
     .flatMap((game) => game.analyzedMoves.map((move) => ({ game, move })))
-    .filter(({ move }) => move.lossCp >= 80)
-    .toSorted((a, b) => b.move.lossCp - a.move.lossCp)
+    .filter(({ move }) => (move.pedagogical?.score ?? 0) >= 55)
+    .toSorted((a, b) => (
+      (b.move.pedagogical?.score ?? 0) - (a.move.pedagogical?.score ?? 0)
+      || b.move.lossCp - a.move.lossCp
+    ))
     .slice(0, budget.deepPositions);
   total = completed + critical.length * 2;
 
@@ -145,13 +194,16 @@ export async function analyzePayload(
     move.playerCpBefore = evaluationForPlayer(before.whiteCp, game.playerColor);
     move.playerCpAfter = evaluationForPlayer(after.whiteCp, game.playerColor);
     move.lossCp = Math.max(0, move.playerCpBefore - move.playerCpAfter);
-  }
-
-  for (const game of analyzedGames) {
-    for (const move of game.analyzedMoves) {
-      move.patterns = patternsForAnalyzedMove(move);
-      move.pawnStructure = structureForPosition(move.fenBefore);
-    }
+    move.patterns = patternsForAnalyzedMove(move);
+    move.pawnStructure = structureForPosition(move.fenBefore);
+    move.pedagogical = scorePedagogicalMoment({
+      beforeCp: move.playerCpBefore,
+      afterCp: move.playerCpAfter,
+      patterns: move.patterns,
+      phase: move.phase,
+      ply: move.ply,
+      playerRating: game.playerRating,
+    });
   }
 
   const metrics = calculateMetrics(analyzedGames);

@@ -153,15 +153,23 @@ describe("Stockfish reference positions", () => {
       });
       expect(played, `${exercise.id} must stay legal`).not.toBeNull();
 
-      const after = await analyze(chess.fen(), { depth: 9 });
       const beforePlayerCp = exercise.playerColor === "white" ? before.whiteCp : -before.whiteCp;
-      const afterPlayerCp = exercise.playerColor === "white" ? after.whiteCp : -after.whiteCp;
       if (exercise.baselinePlayerCp >= 200) {
         expect(
           beforePlayerCp,
           `${exercise.id} is presented as a winning position`,
         ).toBeGreaterThan(150);
       }
+      if (chess.isGameOver()) {
+        expect(
+          chess.isCheckmate(),
+          `${exercise.id} must only finish immediately by checkmate`,
+        ).toBe(true);
+        continue;
+      }
+
+      const after = await analyze(chess.fen(), { depth: 9 });
+      const afterPlayerCp = exercise.playerColor === "white" ? after.whiteCp : -after.whiteCp;
       expect(
         beforePlayerCp - afterPlayerCp,
         `${exercise.id} should preserve the engine evaluation`,

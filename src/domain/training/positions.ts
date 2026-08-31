@@ -15,6 +15,10 @@ export type TrainingPosition = {
   sourceUrl?: string;
   solutionMoves: string[];
   qualityScore?: number;
+  /** Original Lichess metadata kept for quality filtering and auditability. */
+  popularity?: number;
+  plays?: number;
+  sourceThemes?: string[];
   isVerified: boolean;
   playerColor: PlayerColor;
 };

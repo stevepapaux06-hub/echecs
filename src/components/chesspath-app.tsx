@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import {
   ArrowLeft,
@@ -594,19 +594,24 @@ export function ChessPathApp() {
   }
 
   const connected = Boolean(user);
-  const historicalExercises = result?.exercises ?? persistent?.analyses[0]?.exercises ?? [];
-  const historicalIds = new Set(historicalExercises.map((exercise) => exercise.id));
-  const hubExercises = [
-    ...historicalExercises,
-    ...allConceptExercises().filter((exercise) => !historicalIds.has(exercise.id)),
-  ];
+  const hubExercises = useMemo(() => {
+    const historical = [...new Map([
+      ...(result?.exercises ?? []),
+      ...(persistent?.analyses.flatMap((analysis) => analysis.exercises) ?? []),
+    ].map((exercise) => [exercise.id, exercise])).values()];
+    const historicalIds = new Set(historical.map((exercise) => exercise.id));
+    return [
+      ...historical,
+      ...allConceptExercises().filter((exercise) => !historicalIds.has(exercise.id)),
+    ];
+  }, [persistent?.analyses, result?.exercises]);
   const navProps = { onNavigate: navigate, connected };
 
   if (screen === "loading") return <LoadingScreen label={loadingLabel} progress={progress} {...navProps} />;
   if (screen === "dashboard" && result) return <Dashboard result={result} saveStatus={saveStatus} onTrain={() => navigate("training-hub")} onReset={() => navigate("analyze")} {...navProps} />;
   if (screen === "training" && trainingExercises.length && trainingEngine) return <TrainingBoard exercises={trainingExercises} engine={trainingEngine} onBack={() => navigate("training-hub")} onAttempt={(...args) => void recordAttempt(...args)} />;
   if (screen === "analyze") return <AnalyzeScreen username={persistent?.chess?.username} error={error} onAnalyze={(request) => void startAnalysis(request)} {...navProps} />;
-  if (screen === "training-hub") return <main className="app-page"><AppNav active="training-hub" {...navProps} /><TrainingHub exercises={hubExercises} attempts={persistent?.trainingAttempts ?? []} priority={result?.metrics.priorityTitle ?? persistent?.analyses[0]?.metrics.priorityTitle} onStart={(items) => void startTraining(items)} onAnalyze={() => navigate("analyze")} /></main>;
+  if (screen === "training-hub") return <main className="app-page"><AppNav active="training-hub" {...navProps} /><TrainingHub exercises={hubExercises} attempts={persistent?.trainingAttempts ?? []} priority={result?.metrics.priorityTitle ?? persistent?.analyses[0]?.metrics.priorityTitle} userRating={result?.profile.rating ?? persistent?.chess?.rating} onStart={(items) => void startTraining(items)} onAnalyze={() => navigate("analyze")} /></main>;
   if (screen === "progress") return <main className="app-page"><AppNav active="progress" {...navProps} /><ProgressView profile={persistent} onProfile={() => navigate("profile")} /></main>;
   if (screen === "profile") return <main className="app-page"><AppNav active="profile" {...navProps} />{authNotice ? <p className={`global-notice ${authNotice.kind === "error" ? "error" : ""}`} role={authNotice.kind === "error" ? "alert" : "status"}>{authNotice.message}</p> : null}{saveStatus ? <p className="global-notice">{saveStatus}</p> : null}{error ? <p className="global-notice error">{error}</p> : null}<ProfileView key={user?.id ?? "guest"} user={user} profile={persistent} loading={profileLoading} profileError={profileError} initialAuthMode={authEntryMode} passwordRecovery={passwordRecovery} onPasswordRecovered={() => setPasswordRecovery(false)} onRetryProfile={() => refreshProfile(user)} onSync={synchronize} onLinkChess={linkChessAccount} onUnlinkChess={unlinkChessAccount} onOpenAnalysis={openAnalysis} /></main>;
   return <HomeScreen profile={persistent} error={error} onAnalyze={(request) => void startAnalysis(request)} onNavigate={navigate} />;

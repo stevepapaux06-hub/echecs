@@ -22,12 +22,25 @@ export function nextExerciseIndex(current: number, total: number): number | null
   return current + 1 < total ? current + 1 : null;
 }
 
-function latestAttempts(attempts: TrainingAttemptRecord[]): Map<string, TrainingAttemptRecord> {
-  const latest = new Map<string, TrainingAttemptRecord>();
+type AttemptHistory = {
+  latest: TrainingAttemptRecord;
+  attempts: number;
+  successes: number;
+  failures: number;
+};
+
+function attemptHistory(attempts: TrainingAttemptRecord[]): Map<string, AttemptHistory> {
+  const history = new Map<string, AttemptHistory>();
   for (const attempt of [...attempts].toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))) {
-    if (!latest.has(attempt.exerciseId)) latest.set(attempt.exerciseId, attempt);
+    const previous = history.get(attempt.exerciseId);
+    history.set(attempt.exerciseId, {
+      latest: previous?.latest ?? attempt,
+      attempts: (previous?.attempts ?? 0) + 1,
+      successes: (previous?.successes ?? 0) + Number(attempt.result === "success"),
+      failures: (previous?.failures ?? 0) + Number(attempt.result === "failed"),
+    });
   }
-  return latest;
+  return history;
 }
 
 function uniquePositions(exercises: TrainingExercise[]): TrainingExercise[] {
@@ -50,16 +63,44 @@ export function buildTrainingSession(
   attempts: TrainingAttemptRecord[],
   filter: TrainingFilter,
   limit = 7,
+  options: { now?: number; userRating?: number } = {},
 ): TrainingExercise[] {
-  const latest = latestAttempts(attempts);
+  const history = attemptHistory(attempts);
+  const now = options.now ?? Date.now();
   const filtered = filter === "recommended" || filter === "mix"
     ? exercises
     : exercises.filter((exercise) => exercise.category === filter);
   const unique = uniquePositions(filtered);
-  const failed = unique.filter((exercise) => latest.get(exercise.id)?.result === "failed");
-  const deferredSuccess = unique.filter((exercise) => latest.get(exercise.id)?.result === "success");
-  const fresh = unique.filter((exercise) => !latest.has(exercise.id));
-  const partial = unique.filter((exercise) => latest.get(exercise.id)?.result === "partial");
+  const ageDays = (exercise: TrainingExercise): number => {
+    const date = history.get(exercise.id)?.latest.createdAt;
+    return date ? Math.max(0, (now - Date.parse(date)) / 86_400_000) : Number.POSITIVE_INFINITY;
+  };
+  const successesByConcept = new Map<string, number>();
+  for (const attempt of attempts) {
+    if (attempt.result !== "success") continue;
+    const concept = normalizeConceptSlug(attempt.theme);
+    successesByConcept.set(concept, (successesByConcept.get(concept) ?? 0) + 1);
+  }
+  const adapted = (values: TrainingExercise[]): TrainingExercise[] => values.toSorted((first, second) => {
+    const score = (exercise: TrainingExercise): number => {
+      const concept = preciseConcept(exercise);
+      const progression = Math.min(250, (successesByConcept.get(concept) ?? 0) * 35);
+      const target = (options.userRating ?? exercise.difficulty ?? 1_200) + progression;
+      const difficultyDistance = exercise.difficulty === undefined ? 500 : Math.abs(exercise.difficulty - target);
+      return (exercise.qualityScore ?? 0) * 3 - difficultyDistance + Number(exercise.origin === "personal") * 40;
+    };
+    return score(second) - score(first) || first.id.localeCompare(second.id);
+  });
+  const failed = adapted(unique.filter((exercise) => (
+    history.get(exercise.id)?.latest.result === "failed" && ageDays(exercise) >= 1
+  )));
+  const reviewSuccess = adapted(unique.filter((exercise) => (
+    history.get(exercise.id)?.latest.result === "success" && ageDays(exercise) >= 21
+  )));
+  const fresh = adapted(unique.filter((exercise) => !history.has(exercise.id)));
+  const partial = adapted(unique.filter((exercise) => (
+    history.get(exercise.id)?.latest.result === "partial" && ageDays(exercise) >= 3
+  )));
 
   const personal = fresh.filter((exercise) => exercise.origin === "personal");
   const primary = personal[0] ?? fresh[0] ?? partial[0] ?? failed[0];
@@ -94,7 +135,7 @@ export function buildTrainingSession(
     ...remainingFresh,
     ...partial,
     ...failed.slice(1),
-    ...deferredSuccess,
+    ...reviewSuccess,
   ]);
   return ordered.slice(0, limit);
 }

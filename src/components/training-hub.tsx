@@ -24,14 +24,16 @@ export function TrainingHub({
   attempts,
   onStart,
   onAnalyze,
+  userRating,
 }: {
   exercises: TrainingExercise[];
   priority?: string;
   attempts: TrainingAttemptRecord[];
   onStart: (exercises: TrainingExercise[]) => void;
   onAnalyze: () => void;
+  userRating?: number;
 }) {
-  const recommended = buildTrainingSession(exercises, attempts, "recommended");
+  const recommended = buildTrainingSession(exercises, attempts, "recommended", 7, { userRating });
   const counts = {
     personal: recommended.filter((exercise) => exercise.origin === "personal").length,
     concept: recommended.filter((exercise) => exercise.origin === "concept").length,
@@ -54,7 +56,7 @@ export function TrainingHub({
       : "La séance part de tes positions personnelles, puis varie les décisions sans prétendre répéter un concept absent de la bibliothèque.";
 
   function sessionFor(filter: TrainingFilter): TrainingExercise[] {
-    return buildTrainingSession(exercises, attempts, filter);
+    return buildTrainingSession(exercises, attempts, filter, 7, { userRating });
   }
 
   return (

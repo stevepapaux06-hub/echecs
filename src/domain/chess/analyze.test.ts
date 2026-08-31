@@ -83,4 +83,59 @@ describe("analyzePayload resilience", () => {
       "1 décision a été ignorée après deux tentatives moteur ; le reste de l’analyse est complet.",
     );
   });
+
+  it("keeps an equal middlegame position selected by a reliable pattern", async () => {
+    const chess = new Chess("4k3/8/4q1r1/8/8/3N4/8/K7 w - - 0 1");
+    const fenBefore = chess.fen();
+    const played = chess.move("Kb1");
+    const fenAfter = chess.fen();
+    const move: MoveSnapshot = {
+      ply: 20,
+      san: played.san,
+      uci: `${played.from}${played.to}`,
+      from: played.from,
+      to: played.to,
+      color: "w",
+      fenBefore,
+      fenAfter,
+      phase: "middlegame",
+    };
+    const input = payload();
+    input.games[0] = { ...input.games[0], moves: [move] };
+    const engine: PositionEvaluator = {
+      evaluate: async (fen) => {
+        const board = new Chess(fen);
+        const sideToMove = sideToMoveFromFen(fen);
+        const bestMove = fen === fenBefore
+          ? "d3f4"
+          : (() => {
+              const first = board.moves({ verbose: true })[0];
+              return first ? `${first.from}${first.to}${first.promotion ?? ""}` : "";
+            })();
+        return {
+          fen,
+          sideToMove,
+          whiteCp: 0,
+          bestMove,
+          depth: 10,
+          lines: bestMove ? [{
+            multipv: 1,
+            depth: 10,
+            rawScore: { type: "cp", value: 0 },
+            whiteScore: { type: "cp", value: 0 },
+            whiteCp: 0,
+            pv: [bestMove],
+          }] : [],
+          debug: { fen, sideToMove, requestedDepth: 10, reachedDepth: 10, bestMove, lines: [] },
+        };
+      },
+    };
+
+    const result = await analyzePayload(input, engine, () => undefined);
+
+    expect(result.games[0].analyzedMoves[0].pedagogical?.kind).toBe("stable_pattern");
+    expect(result.exercises.some((exercise) => (
+      exercise.origin === "personal" && exercise.conceptSlug === "fork"
+    ))).toBe(true);
+  });
 });
