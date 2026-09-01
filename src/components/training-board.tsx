@@ -27,6 +27,7 @@ import {
   type PedagogicalMoveResult,
   type TrainingResult,
 } from "@/domain/training/sequence";
+import { isLegalTrainingDrop } from "@/domain/training/interaction";
 import { nextExerciseIndex, sharesPreciseConcept } from "@/domain/training/session";
 import { detectMovePatterns } from "@/domain/patterns/engine";
 import type { StockfishClient } from "@/infrastructure/engine/stockfish-client";
@@ -99,16 +100,19 @@ export function TrainingBoard({
   const [result, setResult] = useState<TrainingResult | null>(null);
   const [variantStep, setVariantStep] = useState<number | null>(null);
   const [continuing, setContinuing] = useState(false);
+  const [boardRevision, setBoardRevision] = useState(0);
   const baselineCache = useRef(new Map<string, EngineEvaluation>());
   const initialEvaluation = useRef<EngineEvaluation | null>(null);
   const initialPlayerCp = useRef<number | null>(null);
   const largestLossCp = useRef(0);
   const firstMovePedagogy = useRef<PedagogicalMoveResult | null>(null);
   const attemptToken = useRef(0);
+  const moveInFlight = useRef(false);
   const exercise = exercises[index];
 
   function resetBoard(targetIndex = index) {
     attemptToken.current += 1;
+    moveInFlight.current = false;
     const target = exercises[targetIndex];
     setPosition(target.fen);
     setFeedbackFen(target.fen);
@@ -119,6 +123,7 @@ export function TrainingBoard({
     setAttemptMoves([]);
     setResult(null);
     setVariantStep(null);
+    setBoardRevision((revision) => revision + 1);
     initialEvaluation.current = null;
     initialPlayerCp.current = null;
     largestLossCp.current = 0;
@@ -177,13 +182,17 @@ export function TrainingBoard({
       pedagogicalMove: firstMovePedagogy.current ?? "concept",
     }));
     setThinkingStage(null);
+    moveInFlight.current = false;
     setResult(status);
     setVariantStep(null);
     onAttempt?.(exercise, status, lossCp, moves);
   }
 
   async function attemptMove(sourceSquare: string, targetSquare: string | null): Promise<boolean> {
-    if (!targetSquare || thinkingStage || feedback || result) return false;
+    if (!targetSquare || thinkingStage || feedback || result) {
+      moveInFlight.current = false;
+      return false;
+    }
     const token = ++attemptToken.current;
     const decisionFen = position;
     const chess = new Chess(decisionFen);
@@ -191,6 +200,7 @@ export function TrainingBoard({
     try {
       move = chess.move({ from: sourceSquare as Square, to: targetSquare as Square, promotion: "q" });
     } catch {
+      moveInFlight.current = false;
       return false;
     }
 
@@ -304,12 +314,15 @@ export function TrainingBoard({
       const movesAfterReply = [...movesAfterPlayer, replyUci];
       setPosition(replyPosition.fen());
       setAttemptMoves(movesAfterReply);
+      moveInFlight.current = false;
       setThinkingStage(null);
     } catch {
       if (token !== attemptToken.current) return true;
       setPosition(decisionFen);
       setPlayerMoves(playerMoves);
       setAttemptMoves(attemptMoves);
+      moveInFlight.current = false;
+      setBoardRevision((revision) => revision + 1);
       setThinkingStage(null);
       setEngineError("Le moteur local a été interrompu. Ton coup n’est pas compté : tu peux le rejouer.");
     }
@@ -373,8 +386,16 @@ export function TrainingBoard({
       return boardInteractive && piece.pieceType.toLowerCase().startsWith(expected);
     },
     onPieceDrop: ({ sourceSquare, targetSquare }) => {
+      if (
+        !boardInteractive
+        || moveInFlight.current
+        || !isLegalTrainingDrop(position, sourceSquare, targetSquare)
+      ) {
+        return false;
+      }
+      moveInFlight.current = true;
       void attemptMove(sourceSquare, targetSquare);
-      return Boolean(targetSquare);
+      return true;
     },
   };
 
@@ -389,7 +410,7 @@ export function TrainingBoard({
       <section className="training-layout">
         <div className="board-column">
           <button type="button" className="text-button back-button" onClick={onBack}><ArrowLeft size={16} /> Retour à l’entraînement</button>
-          <div className="board-frame"><Chessboard options={options} /></div>
+          <div className="board-frame"><Chessboard key={`${exercise.id}:${boardRevision}`} options={options} /></div>
           <div className="board-actions">
             <button type="button" onClick={() => resetBoard()}><RotateCcw size={16} /> Recommencer</button>
             <span>{exercise.mode === "one-move" ? "Décision ciblée" : `Séquence · ${playerMoves}/${exercise.maxPlayerMoves} coups joués`}</span>
