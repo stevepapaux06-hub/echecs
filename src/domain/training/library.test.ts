@@ -41,9 +41,12 @@ describe("curated training library", () => {
   it("ships a varied verified offline Lichess bank", () => {
     const lichess = allConceptExercises().filter((exercise) => exercise.source === "lichess");
     expect(lichess).toHaveLength(2_520);
-    expect(new Set(lichess.map((exercise) => exercise.conceptSlug))).toEqual(new Set([
-      "fork", "pin", "skewer", "loose_piece", "remove_defender", "opponent_threat", "passed_pawn",
-    ]));
+    const concepts = new Set(lichess.map((exercise) => exercise.conceptSlug));
+    for (const concept of ["fork", "pin", "skewer", "loose_piece", "remove_defender", "opponent_threat", "passed_pawn"]) {
+      expect(concepts.has(concept)).toBe(true);
+    }
     expect(lichess.every((exercise) => exercise.isVerified && exercise.sourceId && exercise.difficulty)).toBe(true);
+    expect(lichess.filter((exercise) => exercise.category === "endgame")
+      .every((exercise) => exercise.phase === "endgame")).toBe(true);
   });
 });

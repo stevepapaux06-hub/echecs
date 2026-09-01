@@ -94,6 +94,8 @@ export type Database = {
       }
       concept_stats: {
         Row: {
+          baseline_game_opportunities: number
+          baseline_game_successes: number
           concept_slug: string
           created_at: string
           failures: number
@@ -111,6 +113,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          baseline_game_opportunities?: number
+          baseline_game_successes?: number
           concept_slug: string
           created_at?: string
           failures?: number
@@ -128,6 +132,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          baseline_game_opportunities?: number
+          baseline_game_successes?: number
           concept_slug?: string
           created_at?: string
           failures?: number
@@ -236,6 +242,8 @@ export type Database = {
       }
       games: {
         Row: {
+          analysis_summary: Json | null
+          analyzed_at: string | null
           chess_username: string | null
           external_id: string
           id: string
@@ -251,6 +259,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          analysis_summary?: Json | null
+          analyzed_at?: string | null
           chess_username?: string | null
           external_id: string
           id?: string
@@ -266,6 +276,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          analysis_summary?: Json | null
+          analyzed_at?: string | null
           chess_username?: string | null
           external_id?: string
           id?: string

@@ -1,3 +1,4 @@
+import { Chess } from "chess.js";
 import { describe, expect, it } from "vitest";
 import type { AnalyzedGame, DiagnosticMetrics, EngineEvaluation } from "@/domain/chess/types";
 import { filterLostPositionCascade, generateExercises } from "./generate";
@@ -214,5 +215,102 @@ describe("personal exercise generation", () => {
     };
     expect(generateExercises([game], metrics).filter((exercise) => exercise.origin === "personal").length)
       .toBeGreaterThan(7);
+  });
+
+  it("keeps an equal middlegame strategy position without a large engine drop", () => {
+    const fen = "r2q1rk1/pp1nbppp/2p1pn2/8/8/2N1PN2/PPQ1BPPP/R4RK1 w - - 2 13";
+    const after = new Chess(fen);
+    after.move("h3");
+    const game: AnalyzedGame = {
+      id: "quiet-strategy",
+      source: "pgn",
+      rawPgn: "",
+      playedAt: 0,
+      timeClass: "rapid",
+      timeControl: "600",
+      rated: false,
+      playerColor: "white",
+      playerRating: 1_300,
+      opponent: "Plan",
+      opponentRating: 1_300,
+      outcome: "draw",
+      moves: [],
+      analyzedMoves: [{
+        ply: 25,
+        san: "h3",
+        uci: "h2h3",
+        from: "h2",
+        to: "h3",
+        color: "w",
+        fenBefore: fen,
+        fenAfter: after.fen(),
+        phase: "middlegame",
+        before: evaluation(fen, 0, ["a1d1", "d8c7"]),
+        after: evaluation(after.fen(), 0, ["d8c7"]),
+        playerCpBefore: 0,
+        playerCpAfter: 0,
+        lossCp: 0,
+        patterns: [{
+          conceptSlug: "open_file",
+          fen,
+          ply: 25,
+          confidence: 0.92,
+          opportunity: true,
+          success: false,
+          source: "pattern_engine_stockfish_validated",
+          moveUci: "a1d1",
+        }],
+        pedagogical: {
+          beforeState: "equal",
+          afterState: "equal",
+          score: 73,
+          kind: "stable_pattern",
+          reliablePatternConfidence: 0.92,
+          worthy: true,
+        },
+      }],
+    };
+    const theme = {
+      id: "fork",
+      category: "tactic" as const,
+      title: "Fourchette",
+      summary: "",
+      confidence: "low" as const,
+      sampleSize: 1,
+      issueCount: 1,
+      evidence: [],
+      positionIds: [],
+    };
+    const metrics: DiagnosticMetrics = {
+      gamesAnalyzed: 1,
+      positionsAnalyzed: 1,
+      importantErrors: 0,
+      importantErrorsPerGame: 0,
+      conversionOpportunities: 0,
+      convertedWins: 0,
+      conversionRate: null,
+      averageWinningRetention: null,
+      defenseOpportunities: 0,
+      recoveredPositions: 0,
+      savedGames: 0,
+      defenseRecoveryRate: null,
+      phaseMetrics: [],
+      priority: "middlegame",
+      priorityTitle: "Fourchette",
+      prioritySummary: "",
+      strengths: [],
+      weaknesses: [],
+      focusItems: [],
+      themes: [theme],
+      primaryTheme: theme,
+    };
+    const strategy = generateExercises([game], metrics).find((exercise) => exercise.origin === "personal");
+    expect(strategy).toMatchObject({
+      conceptSlug: "open_file",
+      category: "strategy",
+      phase: "middlegame",
+      baselinePlayerCp: 0,
+    });
+    expect(strategy?.explanation?.focus).toContain("tour");
   });
 });

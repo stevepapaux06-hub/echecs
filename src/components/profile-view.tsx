@@ -272,7 +272,7 @@ export function ProfileView({
       </header>
 
       <div className="profile-kpis">
-        <article><span>Parties enregistrées</span><strong>{profile.games.length}</strong><small>Chess.com et PGN, sans doublons</small></article>
+        <article><span>Parties enregistrées</span><strong>{profile.savedGamesCount}</strong><small>{profile.analyzedGamesCount} analysées · Chess.com et PGN sans doublons</small></article>
         <article><span>Analyses conservées</span><strong>{profile.analyses.length}</strong><small>Chaque diagnostic reste accessible</small></article>
         <article><span>Exercices terminés</span><strong>{profile.attempts}</strong><small>Performance d’entraînement</small></article>
       </div>

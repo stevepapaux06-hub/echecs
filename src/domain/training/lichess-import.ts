@@ -1,4 +1,5 @@
 import { Chess, type Square } from "chess.js";
+import { classifyPhase } from "../chess/phase";
 import { conceptDefinition, type ConceptSlug } from "../knowledge/concepts";
 import type { TrainingPosition } from "./positions";
 
@@ -14,6 +15,8 @@ const THEME_TO_CONCEPTS: Readonly<Record<string, ConceptSlug[]>> = {
   skewer: ["skewer"],
   hangingPiece: ["loose_piece"],
   capturingDefender: ["remove_defender"],
+  deflection: ["remove_defender"],
+  overloading: ["overloaded_defender"],
   // Lichess defines defensiveMove as the precise response needed to avoid
   // losing material or an advantage: opponent_threat is the training label,
   // while defensive_resource remains available as the secondary concept.
@@ -22,11 +25,12 @@ const THEME_TO_CONCEPTS: Readonly<Record<string, ConceptSlug[]>> = {
 };
 
 const CONCEPT_PRIORITY: ConceptSlug[] = [
-  "fork",
-  "pin",
-  "skewer",
-  "loose_piece",
   "remove_defender",
+  "overloaded_defender",
+  "fork",
+  "skewer",
+  "pin",
+  "loose_piece",
   "opponent_threat",
   "defensive_resource",
   "passed_pawn",
@@ -35,6 +39,40 @@ const CONCEPT_PRIORITY: ConceptSlug[] = [
 export function mapLichessThemesToConcepts(themes: string[]): ConceptSlug[] {
   const mapped = [...new Set(themes.flatMap((theme) => THEME_TO_CONCEPTS[theme] ?? []))];
   return mapped.toSorted((a, b) => CONCEPT_PRIORITY.indexOf(a) - CONCEPT_PRIORITY.indexOf(b));
+}
+
+export function classifyLichessPosition(
+  fen: string,
+  sourceThemes: string[],
+): Pick<TrainingPosition, "category" | "conceptSlug" | "secondaryConceptSlugs" | "classificationConfidence"> | null {
+  const concepts = mapLichessThemesToConcepts(sourceThemes);
+  if (!concepts.length) return null;
+  const fullmove = Number(fen.split(/\s+/)[5] ?? 1);
+  const phase = classifyPhase(fen, Math.max(1, fullmove * 2 - 1));
+  const concreteTactic = concepts.find((slug) => ![
+    "passed_pawn",
+    "defensive_resource",
+  ].includes(slug));
+  const primary = concreteTactic
+    ?? (concepts.includes("defensive_resource") ? "defensive_resource" : undefined)
+    ?? (concepts.includes("passed_pawn") ? "passed_pawn" : undefined);
+
+  if (!primary) return null;
+  const definition = conceptDefinition(primary);
+  if (!definition) return null;
+  const category = primary === "passed_pawn"
+    ? phase === "endgame" ? "endgame" : "strategy"
+    : primary === "defensive_resource"
+      ? "defense"
+      : "tactic";
+  return {
+    category,
+    conceptSlug: primary,
+    secondaryConceptSlugs: concepts.filter((slug) => slug !== primary),
+    classificationConfidence: primary === "passed_pawn" && phase !== "endgame"
+      ? 0.55
+      : concepts.length > 1 ? 0.9 : 0.95,
+  };
 }
 
 function csvFields(line: string): string[] {
@@ -62,8 +100,8 @@ export function parseLichessPuzzleCsvLine(line: string): TrainingPosition | null
   if (fields.length < 9 || fields[0] === "PuzzleId") return null;
   const [puzzleId, initialFen, rawMoves, rawRating, , rawPopularity, rawPlays, rawThemes, gameUrl] = fields;
   const moves = rawMoves.trim().split(/\s+/).filter(Boolean);
-  const concepts = mapLichessThemesToConcepts(rawThemes.trim().split(/\s+/).filter(Boolean));
-  if (!puzzleId || moves.length < 2 || concepts.length === 0) return null;
+  const sourceThemes = rawThemes.trim().split(/\s+/).filter(Boolean);
+  if (!puzzleId || moves.length < 2) return null;
   try {
     const chess = new Chess(initialFen);
     const setupMove = moves[0];
@@ -72,14 +110,12 @@ export function parseLichessPuzzleCsvLine(line: string): TrainingPosition | null
       to: setupMove.slice(2, 4) as Square,
       promotion: setupMove.slice(4, 5) || "q",
     });
-    const concept = conceptDefinition(concepts[0]);
-    if (!concept) return null;
+    const classification = classifyLichessPosition(chess.fen(), sourceThemes);
+    if (!classification) return null;
     return {
       id: `lichess-${puzzleId}`,
       fen: chess.fen(),
-      category: concept.category,
-      conceptSlug: concepts[0],
-      secondaryConceptSlug: concepts[1],
+      ...classification,
       difficulty: Number.isFinite(Number(rawRating)) ? Number(rawRating) : undefined,
       source: "lichess",
       sourceGameId: puzzleId,
@@ -88,7 +124,7 @@ export function parseLichessPuzzleCsvLine(line: string): TrainingPosition | null
       qualityScore: Number.isFinite(Number(rawPopularity)) ? Number(rawPopularity) : undefined,
       popularity: Number.isFinite(Number(rawPopularity)) ? Number(rawPopularity) : undefined,
       plays: Number.isFinite(Number(rawPlays)) ? Number(rawPlays) : undefined,
-      sourceThemes: rawThemes.trim().split(/\s+/).filter(Boolean),
+      sourceThemes,
       isVerified: true,
       playerColor: chess.turn() === "w" ? "white" : "black",
     };

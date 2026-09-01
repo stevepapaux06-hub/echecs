@@ -3,6 +3,7 @@ import type { TrainingAttemptRecord, TrainingExercise } from "@/domain/chess/typ
 import { allConceptExercises } from "./library";
 import {
   buildTrainingSession,
+  conceptTrainingFilter,
   nextExerciseIndex,
   sharesPreciseConcept,
 } from "./session";
@@ -96,5 +97,41 @@ describe("personalized training session", () => {
       userRating: 1_200,
     });
     expect(session[0].difficulty).toBeGreaterThanOrEqual(1_200);
+  });
+
+  it("keeps a Fourchette session on real fork positions only", () => {
+    const session = buildTrainingSession(
+      concepts,
+      [],
+      conceptTrainingFilter("fork"),
+      7,
+      { userRating: 1_300 },
+    );
+    expect(session).toHaveLength(7);
+    expect(session.every((exercise) => exercise.conceptSlug === "fork")).toBe(true);
+  });
+
+  it("continues after seven with new positions from the same exact concept", () => {
+    const filter = conceptTrainingFilter("fork");
+    const first = buildTrainingSession(concepts, [], filter, 7, { userRating: 1_300 });
+    const second = buildTrainingSession(concepts, [], filter, 7, {
+      userRating: 1_300,
+      excludeExerciseIds: new Set(first.map((exercise) => exercise.id)),
+    });
+    expect(second).toHaveLength(7);
+    expect(second.every((exercise) => exercise.conceptSlug === "fork")).toBe(true);
+    expect(second.every((exercise) => !first.some((seen) => seen.id === exercise.id))).toBe(true);
+  });
+
+  it("turns a fork diagnostic into an exact transfer sequence", () => {
+    const session = buildTrainingSession(
+      [personal, sameTheme, ...concepts],
+      [],
+      "recommended",
+      7,
+      { priorityConcept: "fork", userRating: 1_300 },
+    );
+    expect(session[0].origin).toBe("personal");
+    expect(session.every((exercise) => exercise.conceptSlug === "fork")).toBe(true);
   });
 });

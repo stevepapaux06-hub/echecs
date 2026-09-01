@@ -28,6 +28,7 @@ import {
   type TrainingResult,
 } from "@/domain/training/sequence";
 import { nextExerciseIndex, sharesPreciseConcept } from "@/domain/training/session";
+import { detectMovePatterns } from "@/domain/patterns/engine";
 import type { StockfishClient } from "@/infrastructure/engine/stockfish-client";
 import { evaluationForPlayer, formatWhiteCentricEvaluation } from "@/infrastructure/engine/uci";
 import { Brand } from "./brand";
@@ -74,10 +75,12 @@ export function TrainingBoard({
   engine,
   onBack,
   onAttempt,
+  onContinue,
 }: {
   exercises: TrainingExercise[];
   engine: StockfishClient;
   onBack: () => void;
+  onContinue?: (seenExerciseIds: string[]) => Promise<boolean>;
   onAttempt?: (
     exercise: TrainingExercise,
     result: TrainingResult,
@@ -95,6 +98,7 @@ export function TrainingBoard({
   const [attemptMoves, setAttemptMoves] = useState<string[]>([]);
   const [result, setResult] = useState<TrainingResult | null>(null);
   const [variantStep, setVariantStep] = useState<number | null>(null);
+  const [continuing, setContinuing] = useState(false);
   const baselineCache = useRef(new Map<string, EngineEvaluation>());
   const initialEvaluation = useRef<EngineEvaluation | null>(null);
   const initialPlayerCp = useRef<number | null>(null);
@@ -121,10 +125,17 @@ export function TrainingBoard({
     firstMovePedagogy.current = null;
   }
 
-  function nextExercise() {
+  async function nextExercise() {
     const next = nextExerciseIndex(index, exercises.length);
     if (next === null) {
-      onBack();
+      if (!onContinue) {
+        onBack();
+        return;
+      }
+      setContinuing(true);
+      const continued = await onContinue(exercises.map((candidate) => candidate.id));
+      if (!continued) onBack();
+      else setContinuing(false);
       return;
     }
     setIndex(next);
@@ -226,10 +237,21 @@ export function TrainingBoard({
       setPlayerMoves(nextPlayerMoves);
       setAttemptMoves(movesAfterPlayer);
       if (!firstMovePedagogy.current) {
+        const baselinePlayerCp = evaluationForPlayer(baseline.whiteCp, exercise.playerColor);
+        const runtimeConceptMoves = baseline.lines
+          .filter((line) => (
+            baselinePlayerCp - evaluationForPlayer(line.whiteCp, exercise.playerColor) <= 100
+            && Boolean(line.pv[0])
+            && detectMovePatterns(decisionFen, line.pv[0]).some((pattern) => (
+              pattern.conceptSlug === exercise.conceptSlug
+            ))
+          ))
+          .map((line) => line.pv[0]);
         firstMovePedagogy.current = classifyPedagogicalMove(
           exercise,
           playedUci,
           decisionFeedback.lossCp,
+          runtimeConceptMoves,
         );
       }
 
@@ -389,7 +411,15 @@ export function TrainingBoard({
             <div className={`feedback-card ${feedback.tone}`} aria-live="polite">
               <span className="feedback-icon">{feedback.tone === "warning" ? "!" : <Check size={20} />}</span>
               <div><small>Bilan de la séquence</small><h2>{feedback.title}</h2><p>{feedback.body}</p></div>
-              <div className="why-block"><small>Concept travaillé</small><p>{feedback.idea}</p></div>
+              {feedback.explanation ? (
+                <div className="why-block causal-feedback">
+                  <small>Ce qu’il fallait remarquer</small><p>{feedback.explanation.notice}</p>
+                  <small>Pièce ou faiblesse</small><p>{feedback.explanation.focus}</p>
+                  <small>Plan et objectif</small><p>{feedback.explanation.plan} {feedback.explanation.objective}</p>
+                  {feedback.explanation.opponentIdea ? <><small>Réaction adverse</small><p>{feedback.explanation.opponentIdea}</p></> : null}
+                  <small>Règle à retenir</small><p>{feedback.explanation.rule}</p>
+                </div>
+              ) : <div className="why-block"><small>Concept travaillé</small><p>{feedback.idea}</p></div>}
               <div className="move-comparison sequence-summary">
                 <div><span>Ta séquence</span><strong>{feedback.playedMoveSan || "—"}</strong></div>
                 <div><span>Départ de la ligne clé</span><strong>{feedback.bestMoveSan}</strong></div>
@@ -438,12 +468,12 @@ export function TrainingBoard({
 
           <div className="exercise-footer">
             {exercise.gameUrl ? <a href={exercise.gameUrl} target="_blank" rel="noreferrer">Voir la partie source <ExternalLink size={14} /></a> : <span className="concept-source">Position pédagogique vérifiée avec Stockfish</span>}
-            <button type="button" className="primary-button" onClick={nextExercise} disabled={!result}>
+            <button type="button" className="primary-button" onClick={() => void nextExercise()} disabled={!result || continuing}>
               {followingExercise
                 ? sameConceptNext
                   ? "Nouvelle position sur ce concept"
                   : "Exercice suivant"
-                : "Terminer la séance"} <ArrowRight size={17} />
+                : continuing ? "Chargement…" : "Continuer"} <ArrowRight size={17} />
             </button>
           </div>
         </aside>

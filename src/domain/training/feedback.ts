@@ -4,6 +4,7 @@ import type {
   PlanArrow,
   PlanSquare,
   PlayerColor,
+  StructuredExerciseExplanation,
   TrainingExercise,
   TrainingType,
 } from "@/domain/chess/types";
@@ -35,6 +36,7 @@ export type TrainingFeedback = {
   afterPlayerCp: number;
   candidates: CandidateMove[];
   idea: string;
+  explanation?: StructuredExerciseExplanation;
   principalLineUci: string[];
   planArrows: PlanArrow[];
   planSquares: PlanSquare[];
@@ -214,7 +216,9 @@ export function buildTrainingFeedback({
         ? "good"
         : "warning",
     title: copy.title,
-    body: copy.lead,
+    body: exercise.explanation
+      ? `${copy.lead} ${exercise.explanation.objective}`
+      : copy.lead,
     bestMove,
     bestMoveSan: uciToSan(fen, bestMove),
     playedMove,
@@ -225,6 +229,7 @@ export function buildTrainingFeedback({
     afterPlayerCp,
     candidates,
     idea: exercise.concept || inferredIdea,
+    explanation: exercise.explanation,
     principalLineUci,
     planArrows: exercise.planArrows?.length ? exercise.planArrows : inferredArrows,
     planSquares: exercise.planSquares ?? [],
@@ -317,6 +322,7 @@ export function buildSequenceFeedback({
     afterPlayerCp,
     candidates,
     idea: exercise.concept || describeMoveIdea(exercise.fen, bestMove, exercise.type),
+    explanation: exercise.explanation,
     principalLineUci: principal,
     planArrows: exercise.planArrows?.length ? exercise.planArrows : inferredArrows,
     planSquares: exercise.planSquares ?? [],

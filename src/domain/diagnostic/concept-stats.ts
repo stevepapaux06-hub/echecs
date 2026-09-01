@@ -63,3 +63,19 @@ export function addTrainingConceptAttempt(
     gameSuccesses: current.gameSuccesses,
   });
 }
+
+export function replaceGameConceptTotals(
+  previous: ConceptStatCounters | undefined,
+  totals: { opportunities: number; successes: number },
+): ConceptStatCounters {
+  const current = previous ?? EMPTY;
+  return withMastery({
+    opportunities: totals.opportunities,
+    successes: totals.successes,
+    failures: totals.opportunities - totals.successes,
+    trainingAttempts: current.trainingAttempts,
+    trainingSuccesses: current.trainingSuccesses,
+    gameOpportunities: totals.opportunities,
+    gameSuccesses: totals.successes,
+  });
+}

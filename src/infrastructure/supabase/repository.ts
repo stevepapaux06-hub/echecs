@@ -1,6 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import type {
   AnalysisPayload,
+  AnalyzedGame,
   CompleteAnalysis,
   DiagnosticMetrics,
   ParsedGame,
@@ -11,8 +12,8 @@ import type {
 import type { Json } from "./database.types";
 import { normalizeAuthError } from "./auth-errors";
 import { getSupabaseClient } from "./client";
-import { addGameConceptSample, addTrainingConceptAttempt, type ConceptStatCounters } from "../../domain/diagnostic/concept-stats";
-import { normalizeConceptSlug } from "../../domain/knowledge/concepts";
+import { addTrainingConceptAttempt, replaceGameConceptTotals, type ConceptStatCounters } from "../../domain/diagnostic/concept-stats";
+import { conceptDefinition, normalizeConceptSlug } from "../../domain/knowledge/concepts";
 
 export type AnalysisHistoryItem = {
   id: string;
@@ -50,6 +51,8 @@ export type PersistentProfile = {
   chess: PlayerProfile | null;
   analyses: AnalysisHistoryItem[];
   games: SavedGame[];
+  savedGamesCount: number;
+  analyzedGamesCount: number;
   weaknesses: WeaknessRecord[];
   attempts: number;
   trainingAttempts: TrainingAttemptRecord[];
@@ -69,6 +72,48 @@ export type ConceptStatsRecord = {
   lastSeenAt: string | null;
   lastTrainedAt: string | null;
 };
+
+export type GameAnalysisSummary = {
+  version: 1;
+  gameKey: string;
+  concepts: Array<{ conceptSlug: string; opportunities: number; successes: number }>;
+};
+
+export function summarizeAnalyzedGame(game: AnalyzedGame): GameAnalysisSummary {
+  const concepts = new Map<string, { opportunities: number; successes: number }>();
+  for (const move of game.analyzedMoves) {
+    for (const pattern of move.patterns ?? []) {
+      if (!pattern.opportunity || pattern.confidence < 0.8) continue;
+      const current = concepts.get(pattern.conceptSlug) ?? { opportunities: 0, successes: 0 };
+      current.opportunities += 1;
+      current.successes += Number(pattern.success);
+      concepts.set(pattern.conceptSlug, current);
+    }
+  }
+  return {
+    version: 1,
+    gameKey: `${game.source}:${game.id}`,
+    concepts: [...concepts.entries()].map(([conceptSlug, counters]) => ({ conceptSlug, ...counters })),
+  };
+}
+
+export function aggregateGameAnalysisSummaries(
+  summaries: GameAnalysisSummary[],
+): Map<string, { opportunities: number; successes: number }> {
+  const totals = new Map<string, { opportunities: number; successes: number }>();
+  const seenGames = new Set<string>();
+  for (const summary of summaries) {
+    if (seenGames.has(summary.gameKey)) continue;
+    seenGames.add(summary.gameKey);
+    for (const concept of summary.concepts ?? []) {
+      const current = totals.get(concept.conceptSlug) ?? { opportunities: 0, successes: 0 };
+      current.opportunities += concept.opportunities;
+      current.successes += concept.successes;
+      totals.set(concept.conceptSlug, current);
+    }
+  }
+  return totals;
+}
 
 function missingOptionalTable(error: { code?: string; message?: string } | null): boolean {
   return Boolean(error && (error.code === "42P01" || error.code === "PGRST205"));
@@ -99,6 +144,27 @@ function countersFromRow(row: {
 
 function json(value: unknown): Json {
   return JSON.parse(JSON.stringify(value)) as Json;
+}
+
+async function loadGameAnalysisSummaries(userId: string): Promise<GameAnalysisSummary[]> {
+  const supabase = getSupabaseClient();
+  const summaries: GameAnalysisSummary[] = [];
+  const pageSize = 1_000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("games")
+      .select("analysis_summary")
+      .eq("user_id", userId)
+      .not("analysis_summary", "is", null)
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      const summary = row.analysis_summary as unknown as GameAnalysisSummary | null;
+      if (summary?.version === 1 && typeof summary.gameKey === "string" && Array.isArray(summary.concepts)) summaries.push(summary);
+    }
+    if ((data?.length ?? 0) < pageSize) break;
+  }
+  return summaries;
 }
 
 function throwAuthError(reason: unknown): never {
@@ -195,10 +261,12 @@ function profileFromRow(row: {
 
 export async function loadPersistentProfile(user: User): Promise<PersistentProfile> {
   const supabase = getSupabaseClient();
-  const [profileResult, analysesResult, gamesResult, weaknessesResult, attemptsResult, conceptStatsResult] = await Promise.all([
+  const [profileResult, analysesResult, gamesResult, gamesCountResult, analyzedCountResult, weaknessesResult, attemptsResult, conceptStatsResult] = await Promise.all([
     supabase.from("chess_profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("analyses").select("*").order("created_at", { ascending: false }),
     supabase.from("games").select("id,external_id,source,played_at,time_class,result,parsed_game").order("played_at", { ascending: false }).limit(100),
+    supabase.from("games").select("id", { count: "exact", head: true }),
+    supabase.from("games").select("id", { count: "exact", head: true }).not("analyzed_at", "is", null),
     supabase.from("weaknesses").select("*").order("last_seen_at", { ascending: false }),
     supabase
       .from("exercise_attempts")
@@ -207,7 +275,7 @@ export async function loadPersistentProfile(user: User): Promise<PersistentProfi
       .limit(1000),
     supabase.from("concept_stats").select("*"),
   ]);
-  const firstError = profileResult.error || analysesResult.error || gamesResult.error || weaknessesResult.error || attemptsResult.error;
+  const firstError = profileResult.error || analysesResult.error || gamesResult.error || gamesCountResult.error || analyzedCountResult.error || weaknessesResult.error || attemptsResult.error;
   if (firstError) throw firstError;
   if (conceptStatsResult.error && !missingOptionalTable(conceptStatsResult.error)) throw conceptStatsResult.error;
 
@@ -237,6 +305,8 @@ export async function loadPersistentProfile(user: User): Promise<PersistentProfi
         opponent: parsed.opponent || "Adversaire",
       };
     }),
+    savedGamesCount: gamesCountResult.count ?? gamesResult.data?.length ?? 0,
+    analyzedGamesCount: analyzedCountResult.count ?? 0,
     weaknesses: (weaknessesResult.data ?? []).map((row) => ({
       theme: row.theme,
       title: row.title,
@@ -303,38 +373,53 @@ export async function saveGames(
   userId: string,
   profile: PlayerProfile,
   games: ParsedGame[],
+  analysisSummaries: ReadonlyMap<string, GameAnalysisSummary> = new Map(),
 ): Promise<{ ids: string[]; inserted: number }> {
   if (games.length === 0) return { ids: [], inserted: 0 };
   const supabase = getSupabaseClient();
   const externalIds = games.map((game) => game.id);
   const { data: existing, error: existingError } = await supabase
     .from("games")
-    .select("external_id")
+    .select("source,external_id,analysis_summary")
     .eq("user_id", userId)
     .in("external_id", externalIds);
   if (existingError) throw existingError;
-  const existingIds = new Set((existing ?? []).map((row) => row.external_id));
+  const existingIds = new Set((existing ?? []).map((row) => `${row.source}:${row.external_id}`));
+  const existingSummaryVersions = new Map((existing ?? []).map((row) => [
+    `${row.source}:${row.external_id}`,
+    (row.analysis_summary as { version?: number } | null)?.version,
+  ]));
 
   const { data, error } = await supabase
     .from("games")
-    .upsert(games.map((game) => ({
-      user_id: userId,
-      source: game.source,
-      external_id: game.id,
-      chess_username: profile.username,
-      pgn: game.rawPgn,
-      played_at: new Date(game.playedAt * 1000).toISOString(),
-      time_class: game.timeClass,
-      time_control: game.timeControl,
-      result: game.outcome,
-      player_color: game.playerColor,
-      parsed_game: json(game),
-    })), { onConflict: "user_id,source,external_id" })
+    .upsert(games.map((game) => {
+      const gameKey = `${game.source}:${game.id}`;
+      const summary = existingSummaryVersions.get(gameKey) === 0
+        ? undefined
+        : analysisSummaries.get(gameKey);
+      return {
+        user_id: userId,
+        source: game.source,
+        external_id: game.id,
+        chess_username: profile.username,
+        pgn: game.rawPgn,
+        played_at: new Date(game.playedAt * 1000).toISOString(),
+        time_class: game.timeClass,
+        time_control: game.timeControl,
+        result: game.outcome,
+        player_color: game.playerColor,
+        parsed_game: json(game),
+        ...(summary ? {
+          analysis_summary: json(summary),
+          analyzed_at: new Date().toISOString(),
+        } : {}),
+      };
+    }), { onConflict: "user_id,source,external_id" })
     .select("id,external_id");
   if (error) throw error;
   return {
     ids: (data ?? []).map((row) => row.id),
-    inserted: games.filter((game) => !existingIds.has(game.id)).length,
+    inserted: games.filter((game) => !existingIds.has(`${game.source}:${game.id}`)).length,
   };
 }
 
@@ -346,7 +431,8 @@ export async function saveCompleteAnalysis(
   const supabase = getSupabaseClient();
   await saveChessProfile(userId, payload.profile);
 
-  const savedGames = await saveGames(userId, payload.profile, payload.games);
+  const analysisSummaries = new Map(result.games.map((game) => [`${game.source}:${game.id}`, summarizeAnalyzedGame(game)]));
+  const savedGames = await saveGames(userId, payload.profile, payload.games, analysisSummaries);
   const cadenceLabel = payload.selection.cadence === "all"
     ? "toutes cadences"
     : payload.selection.cadence[0].toUpperCase() + payload.selection.cadence.slice(1);
@@ -369,7 +455,7 @@ export async function saveCompleteAnalysis(
     .single();
   if (analysisError) throw analysisError;
 
-  const [previousWeaknessesResult, attemptsResult, previousConceptStatsResult] = await Promise.all([
+  const [previousWeaknessesResult, attemptsResult, previousConceptStatsResult, gameSummaries] = await Promise.all([
     supabase
       .from("weaknesses")
       .select("theme,sample_size,issue_count,status")
@@ -382,6 +468,7 @@ export async function saveCompleteAnalysis(
       .from("concept_stats")
       .select("*")
       .eq("user_id", userId),
+    loadGameAnalysisSummaries(userId),
   ]);
   if (previousWeaknessesResult.error) throw previousWeaknessesResult.error;
   if (attemptsResult.error) throw attemptsResult.error;
@@ -445,15 +532,24 @@ export async function saveCompleteAnalysis(
     if (error) throw error;
   }
 
-  if (!previousConceptStatsResult.error && result.metrics.conceptStats?.length) {
+  if (!previousConceptStatsResult.error) {
     const previousByConcept = new Map((previousConceptStatsResult.data ?? []).map((row) => [row.concept_slug, row]));
+    const newGameConcepts = aggregateGameAnalysisSummaries(gameSummaries);
+    const cumulativeConcepts = new Map(newGameConcepts);
+    for (const previous of previousConceptStatsResult.data ?? []) {
+      const fresh = newGameConcepts.get(previous.concept_slug) ?? { opportunities: 0, successes: 0 };
+      cumulativeConcepts.set(previous.concept_slug, {
+        opportunities: previous.baseline_game_opportunities + fresh.opportunities,
+        successes: previous.baseline_game_successes + fresh.successes,
+      });
+    }
     const now = new Date().toISOString();
-    const conceptRows = result.metrics.conceptStats.map((stat) => {
-      const previous = previousByConcept.get(stat.conceptSlug);
-      const counters = addGameConceptSample(countersFromRow(previous), stat);
+    const conceptRows = [...cumulativeConcepts.entries()].map(([conceptSlug, totals]) => {
+      const previous = previousByConcept.get(conceptSlug);
+      const counters = replaceGameConceptTotals(countersFromRow(previous), totals);
       return {
         user_id: userId,
-        concept_slug: stat.conceptSlug,
+        concept_slug: conceptSlug,
         opportunities: counters.opportunities,
         successes: counters.successes,
         failures: counters.failures,
@@ -467,8 +563,44 @@ export async function saveCompleteAnalysis(
         updated_at: now,
       };
     });
-    const { error } = await supabase.from("concept_stats").upsert(conceptRows, { onConflict: "user_id,concept_slug" });
-    if (error) throw error;
+    if (conceptRows.length) {
+      const { error } = await supabase.from("concept_stats").upsert(conceptRows, { onConflict: "user_id,concept_slug" });
+      if (error) throw error;
+    }
+
+    const cumulativeWeaknesses = [...cumulativeConcepts.entries()]
+      .filter(([, totals]) => totals.opportunities >= 2)
+      .map(([conceptSlug, totals]) => {
+        const definition = conceptDefinition(conceptSlug);
+        const failures = totals.opportunities - totals.successes;
+        const failureRate = failures / totals.opportunities;
+        const previous = previousByConcept.get(conceptSlug);
+        const trained = previous?.training_attempts ?? 0;
+        const trainedSuccesses = previous?.training_successes ?? 0;
+        const trainingRate = trainedSuccesses / Math.max(1, trained);
+        const status = totals.opportunities >= 8 && failureRate <= 0.15 && trained >= 3 && trainingRate >= 0.75
+          ? "mastered"
+          : trained >= 2 && trainingRate >= 0.6
+            ? "progressing"
+            : failures >= 2
+              ? "to_work"
+              : "learning";
+        return {
+          user_id: userId,
+          theme: conceptSlug,
+          title: definition?.labelFr ?? conceptSlug,
+          confidence: totals.opportunities >= 8 ? "high" : totals.opportunities >= 4 ? "medium" : "low",
+          sample_size: totals.opportunities,
+          issue_count: failures,
+          status,
+          details: json({ cumulative: true, opportunities: totals.opportunities, successes: totals.successes }),
+          last_seen_at: now,
+        };
+      });
+    if (cumulativeWeaknesses.length) {
+      const { error } = await supabase.from("weaknesses").upsert(cumulativeWeaknesses, { onConflict: "user_id,theme" });
+      if (error) throw error;
+    }
   }
 
   const exerciseRows = result.exercises.map((exercise) => ({

@@ -236,6 +236,15 @@ export type PlanSquare = {
   color: "primary" | "secondary" | "warning";
 };
 
+export type StructuredExerciseExplanation = {
+  notice: string;
+  focus: string;
+  plan: string;
+  objective: string;
+  opponentIdea?: string;
+  rule: string;
+};
+
 export type TrainingExercise = {
   id: string;
   type: TrainingType;
@@ -256,6 +265,8 @@ export type TrainingExercise = {
   playedMovePlayerCp?: number;
   lossCp?: number;
   engineCandidates?: TrainingCandidateLine[];
+  /** Stockfish-sound moves that demonstrate the same precise concept. */
+  acceptedConceptMoveUcis?: string[];
   pedagogy?: PedagogyAnnotation;
   phase: GamePhase;
   gameUrl?: string;
@@ -271,6 +282,11 @@ export type TrainingExercise = {
   successThresholdCp?: number;
   planArrows?: PlanArrow[];
   planSquares?: PlanSquare[];
+  explanation?: StructuredExerciseExplanation;
+  /** Other reliable motifs present, never used as a substitute for the lesson's primary motif. */
+  secondaryConceptSlugs?: import("@/domain/knowledge/concepts").ConceptSlug[];
+  classificationConfidence?: number;
+  /** Kept for persisted V2 exercises; new exercises use secondaryConceptSlugs. */
   secondaryConceptSlug?: import("@/domain/knowledge/concepts").ConceptSlug;
   difficulty?: number;
   source?: "personal_game" | "chesspath_curated" | "lichess";

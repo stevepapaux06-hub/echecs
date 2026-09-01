@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { importLichessPuzzleCsv, mapLichessThemesToConcepts, parseLichessPuzzleCsvLine } from "./lichess-import";
+import { classifyLichessPosition, importLichessPuzzleCsv, mapLichessThemesToConcepts, parseLichessPuzzleCsvLine } from "./lichess-import";
 
 const HEADER = "PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,OpeningTags,DailyDate";
 const FORK = "00sJ9,r3r1k1/p4ppp/2p2n2/1p6/3P1qb1/2NQR3/PPB2PP1/R1B3K1 w - - 5 18,e3g3 e8e1 g1h2 e1c1 a1c1 f4h6 h2g1 h6c1,2671,105,87,325,advantage attraction fork middlegame sacrifice veryLong,https://lichess.org/gyFeQsOE#35,French_Defense,1607774862751";
@@ -26,8 +26,30 @@ describe("Lichess puzzle importer", () => {
   it("maps only exact official themes and never broad tags", () => {
     expect(mapLichessThemesToConcepts(["fork", "pin", "advantage", "middlegame"]))
       .toEqual(["fork", "pin"]);
-    expect(mapLichessThemesToConcepts(["deflection", "middlegame"])).toEqual([]);
+    expect(mapLichessThemesToConcepts(["deflection", "middlegame"])).toEqual(["remove_defender"]);
     expect(mapLichessThemesToConcepts(["advancedPawn"])).toEqual(["passed_pawn"]);
+  });
+
+  it("prefers removing the defender over a secondary pin tag", () => {
+    expect(classifyLichessPosition(
+      "r3r1k1/pp3ppp/2n1bn2/8/8/2N1BN2/PP3PPP/R3R1K1 w - - 0 25",
+      ["pin", "deflection", "middlegame"],
+    )).toMatchObject({
+      category: "tactic",
+      conceptSlug: "remove_defender",
+      secondaryConceptSlugs: ["pin"],
+    });
+  });
+
+  it("does not call a full middlegame an endgame only because it contains an advanced pawn", () => {
+    expect(classifyLichessPosition(
+      "r3r1k1/pp3ppp/2n1bn2/4P3/8/2N1BN2/PP3PPP/R3R1K1 w - - 0 25",
+      ["advancedPawn", "middlegame"],
+    )).toMatchObject({
+      category: "strategy",
+      conceptSlug: "passed_pawn",
+      classificationConfidence: 0.55,
+    });
   });
 
   it("indexes a fork weakness with fork positions only", () => {

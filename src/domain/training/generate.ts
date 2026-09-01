@@ -8,6 +8,8 @@ import type {
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
 import { conceptExercisesFor } from "./library";
 import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
+import { detectMovePatterns } from "../patterns/engine";
+import { buildExerciseTeaching } from "./explanation";
 
 export const DEFAULT_TRAINING_FILTER_CONFIG = {
   lostPositionThresholdCp: 200,
@@ -15,6 +17,27 @@ export const DEFAULT_TRAINING_FILTER_CONFIG = {
 } as const;
 
 const MAX_PERSONAL_RESERVE = 120;
+const CONCRETE_CONCEPT_PRIORITY = [
+  "remove_defender",
+  "overloaded_defender",
+  "fork",
+  "skewer",
+  "pin",
+  "loose_piece",
+  "opponent_threat",
+  "outpost",
+  "open_file",
+  "weak_pawn",
+  "pawn_break",
+  "improve_worst_piece",
+  "passed_pawn",
+  "forcing_moves",
+] as const;
+
+function conceptSpecificity(slug: string): number {
+  const index = CONCRETE_CONCEPT_PRIORITY.indexOf(slug as typeof CONCRETE_CONCEPT_PRIORITY[number]);
+  return index < 0 ? 0 : CONCRETE_CONCEPT_PRIORITY.length - index;
+}
 
 /**
  * Keeps the first pedagogically meaningful collapse, then suppresses its
@@ -158,9 +181,22 @@ export function generateExercises(
         || b.move.lossCp - a.move.lossCp;
     });
   const pedagogical = ranked.filter(({ move }) => move.pedagogical?.worthy);
+  const balancedStrategy = pedagogical.filter(({ move }) => (
+    move.phase === "middlegame"
+    && move.playerCpBefore >= -120
+    && move.playerCpBefore <= 120
+    && move.patterns?.some((pattern) => {
+      const category = conceptDefinition(pattern.conceptSlug)?.category;
+      return !pattern.success && (category === "strategy" || pattern.conceptSlug === "passed_pawn");
+    })
+  ));
   const fallback = ranked.filter(({ move }) => move.lossCp >= 60).slice(0, 3);
   const seenFens = new Set<string>();
-  const candidates = (pedagogical.length ? pedagogical : fallback)
+  const primaryPedagogical = pedagogical.filter(({ positionId }) => primaryPositions.has(positionId));
+  const candidateOrder = pedagogical.length
+    ? [...primaryPedagogical, ...balancedStrategy, ...pedagogical]
+    : fallback;
+  const candidates = candidateOrder
     .filter(({ move }) => {
       if (seenFens.has(move.fenBefore)) return false;
       seenFens.add(move.fenBefore);
@@ -172,17 +208,37 @@ export function generateExercises(
     const fallbackType = getType(move.playerCpBefore, move.phase);
     const relatedToPrimary = primaryPositions.has(`${game.id}:${move.ply}`);
     const patterns = move.patterns?.toSorted((a, b) => (
-      Number(a.success) - Number(b.success) || b.confidence - a.confidence
+      Number(a.success) - Number(b.success)
+      || conceptSpecificity(b.conceptSlug) - conceptSpecificity(a.conceptSlug)
+      || b.confidence - a.confidence
     ));
     const detectedPattern = patterns?.find((pattern) => (
       !pattern.success && pattern.conceptSlug === primaryConceptSlug
     )) ?? patterns?.find((pattern) => !pattern.success) ?? patterns?.[0];
     const conceptSlug = detectedPattern?.conceptSlug ?? (relatedToPrimary ? primaryConceptSlug : fallbackType);
     const concept = conceptDefinition(conceptSlug);
-    const category = concept?.category ?? (relatedToPrimary ? metrics.primaryTheme.category : categoryForType(fallbackType));
+    const category = conceptSlug === "passed_pawn" && move.phase !== "endgame"
+      ? "strategy"
+      : concept?.category === "endgame" && move.phase !== "endgame"
+        ? categoryForType(fallbackType)
+        : concept?.category ?? (relatedToPrimary ? metrics.primaryTheme.category : categoryForType(fallbackType));
     const type = typeForMoment(fallbackType, category, move.pedagogical?.kind);
     const shape = exerciseShape(type, category, move.playerCpBefore);
     const solutionLine = move.before.lines[0]?.pv.slice(0, shape.maxPlayerMoves * 2 - 1);
+    const teaching = buildExerciseTeaching(
+      move.fenBefore,
+      move.before.bestMove,
+      conceptSlug,
+      solutionLine,
+    );
+    const acceptedConceptMoveUcis = move.before.lines
+      .filter((line) => line.pv[0] && detectMovePatterns(move.fenBefore, line.pv[0]).some((pattern) => (
+        pattern.conceptSlug === conceptSlug
+      )))
+      .map((line) => line.pv[0]);
+    const secondaryConceptSlugs = [...new Set((move.patterns ?? [])
+      .filter((pattern) => pattern.conceptSlug !== conceptSlug && pattern.confidence >= 0.84)
+      .map((pattern) => pattern.conceptSlug))];
     return {
       // Stable across analyses: reordering the reserve cannot make a solved
       // personal position look new again.
@@ -212,6 +268,9 @@ export function generateExercises(
           whiteCentricCp: line.whiteCp,
           pv: line.pv.slice(0, 6),
         })),
+      acceptedConceptMoveUcis: acceptedConceptMoveUcis.length
+        ? acceptedConceptMoveUcis
+        : [move.before.bestMove],
       phase: move.phase,
       gameUrl: game.url,
       opponent: game.opponent,
@@ -219,6 +278,12 @@ export function generateExercises(
       maxPlayerMoves: shape.maxPlayerMoves,
       solutionLine: solutionLine?.length ? solutionLine : [move.before.bestMove],
       successThresholdCp: shape.successThresholdCp,
+      explanation: teaching?.explanation,
+      planArrows: teaching?.planArrows,
+      planSquares: teaching?.planSquares,
+      secondaryConceptSlugs,
+      secondaryConceptSlug: secondaryConceptSlugs[0],
+      classificationConfidence: detectedPattern?.confidence ?? 0.75,
       difficulty: game.playerRating || undefined,
       source: "personal_game",
       sourceId: game.id,

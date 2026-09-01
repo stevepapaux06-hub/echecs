@@ -31,7 +31,7 @@ export function ProgressView({ profile, onProfile }: { profile: PersistentProfil
 
       <div className="progress-kpis">
         <article><BarChart3 /><span>Analyses</span><strong>{profile.analyses.length}</strong></article>
-        <article><Target /><span>Parties conservées</span><strong>{profile.games.length}</strong></article>
+        <article><Target /><span>Parties conservées</span><strong>{profile.savedGamesCount}</strong></article>
         <article><BrainCircuit /><span>Thèmes suivis</span><strong>{profile.weaknesses.length}</strong></article>
       </div>
 
@@ -62,4 +62,3 @@ export function ProgressView({ profile, onProfile }: { profile: PersistentProfil
     </section>
   );
 }
-

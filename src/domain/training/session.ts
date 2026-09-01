@@ -3,9 +3,23 @@ import type {
   TrainingAttemptRecord,
   TrainingExercise,
 } from "@/domain/chess/types";
-import { normalizeConceptSlug } from "../knowledge/concepts";
+import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
 
-export type TrainingFilter = "recommended" | "mix" | DiagnosticCategory;
+export type TrainingFilter = "recommended" | "mix" | DiagnosticCategory | `concept:${string}`;
+
+const BROAD_META_CONCEPTS = new Set(["forcing_moves"]);
+
+export function conceptTrainingFilter(conceptSlug: string): TrainingFilter {
+  return `concept:${normalizeConceptSlug(conceptSlug)}`;
+}
+
+export function conceptFromTrainingFilter(filter: TrainingFilter): string | null {
+  return filter.startsWith("concept:") ? normalizeConceptSlug(filter.slice("concept:".length)) : null;
+}
+
+export function supportsExactTransfer(conceptSlug: string): boolean {
+  return !BROAD_META_CONCEPTS.has(normalizeConceptSlug(conceptSlug));
+}
 
 export function preciseConcept(exercise: TrainingExercise): string {
   return normalizeConceptSlug(exercise.pedagogy?.conceptSlug || exercise.conceptSlug || `legacy-${exercise.id}`);
@@ -63,13 +77,40 @@ export function buildTrainingSession(
   attempts: TrainingAttemptRecord[],
   filter: TrainingFilter,
   limit = 7,
-  options: { now?: number; userRating?: number } = {},
+  options: {
+    now?: number;
+    userRating?: number;
+    priorityConcept?: string;
+    excludeExerciseIds?: ReadonlySet<string>;
+  } = {},
 ): TrainingExercise[] {
   const history = attemptHistory(attempts);
   const now = options.now ?? Date.now();
-  const filtered = filter === "recommended" || filter === "mix"
-    ? exercises
-    : exercises.filter((exercise) => exercise.category === filter);
+  const requestedConcept = conceptFromTrainingFilter(filter);
+  const normalizedPriority = options.priorityConcept
+    ? normalizeConceptSlug(options.priorityConcept)
+    : null;
+  const priorityConcept = filter === "recommended"
+    && normalizedPriority
+    && supportsExactTransfer(normalizedPriority)
+    && exercises.some((exercise) => preciseConcept(exercise) === normalizedPriority)
+    ? normalizedPriority
+    : null;
+  const exactConcept = requestedConcept ?? priorityConcept;
+  const strategySelection = filter === "strategy"
+    || (exactConcept ? conceptDefinition(exactConcept)?.category === "strategy" : false);
+  const filtered = (exactConcept
+    ? exercises.filter((exercise) => preciseConcept(exercise) === exactConcept)
+    : filter === "recommended" || filter === "mix"
+      ? exercises
+      : exercises.filter((exercise) => exercise.category === filter))
+    .filter((exercise) => !options.excludeExerciseIds?.has(exercise.id))
+    .filter((exercise) => exercise.source !== "lichess" || (exercise.classificationConfidence ?? 1) >= 0.8)
+    .filter((exercise) => !strategySelection || (
+      exercise.phase === "middlegame"
+      && exercise.baselinePlayerCp >= -150
+      && exercise.baselinePlayerCp <= 150
+    ));
   const unique = uniquePositions(filtered);
   const ageDays = (exercise: TrainingExercise): number => {
     const date = history.get(exercise.id)?.latest.createdAt;

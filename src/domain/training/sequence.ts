@@ -31,11 +31,16 @@ export function classifyPedagogicalMove(
   exercise: TrainingExercise,
   playedMove: string,
   decisionLossCp: number,
+  runtimeConceptMoves: string[] = [],
 ): PedagogicalMoveResult {
   if (decisionLossCp > 100) return "error";
   const conceptMoves = exercise.pedagogy?.conceptMoveUcis?.length
     ? exercise.pedagogy.conceptMoveUcis
-    : [exercise.solutionLine?.[0] || exercise.bestMove].filter(Boolean);
+    : [
+        ...(exercise.acceptedConceptMoveUcis ?? []),
+        ...runtimeConceptMoves,
+        exercise.solutionLine?.[0] || exercise.bestMove,
+      ].filter(Boolean);
   return conceptMoves.includes(playedMove) ? "concept" : "good-alternative";
 }
 

@@ -16,6 +16,7 @@ const NON_PAWN_VALUES = {
 export function classifyPhase(fen: string, ply: number): GamePhase {
   const chess = new Chess(fen);
   let nonPawnMaterial = 0;
+  let nonPawnPieces = 0;
   let queens = 0;
 
   for (const row of chess.board()) {
@@ -23,12 +24,16 @@ export function classifyPhase(fen: string, ply: number): GamePhase {
       if (!piece) continue;
       if (piece.type === "q") queens += 1;
       if (piece.type in NON_PAWN_VALUES) {
+        nonPawnPieces += 1;
         nonPawnMaterial += NON_PAWN_VALUES[piece.type as keyof typeof NON_PAWN_VALUES];
       }
     }
   }
 
   if (ply < 20 && nonPawnMaterial >= 4_800) return "opening";
-  if (queens === 0 || nonPawnMaterial <= 2_600) return "endgame";
+  // Losing the queens alone does not make a finale. Four rooks and several
+  // minor pieces still form a middlegame, so queenless positions also need a
+  // genuinely reduced number of non-pawn pieces.
+  if (nonPawnMaterial <= 2_600 || (queens === 0 && nonPawnPieces <= 4)) return "endgame";
   return "middlegame";
 }

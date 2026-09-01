@@ -8,6 +8,9 @@ export type TrainingPosition = {
   fen: string;
   category: "tactic" | "strategy" | "opening" | "endgame" | "conversion" | "defense";
   conceptSlug: ConceptSlug;
+  secondaryConceptSlugs?: ConceptSlug[];
+  classificationConfidence?: number;
+  /** Backward compatibility with the generated V1 bank. */
   secondaryConceptSlug?: ConceptSlug;
   difficulty?: number;
   source: TrainingPositionSource;

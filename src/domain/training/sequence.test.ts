@@ -43,6 +43,12 @@ describe("multi-move training sequences", () => {
     }).result).toBe("success");
   });
 
+  it("accepts another Stockfish-sound move when it demonstrates the same precise plan", () => {
+    const opening = exercise("opening-develop-with-tempo");
+    expect(classifyPedagogicalMove(opening, "b1c3", 15, ["b1c3"]))
+      .toBe("concept");
+  });
+
   it("automatically provides the validated opponent reply in a tactic", () => {
     const tactic = exercise("fork-knight-c7");
     expect(referenceReply(tactic, ["b5c7"])).toBe("e8d7");
