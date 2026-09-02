@@ -24,4 +24,22 @@ describe("deterministic training explanation", () => {
     expect(teaching?.planArrows).toContainEqual(expect.objectContaining({ from: "d1", to: "d7" }));
     expect(teaching?.planSquares).toContainEqual(expect.objectContaining({ square: "d7" }));
   });
+
+  it("explains remove_defender causally instead of falling back to piece improvement", () => {
+    const exercise = allConceptExercises().find((candidate) => candidate.conceptSlug === "remove_defender")!;
+    const teaching = buildExerciseTeaching(exercise.fen, exercise.bestMove, exercise.conceptSlug, exercise.solutionLine);
+    const copy = Object.values(teaching?.explanation ?? {}).join(" ").toLowerCase();
+    expect(copy).toMatch(/défenseur|défense/);
+    expect(copy).toMatch(/éliminer|détourner|disparaître/);
+    expect(copy).not.toContain("améliorer le roi");
+  });
+
+  it("keeps forcing feedback about calculation rather than a generic king route", () => {
+    const exercise = allConceptExercises().find((candidate) => candidate.id === "concept-fork-knight-c7")!;
+    const teaching = buildExerciseTeaching(exercise.fen, exercise.bestMove, "forcing_moves", exercise.solutionLine);
+    const copy = Object.values(teaching?.explanation ?? {}).join(" ").toLowerCase();
+    expect(copy).toMatch(/forcing|échec|prise|menace|promotion/);
+    expect(copy).toContain("réponse");
+    expect(copy).not.toContain("améliorer le roi");
+  });
 });

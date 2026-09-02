@@ -1,5 +1,6 @@
 import type {
   AnalyzedGame,
+  AnalyzedMove,
   DiagnosticCategory,
   DiagnosticMetrics,
   TrainingExercise,
@@ -10,6 +11,7 @@ import { conceptExercisesFor } from "./library";
 import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
 import { detectMovePatterns } from "../patterns/engine";
 import { buildExerciseTeaching } from "./explanation";
+import { withTrainingTaxonomy } from "./taxonomy";
 
 export const DEFAULT_TRAINING_FILTER_CONFIG = {
   lostPositionThresholdCp: 200,
@@ -17,6 +19,7 @@ export const DEFAULT_TRAINING_FILTER_CONFIG = {
 } as const;
 
 const MAX_PERSONAL_RESERVE = 120;
+const STATE_BASED_MOMENTS = new Set(["conversion", "collapse", "defensive_miss", "defensive_resource"]);
 const CONCRETE_CONCEPT_PRIORITY = [
   "remove_defender",
   "overloaded_defender",
@@ -37,6 +40,28 @@ const CONCRETE_CONCEPT_PRIORITY = [
 function conceptSpecificity(slug: string): number {
   const index = CONCRETE_CONCEPT_PRIORITY.indexOf(slug as typeof CONCRETE_CONCEPT_PRIORITY[number]);
   return index < 0 ? 0 : CONCRETE_CONCEPT_PRIORITY.length - index;
+}
+
+/**
+ * Personal does not mean pedagogical. Keep only positions with a reliable,
+ * transferable concept or a meaningful state transition. Positions that stay
+ * completely won/lost are rejected even when the raw engine delta is large.
+ */
+export function isPedagogicallyEligiblePersonalMove(move: AnalyzedMove): boolean {
+  const assessment = move.pedagogical;
+  if (!assessment?.worthy || assessment.score < 55) return false;
+  if (!move.before.bestMove || !move.before.lines[0]?.pv[0]) return false;
+  const reliableConcept = (move.patterns ?? []).some((pattern) => (
+    pattern.opportunity && !pattern.success && pattern.confidence >= 0.84
+  ));
+  const stateBased = STATE_BASED_MOMENTS.has(assessment.kind);
+  if (!reliableConcept && !stateBased) return false;
+  if (assessment.beforeState === "clearly_lost"
+    && (assessment.kind !== "defensive_resource" || assessment.afterState === "clearly_lost")) return false;
+  if (assessment.beforeState === "clearly_winning" && assessment.afterState !== "equal"
+    && assessment.afterState !== "slightly_worse" && assessment.afterState !== "losing"
+    && assessment.afterState !== "clearly_lost") return false;
+  return true;
 }
 
 /**
@@ -84,6 +109,15 @@ function categoryForType(type: TrainingType): DiagnosticCategory {
   if (type === "strategy") return "strategy";
   if (type === "opening") return "opening";
   return "tactic";
+}
+
+function conceptForType(type: TrainingType): string {
+  if (type === "conversion") return "restrict_counterplay";
+  if (type === "defense") return "defensive_resource";
+  if (type === "endgame") return "king_activity";
+  if (type === "strategy") return "improve_worst_piece";
+  if (type === "opening") return "development";
+  return "forcing_moves";
 }
 
 function typeForMoment(
@@ -180,7 +214,7 @@ export function generateExercises(
         || (b.move.pedagogical?.score ?? 0) - (a.move.pedagogical?.score ?? 0)
         || b.move.lossCp - a.move.lossCp;
     });
-  const pedagogical = ranked.filter(({ move }) => move.pedagogical?.worthy);
+  const pedagogical = ranked.filter(({ move }) => isPedagogicallyEligiblePersonalMove(move));
   const balancedStrategy = pedagogical.filter(({ move }) => (
     move.phase === "middlegame"
     && move.playerCpBefore >= -120
@@ -190,12 +224,9 @@ export function generateExercises(
       return !pattern.success && (category === "strategy" || pattern.conceptSlug === "passed_pawn");
     })
   ));
-  const fallback = ranked.filter(({ move }) => move.lossCp >= 60).slice(0, 3);
   const seenFens = new Set<string>();
   const primaryPedagogical = pedagogical.filter(({ positionId }) => primaryPositions.has(positionId));
-  const candidateOrder = pedagogical.length
-    ? [...primaryPedagogical, ...balancedStrategy, ...pedagogical]
-    : fallback;
+  const candidateOrder = [...primaryPedagogical, ...balancedStrategy, ...pedagogical];
   const candidates = candidateOrder
     .filter(({ move }) => {
       if (seenFens.has(move.fenBefore)) return false;
@@ -215,7 +246,10 @@ export function generateExercises(
     const detectedPattern = patterns?.find((pattern) => (
       !pattern.success && pattern.conceptSlug === primaryConceptSlug
     )) ?? patterns?.find((pattern) => !pattern.success) ?? patterns?.[0];
-    const conceptSlug = detectedPattern?.conceptSlug ?? (relatedToPrimary ? primaryConceptSlug : fallbackType);
+    const conceptSlug = detectedPattern?.conceptSlug
+      ?? (relatedToPrimary && conceptDefinition(primaryConceptSlug)
+        ? primaryConceptSlug
+        : conceptForType(fallbackType));
     const concept = conceptDefinition(conceptSlug);
     const category = conceptSlug === "passed_pawn" && move.phase !== "endgame"
       ? "strategy"
@@ -239,7 +273,7 @@ export function generateExercises(
     const secondaryConceptSlugs = [...new Set((move.patterns ?? [])
       .filter((pattern) => pattern.conceptSlug !== conceptSlug && pattern.confidence >= 0.84)
       .map((pattern) => pattern.conceptSlug))];
-    return {
+    return withTrainingTaxonomy({
       // Stable across analyses: reordering the reserve cannot make a solved
       // personal position look new again.
       id: `personal-${game.id}-${move.ply}`,
@@ -248,6 +282,8 @@ export function generateExercises(
       mode: shape.mode,
       theme: conceptSlug,
       conceptSlug,
+      domain: category,
+      primaryConcept: conceptSlug,
       category,
       title: COPY[type].title,
       prompt: COPY[type].prompt,
@@ -283,15 +319,20 @@ export function generateExercises(
       planSquares: teaching?.planSquares,
       secondaryConceptSlugs,
       secondaryConceptSlug: secondaryConceptSlugs[0],
-      classificationConfidence: detectedPattern?.confidence ?? 0.75,
+      secondaryConcepts: secondaryConceptSlugs,
+      classificationConfidence: detectedPattern?.confidence
+        ?? (STATE_BASED_MOMENTS.has(move.pedagogical?.kind ?? "") ? 0.86 : 0.75),
       difficulty: game.playerRating || undefined,
       source: "personal_game",
       sourceId: game.id,
       qualityScore: move.pedagogical?.score
         ?? (detectedPattern ? Math.round(detectedPattern.confidence * 100) : undefined),
       isVerified: true,
-    };
-  });
+    });
+  }).filter((exercise) => (
+    Boolean(exercise.explanation)
+    && (exercise.classificationConfidence ?? 0) >= 0.8
+  ));
 
   const concepts = conceptExercisesFor(
     metrics.primaryTheme.category,

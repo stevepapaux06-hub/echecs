@@ -254,6 +254,9 @@ export type TrainingExercise = {
   /** Precise pedagogical concept. Unlike `theme`, this is never a broad category. */
   conceptSlug: string;
   category: DiagnosticCategory;
+  /** Strict taxonomy aliases. Legacy persisted exercises fall back to category/conceptSlug. */
+  domain?: DiagnosticCategory;
+  primaryConcept?: string;
   title: string;
   prompt: string;
   sourceLabel: string;
@@ -285,6 +288,7 @@ export type TrainingExercise = {
   explanation?: StructuredExerciseExplanation;
   /** Other reliable motifs present, never used as a substitute for the lesson's primary motif. */
   secondaryConceptSlugs?: import("@/domain/knowledge/concepts").ConceptSlug[];
+  secondaryConcepts?: import("@/domain/knowledge/concepts").ConceptSlug[];
   classificationConfidence?: number;
   /** Kept for persisted V2 exercises; new exercises use secondaryConceptSlugs. */
   secondaryConceptSlug?: import("@/domain/knowledge/concepts").ConceptSlug;

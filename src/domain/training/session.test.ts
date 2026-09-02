@@ -6,6 +6,7 @@ import {
   conceptTrainingFilter,
   nextExerciseIndex,
   sharesPreciseConcept,
+  trainingPoolForFilter,
 } from "./session";
 
 const now = "2026-08-28T10:00:00.000Z";
@@ -121,6 +122,20 @@ describe("personalized training session", () => {
     expect(second).toHaveLength(7);
     expect(second.every((exercise) => exercise.conceptSlug === "fork")).toBe(true);
     expect(second.every((exercise) => !first.some((seen) => seen.id === exercise.id))).toBe(true);
+  });
+
+  it("filters Mes parties, Banque and Mix without changing the requested concept", () => {
+    const sourcePool = [personal, sameTheme, ...concepts];
+    const personalOnly = trainingPoolForFilter(sourcePool, conceptTrainingFilter("fork"), "personal");
+    const bankOnly = trainingPoolForFilter(sourcePool, conceptTrainingFilter("fork"), "bank");
+    const mixed = trainingPoolForFilter(sourcePool, conceptTrainingFilter("fork"), "mix");
+
+    expect(personalOnly).toHaveLength(1);
+    expect(personalOnly.every((exercise) => exercise.origin === "personal")).toBe(true);
+    expect(bankOnly.length).toBeGreaterThan(7);
+    expect(bankOnly.every((exercise) => exercise.origin === "concept" && exercise.conceptSlug === "fork")).toBe(true);
+    expect(mixed.some((exercise) => exercise.origin === "personal")).toBe(true);
+    expect(mixed.some((exercise) => exercise.origin === "concept")).toBe(true);
   });
 
   it("turns a fork diagnostic into an exact transfer sequence", () => {

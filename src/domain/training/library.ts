@@ -6,6 +6,8 @@ import { buildExerciseTeaching } from "./explanation";
 import { classifyLichessPosition } from "./lichess-import";
 import LICHESS_BANK from "./lichess-bank.generated.json";
 import type { TrainingPosition } from "./positions";
+import { withTrainingTaxonomy } from "./taxonomy";
+import { STRUCTURED_TRAINING_BANK } from "./structured-bank";
 
 type ConceptExercise = Omit<
   TrainingExercise,
@@ -123,6 +125,7 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
     concept: "Développer le cavalier vers f3 prépare le roque et attaque e5 : un seul coup remplit plusieurs objectifs d’ouverture.",
     maxPlayerMoves: 1,
     solutionLine: ["g1f3"],
+    difficulty: 750,
     planArrows: [
       { from: "g1", to: "f3", color: "primary", label: "développement avec tempo" },
       { from: "f1", to: "c4", color: "secondary", label: "suite naturelle" },
@@ -325,7 +328,7 @@ function exerciseFromLichess(position: TrainingPosition): TrainingExercise | nul
     classification.conceptSlug,
     position.solutionMoves,
   );
-  return {
+  return withTrainingTaxonomy({
     id: position.id,
     type: classification.category === "defense"
       ? "defense"
@@ -362,7 +365,7 @@ function exerciseFromLichess(position: TrainingPosition): TrainingExercise | nul
     explanation: teaching?.explanation,
     planArrows: teaching?.planArrows,
     planSquares: teaching?.planSquares,
-  };
+  });
 }
 
 const LICHESS_LIBRARY = (LICHESS_BANK.positions as TrainingPosition[])
@@ -384,7 +387,7 @@ function curatedExercise(exercise: ConceptExercise): TrainingExercise {
     exercise.conceptSlug,
     exercise.solutionLine,
   );
-  return {
+  return withTrainingTaxonomy({
     ...exercise,
     id: `concept-${exercise.key}`,
     theme: exercise.conceptSlug,
@@ -394,13 +397,17 @@ function curatedExercise(exercise: ConceptExercise): TrainingExercise {
     explanation: exercise.explanation ?? teaching?.explanation,
     planArrows: exercise.planArrows?.length ? exercise.planArrows : teaching?.planArrows,
     planSquares: exercise.planSquares?.length ? exercise.planSquares : teaching?.planSquares,
-  };
+  });
 }
 
 const EXERCISE_POOL = [
   ...CONCEPT_LIBRARY
-    .filter((exercise) => exercise.key !== "strategy-castle-open-file")
+    .filter((exercise) => ![
+      "strategy-castle-open-file",
+      "opening-italian-center",
+    ].includes(exercise.key))
     .map(curatedExercise),
+  ...STRUCTURED_TRAINING_BANK.map(withTrainingTaxonomy),
   ...LICHESS_LIBRARY,
 ];
 

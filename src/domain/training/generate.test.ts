@@ -1,7 +1,11 @@
 import { Chess } from "chess.js";
 import { describe, expect, it } from "vitest";
 import type { AnalyzedGame, DiagnosticMetrics, EngineEvaluation } from "@/domain/chess/types";
-import { filterLostPositionCascade, generateExercises } from "./generate";
+import {
+  filterLostPositionCascade,
+  generateExercises,
+  isPedagogicallyEligiblePersonalMove,
+} from "./generate";
 
 describe("lost-position cascade filter", () => {
   it("keeps the first collapse and suppresses its consequences", () => {
@@ -52,6 +56,45 @@ function evaluation(fen: string, whiteCp: number, pv: string[]): EngineEvaluatio
 }
 
 describe("personal exercise generation", () => {
+  it("rejects a personal position that was already clearly lost", () => {
+    const fen = "4k3/8/8/8/8/8/3q4/3QK3 w - - 0 1";
+    const afterFen = "4k3/8/8/8/8/8/3q4/3Q1K2 b - - 1 1";
+    expect(isPedagogicallyEligiblePersonalMove({
+      ply: 17,
+      san: "Kf1",
+      uci: "e1f1",
+      from: "e1",
+      to: "f1",
+      color: "w",
+      fenBefore: fen,
+      fenAfter: afterFen,
+      phase: "middlegame",
+      before: evaluation(fen, -800, ["d1d2"]),
+      after: evaluation(afterFen, -1_100, ["d2d1"]),
+      playerCpBefore: -800,
+      playerCpAfter: -1_100,
+      lossCp: 300,
+      patterns: [{
+        conceptSlug: "loose_piece",
+        fen,
+        ply: 17,
+        confidence: 0.95,
+        opportunity: true,
+        success: false,
+        source: "pattern_engine_stockfish_validated",
+        moveUci: "d1d2",
+      }],
+      pedagogical: {
+        beforeState: "clearly_lost",
+        afterState: "clearly_lost",
+        score: 90,
+        kind: "stable_pattern",
+        reliablePatternConfidence: 0.95,
+        worthy: true,
+      },
+    })).toBe(false);
+  });
+
   it("starts just before the personal error and keeps a full good continuation", () => {
     const fen = "4k3/8/8/8/8/8/3q4/3QK3 w - - 0 1";
     const afterFen = "4k3/8/8/8/8/8/3q4/3Q1K2 b - - 1 1";
@@ -84,6 +127,24 @@ describe("personal exercise generation", () => {
         playerCpBefore: 100,
         playerCpAfter: -300,
         lossCp: 400,
+        patterns: [{
+          conceptSlug: "loose_piece",
+          fen,
+          ply: 17,
+          confidence: 0.94,
+          opportunity: true,
+          success: false,
+          source: "pattern_engine_stockfish_validated",
+          moveUci: "d1d2",
+        }],
+        pedagogical: {
+          beforeState: "slightly_better",
+          afterState: "losing",
+          score: 95,
+          kind: "collapse",
+          reliablePatternConfidence: 0.94,
+          worthy: true,
+        },
       }],
     };
     const theme = {

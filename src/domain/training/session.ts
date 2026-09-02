@@ -4,17 +4,36 @@ import type {
   TrainingExercise,
 } from "@/domain/chess/types";
 import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
+import { trainingTaxonomy } from "./taxonomy";
 
 export type TrainingFilter = "recommended" | "mix" | DiagnosticCategory | `concept:${string}`;
+export type TrainingSourceFilter = "mix" | "personal" | "bank";
 
 const BROAD_META_CONCEPTS = new Set(["forcing_moves"]);
+const DOMAINS = new Set<DiagnosticCategory>(["tactic", "strategy", "endgame", "opening", "conversion", "defense"]);
 
-export function conceptTrainingFilter(conceptSlug: string): TrainingFilter {
-  return `concept:${normalizeConceptSlug(conceptSlug)}`;
+export function conceptTrainingFilter(
+  conceptSlug: string,
+  domain?: DiagnosticCategory,
+): Extract<TrainingFilter, `concept:${string}`> {
+  return domain
+    ? `concept:${domain}:${normalizeConceptSlug(conceptSlug)}`
+    : `concept:${normalizeConceptSlug(conceptSlug)}`;
 }
 
 export function conceptFromTrainingFilter(filter: TrainingFilter): string | null {
-  return filter.startsWith("concept:") ? normalizeConceptSlug(filter.slice("concept:".length)) : null;
+  if (!filter.startsWith("concept:")) return null;
+  const payload = filter.slice("concept:".length);
+  const [maybeDomain, ...slugParts] = payload.split(":");
+  return normalizeConceptSlug(DOMAINS.has(maybeDomain as DiagnosticCategory) && slugParts.length
+    ? slugParts.join(":")
+    : payload);
+}
+
+export function domainFromTrainingFilter(filter: TrainingFilter): DiagnosticCategory | null {
+  if (!filter.startsWith("concept:")) return null;
+  const maybeDomain = filter.slice("concept:".length).split(":")[0] as DiagnosticCategory;
+  return DOMAINS.has(maybeDomain) ? maybeDomain : null;
 }
 
 export function supportsExactTransfer(conceptSlug: string): boolean {
@@ -22,7 +41,10 @@ export function supportsExactTransfer(conceptSlug: string): boolean {
 }
 
 export function preciseConcept(exercise: TrainingExercise): string {
-  return normalizeConceptSlug(exercise.pedagogy?.conceptSlug || exercise.conceptSlug || `legacy-${exercise.id}`);
+  const taxonomy = trainingTaxonomy(exercise);
+  const primary = normalizeConceptSlug(exercise.pedagogy?.conceptSlug || taxonomy.primaryConcept || `legacy-${exercise.id}`);
+  if (!BROAD_META_CONCEPTS.has(primary)) return primary;
+  return taxonomy.secondaryConcepts.find((concept) => !BROAD_META_CONCEPTS.has(concept)) ?? primary;
 }
 
 export function sharesPreciseConcept(
@@ -34,6 +56,33 @@ export function sharesPreciseConcept(
 
 export function nextExerciseIndex(current: number, total: number): number | null {
   return current + 1 < total ? current + 1 : null;
+}
+
+export function trainingPoolForFilter(
+  exercises: TrainingExercise[],
+  filter: Exclude<TrainingFilter, "recommended">,
+  sourceFilter: TrainingSourceFilter = "mix",
+): TrainingExercise[] {
+  const requestedConcept = conceptFromTrainingFilter(filter);
+  const requestedDomain = domainFromTrainingFilter(filter);
+  const strategySelection = filter === "strategy" || requestedDomain === "strategy"
+    || (requestedConcept ? conceptDefinition(requestedConcept)?.category === "strategy" : false);
+  return uniquePositions(exercises
+    .filter((exercise) => requestedConcept
+      ? preciseConcept(exercise) === requestedConcept
+        && (!requestedDomain || trainingTaxonomy(exercise).domain === requestedDomain)
+      : filter === "mix" || trainingTaxonomy(exercise).domain === filter)
+    .filter((exercise) => sourceFilter === "personal"
+      ? exercise.origin === "personal"
+      : sourceFilter === "bank"
+        ? exercise.origin === "concept"
+        : true)
+    .filter((exercise) => trainingTaxonomy(exercise).confidence >= 0.8)
+    .filter((exercise) => !strategySelection || (
+      exercise.phase === "middlegame"
+      && exercise.baselinePlayerCp >= -150
+      && exercise.baselinePlayerCp <= 150
+    )));
 }
 
 type AttemptHistory = {
@@ -81,12 +130,15 @@ export function buildTrainingSession(
     now?: number;
     userRating?: number;
     priorityConcept?: string;
+    priorityDomain?: DiagnosticCategory;
     excludeExerciseIds?: ReadonlySet<string>;
+    sourceFilter?: TrainingSourceFilter;
   } = {},
 ): TrainingExercise[] {
   const history = attemptHistory(attempts);
   const now = options.now ?? Date.now();
   const requestedConcept = conceptFromTrainingFilter(filter);
+  const requestedDomain = domainFromTrainingFilter(filter);
   const normalizedPriority = options.priorityConcept
     ? normalizeConceptSlug(options.priorityConcept)
     : null;
@@ -97,15 +149,23 @@ export function buildTrainingSession(
     ? normalizedPriority
     : null;
   const exactConcept = requestedConcept ?? priorityConcept;
-  const strategySelection = filter === "strategy"
-    || (exactConcept ? conceptDefinition(exactConcept)?.category === "strategy" : false);
-  const filtered = (exactConcept
-    ? exercises.filter((exercise) => preciseConcept(exercise) === exactConcept)
+  const exactDomain = requestedDomain ?? (priorityConcept ? options.priorityDomain ?? null : null);
+  const filteredByLesson = (exactConcept
+    ? exercises.filter((exercise) => preciseConcept(exercise) === exactConcept
+      && (!exactDomain || trainingTaxonomy(exercise).domain === exactDomain))
     : filter === "recommended" || filter === "mix"
       ? exercises
-      : exercises.filter((exercise) => exercise.category === filter))
+      : exercises.filter((exercise) => trainingTaxonomy(exercise).domain === filter));
+  const strategySelection = filter === "strategy" || exactDomain === "strategy"
+    || (exactConcept ? conceptDefinition(exactConcept)?.category === "strategy" : false);
+  const filtered = filteredByLesson
+    .filter((exercise) => options.sourceFilter === "personal"
+      ? exercise.origin === "personal"
+      : options.sourceFilter === "bank"
+        ? exercise.origin === "concept"
+        : true)
     .filter((exercise) => !options.excludeExerciseIds?.has(exercise.id))
-    .filter((exercise) => exercise.source !== "lichess" || (exercise.classificationConfidence ?? 1) >= 0.8)
+    .filter((exercise) => trainingTaxonomy(exercise).confidence >= 0.8)
     .filter((exercise) => !strategySelection || (
       exercise.phase === "middlegame"
       && exercise.baselinePlayerCp >= -150
@@ -153,7 +213,7 @@ export function buildTrainingSession(
   const sameCategory = primary
     ? fresh.filter((exercise) => (
         exercise.id !== primary.id
-        && exercise.category === primary.category
+        && trainingTaxonomy(exercise).domain === trainingTaxonomy(primary).domain
         && !sameConcept.some((candidate) => candidate.id === exercise.id)
       ))
     : [];

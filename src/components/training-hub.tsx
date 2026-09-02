@@ -1,18 +1,24 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { ArrowRight, BrainCircuit, Clock3, Crown, Crosshair, Shield, Sparkles, Target } from "lucide-react";
 import type { TrainingAttemptRecord, TrainingExercise } from "@/domain/chess/types";
 import { conceptDefinition } from "@/domain/knowledge/concepts";
+import { rankWeaknesses, type WeaknessSignal } from "@/domain/training/priorities";
 import {
   buildTrainingSession,
   conceptTrainingFilter,
   sharesPreciseConcept,
   supportsExactTransfer,
+  trainingPoolForFilter,
   type TrainingFilter,
+  type TrainingSourceFilter,
 } from "@/domain/training/session";
+import { trainingTaxonomy } from "@/domain/training/taxonomy";
 
-const FILTERS: Array<{ id: TrainingFilter; label: string }> = [
-  { id: "recommended", label: "Recommandé pour moi" },
+type LibraryFilter = Exclude<TrainingFilter, "recommended">;
+
+const DOMAINS: Array<{ id: LibraryFilter; label: string }> = [
   { id: "mix", label: "Mix" },
   { id: "tactic", label: "Tactique" },
   { id: "strategy", label: "Stratégie" },
@@ -21,32 +27,48 @@ const FILTERS: Array<{ id: TrainingFilter; label: string }> = [
   { id: "conversion", label: "Conversion" },
 ];
 
-function availableSubthemes(exercises: TrainingExercise[]) {
-  const grouped = new Map<string, {
-    category: TrainingExercise["category"];
-    conceptSlug: string;
-    count: number;
-  }>();
-  for (const exercise of exercises) {
-    if (!supportsExactTransfer(exercise.conceptSlug)) continue;
-    if (exercise.source === "lichess" && (exercise.classificationConfidence ?? 1) < 0.8) continue;
-    const key = `${exercise.category}:${exercise.conceptSlug}`;
+const SOURCES: Array<{ id: TrainingSourceFilter; label: string }> = [
+  { id: "mix", label: "Mix" },
+  { id: "personal", label: "Mes parties" },
+  { id: "bank", label: "Banque" },
+];
+
+function filterIcon(filter: TrainingFilter) {
+  if (filter === "tactic") return Crosshair;
+  if (filter === "strategy") return BrainCircuit;
+  if (filter === "endgame") return Crown;
+  if (filter === "conversion") return Target;
+  return Shield;
+}
+
+function availableSubthemes(
+  exercises: TrainingExercise[],
+  domain: LibraryFilter,
+  source: TrainingSourceFilter,
+) {
+  const grouped = new Map<string, { category: TrainingExercise["category"]; conceptSlug: string; count: number }>();
+  for (const exercise of trainingPoolForFilter(exercises, domain, source)) {
+    const taxonomy = trainingTaxonomy(exercise);
+    if (!supportsExactTransfer(taxonomy.primaryConcept)) continue;
+    const key = `${taxonomy.domain}:${taxonomy.primaryConcept}`;
     const existing = grouped.get(key);
     grouped.set(key, {
-      category: exercise.category,
-      conceptSlug: exercise.conceptSlug,
+      category: taxonomy.domain,
+      conceptSlug: taxonomy.primaryConcept,
       count: (existing?.count ?? 0) + 1,
     });
   }
   return [...grouped.values()]
-    .filter((theme) => theme.count >= 2 && Boolean(conceptDefinition(theme.conceptSlug)))
-    .toSorted((first, second) => first.category.localeCompare(second.category) || second.count - first.count);
+    .filter((theme) => Boolean(conceptDefinition(theme.conceptSlug)))
+    .toSorted((first, second) => second.count - first.count || first.conceptSlug.localeCompare(second.conceptSlug));
 }
 
 export function TrainingHub({
   exercises,
   priority,
   priorityConcept,
+  priorityDomain,
+  conceptStats,
   attempts,
   onStart,
   onAnalyze,
@@ -55,13 +77,20 @@ export function TrainingHub({
   exercises: TrainingExercise[];
   priority?: string;
   priorityConcept?: string;
+  priorityDomain?: TrainingExercise["category"];
+  conceptStats?: WeaknessSignal[];
   attempts: TrainingAttemptRecord[];
-  onStart: (exercises: TrainingExercise[], filter: TrainingFilter) => void;
+  onStart: (exercises: TrainingExercise[], filter: TrainingFilter, source: TrainingSourceFilter) => void;
   onAnalyze: () => void;
   userRating?: number;
 }) {
-  const sessionOptions = { userRating, priorityConcept };
-  const recommended = buildTrainingSession(exercises, attempts, "recommended", 7, sessionOptions);
+  const [libraryDomain, setLibraryDomain] = useState<LibraryFilter>("mix");
+  const [sourceFilter, setSourceFilter] = useState<TrainingSourceFilter>("mix");
+  const recommended = useMemo(() => buildTrainingSession(exercises, attempts, "recommended", 7, {
+    userRating,
+    priorityConcept,
+    priorityDomain,
+  }), [attempts, exercises, priorityConcept, priorityDomain, userRating]);
   const counts = {
     personal: recommended.filter((exercise) => exercise.origin === "personal").length,
     concept: recommended.filter((exercise) => exercise.origin === "concept").length,
@@ -71,80 +100,132 @@ export function TrainingHub({
   const hasConceptBridge = Boolean(firstPersonal && recommended.some((exercise) => (
     exercise.origin === "concept" && sharesPreciseConcept(firstPersonal, exercise)
   )));
-  const recommendationLabel = counts.personal > 0
-    ? "Recommandé pour moi"
-    : "Séance pédagogique";
-  const recommendationTitle = counts.personal > 0
-    ? priority || "Séance issue de tes parties"
-    : "Séance équilibrée ChessPath";
-  const recommendationCopy = counts.personal === 0
-    ? "Une sélection de positions pédagogiques vérifiées avec Stockfish, sans prétendre qu’elles proviennent de tes erreurs."
-    : hasConceptBridge
-      ? "Une erreur personnelle ouvre la séance, puis une nouvelle position te demande d’appliquer exactement le même concept."
-      : "La séance part de tes positions personnelles, puis varie les décisions sans prétendre répéter un concept absent de la bibliothèque.";
+  const rankedWeaknesses = useMemo(() => rankWeaknesses(conceptStats ?? []).slice(0, 4), [conceptStats]);
+  const domainPools = useMemo(() => new Map(DOMAINS.map((domain) => [
+    domain.id,
+    trainingPoolForFilter(exercises, domain.id, sourceFilter),
+  ])), [exercises, sourceFilter]);
+  const subthemes = useMemo(
+    () => availableSubthemes(exercises, libraryDomain, sourceFilter),
+    [exercises, libraryDomain, sourceFilter],
+  );
+  const libraryPool = domainPools.get(libraryDomain) ?? [];
 
-  function sessionFor(filter: TrainingFilter): TrainingExercise[] {
-    return buildTrainingSession(exercises, attempts, filter, 7, sessionOptions);
+  function sessionFor(filter: TrainingFilter, source: TrainingSourceFilter, size = 7) {
+    return buildTrainingSession(exercises, attempts, filter, size, {
+      userRating,
+      priorityConcept,
+      priorityDomain,
+      sourceFilter: source,
+    });
   }
 
-  const subthemes = availableSubthemes(exercises);
+  const recommendationCopy = counts.personal === 0
+    ? "Tes statistiques choisissent le concept prioritaire, puis ChessPath utilise les meilleures positions disponibles dans la banque."
+    : hasConceptBridge
+      ? "Une position pédagogique de tes parties ouvre la séance, puis de nouvelles positions testent le même concept dans d’autres contextes."
+      : "Tes positions personnelles fiables sont prioritaires ; la banque complète la séance sans inventer de correspondance entre deux concepts.";
 
   return (
     <section className="page-shell training-hub-page">
       <header className="page-heading">
-        <div><p className="eyebrow"><span /> S’entraîner</p><h1>Une séance qui travaille<br />ce que tes parties révèlent.</h1></div>
-        <span className="session-duration"><Clock3 size={15} /> environ 12 minutes</span>
+        <div><p className="eyebrow"><span /> S’entraîner</p><h1>Apprends ce qui manque<br />réellement à ton jeu.</h1></div>
+        <span className="session-duration"><Clock3 size={15} /> entraînement continu</span>
       </header>
 
-      <article className="recommended-session">
-        <div>
-          <span className="recommended-badge"><Sparkles size={14} /> {recommendationLabel}</span>
-          <h2>{recommendationTitle}</h2>
-          <p>{recommendationCopy}</p>
-          <div className="session-composition">
-            <span>{counts.personal} erreur{counts.personal > 1 ? "s" : ""} personnelle{counts.personal > 1 ? "s" : ""}</span>
-            <span>{counts.concept} nouvelle{counts.concept > 1 ? "s" : ""} position{counts.concept > 1 ? "s" : ""}</span>
-            <span>{counts.multi} séquence{counts.multi > 1 ? "s" : ""} multi-coups</span>
-          </div>
+      <section className="training-section training-weaknesses">
+        <div className="training-section-heading">
+          <div><span className="section-index">01</span><div><p>Mes faiblesses</p><h2>Une prescription courte, issue de ton profil.</h2></div></div>
+          <small>7 exercices recommandés · puis tu peux continuer</small>
         </div>
-        <button className="lime-button" type="button" onClick={() => onStart(sessionFor("recommended"), "recommended")} disabled={!recommended.length}>
-          Commencer la séance <ArrowRight size={17} />
-        </button>
-      </article>
 
-      <div className="training-modes">
-        {FILTERS.slice(1).map((filter) => {
-          const session = sessionFor(filter.id);
-          const Icon = filter.id === "tactic" ? Crosshair : filter.id === "strategy" ? BrainCircuit : filter.id === "endgame" ? Crown : filter.id === "conversion" ? Target : Shield;
-          return (
-            <button type="button" key={filter.id} onClick={() => onStart(session, filter.id)} disabled={!session.length}>
-              <Icon size={20} />
-              <strong>{filter.label}</strong>
-              <small>{session.length ? `${session.length} position${session.length > 1 ? "s" : ""}` : "Après une analyse ciblée"}</small>
-              <ArrowRight size={15} />
-            </button>
-          );
-        })}
-      </div>
-
-      {subthemes.length ? (
-        <div className="training-subthemes panel">
-          <div className="panel-heading"><div><span>Sous-thèmes disponibles</span><h2>Travaille un motif précis.</h2></div><small>Uniquement les concepts réellement présents</small></div>
-          <div className="subtheme-buttons">
-            {subthemes.map((theme) => {
-              const definition = conceptDefinition(theme.conceptSlug)!;
-              const filter = conceptTrainingFilter(theme.conceptSlug);
-              const session = sessionFor(filter);
+        {rankedWeaknesses.length ? (
+          <div className="weakness-signals" aria-label="Priorités détectées">
+            {rankedWeaknesses.map((weakness) => {
+              const definition = conceptDefinition(weakness.conceptSlug);
               return (
-                <button type="button" key={`${theme.category}:${theme.conceptSlug}`} onClick={() => onStart(session, filter)} disabled={!session.length}>
-                  <strong>{definition.labelFr}</strong>
-                  <small>{theme.count} positions disponibles</small>
-                </button>
+                <div key={weakness.conceptSlug}>
+                  <strong>{definition?.labelFr ?? weakness.conceptSlug}</strong>
+                  <span>{weakness.failures} ratée{weakness.failures > 1 ? "s" : ""} sur {weakness.opportunities} occasions fiables</span>
+                </div>
               );
             })}
           </div>
+        ) : null}
+
+        <article className="recommended-session">
+          <div>
+            <span className="recommended-badge"><Sparkles size={14} /> Recommandé pour moi</span>
+            <h2>{priority || "Séance pédagogique ChessPath"}</h2>
+            <p>{recommendationCopy}</p>
+            <div className="session-composition">
+              <span>{counts.personal} position{counts.personal > 1 ? "s" : ""} de mes parties</span>
+              <span>{counts.concept} position{counts.concept > 1 ? "s" : ""} de transfert</span>
+              <span>{counts.multi} séquence{counts.multi > 1 ? "s" : ""} multi-coups</span>
+            </div>
+          </div>
+          <button className="lime-button" type="button" onClick={() => onStart(recommended, "recommended", "mix")} disabled={!recommended.length}>
+            Commencer mes 7 priorités <ArrowRight size={17} />
+          </button>
+        </article>
+      </section>
+
+      <section className="training-section training-library">
+        <div className="training-section-heading">
+          <div><span className="section-index">02</span><div><p>Bibliothèque d’entraînement</p><h2>Choisis librement ton domaine et ton thème.</h2></div></div>
+          <small>{libraryPool.length} position{libraryPool.length > 1 ? "s" : ""} disponible{libraryPool.length > 1 ? "s" : ""}</small>
         </div>
-      ) : null}
+
+        <div className="source-filter" role="group" aria-label="Source des exercices">
+          {SOURCES.map((source) => (
+            <button className={sourceFilter === source.id ? "active" : ""} type="button" key={source.id} aria-pressed={sourceFilter === source.id} onClick={() => setSourceFilter(source.id)}>
+              {source.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="training-modes">
+          {DOMAINS.map((filter) => {
+            const pool = domainPools.get(filter.id) ?? [];
+            const Icon = filterIcon(filter.id);
+            return (
+              <button className={libraryDomain === filter.id ? "active" : ""} type="button" key={filter.id} aria-pressed={libraryDomain === filter.id} onClick={() => setLibraryDomain(filter.id)} disabled={!pool.length}>
+                <Icon size={20} />
+                <strong>{filter.label}</strong>
+                <small>{pool.length ? `${pool.length} position${pool.length > 1 ? "s" : ""}` : "Indisponible"}</small>
+                <ArrowRight size={15} />
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="library-launch">
+          <div><strong>{DOMAINS.find((domain) => domain.id === libraryDomain)?.label}</strong><span>Le flux continue jusqu’à ce que tu décides de changer de thème.</span></div>
+          <button className="primary-button" type="button" disabled={!libraryPool.length} onClick={() => onStart(sessionFor(libraryDomain, sourceFilter), libraryDomain, sourceFilter)}>
+            Commencer <ArrowRight size={16} />
+          </button>
+        </div>
+
+        {subthemes.length ? (
+          <div className="training-subthemes panel">
+            <div className="panel-heading"><div><span>Sous-thèmes disponibles</span><h2>Travaille un concept précis.</h2></div><small>Seulement les concepts réellement alimentés</small></div>
+            <div className="subtheme-buttons">
+              {subthemes.map((theme) => {
+                const definition = conceptDefinition(theme.conceptSlug)!;
+                const filter = conceptTrainingFilter(theme.conceptSlug, theme.category);
+                return (
+                  <button type="button" key={`${theme.category}:${theme.conceptSlug}`} onClick={() => onStart(sessionFor(filter, sourceFilter), filter, sourceFilter)}>
+                    <strong>{definition.labelFr}</strong>
+                    <small>{theme.count} position{theme.count > 1 ? "s" : ""}</small>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="training-subthemes panel"><p>Aucun sous-thème fiable n’est encore disponible pour ce filtre.</p></div>
+        )}
+      </section>
 
       {!exercises.length ? (
         <div className="empty-training panel">

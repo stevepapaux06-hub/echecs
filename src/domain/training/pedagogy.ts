@@ -8,6 +8,7 @@ import type {
 } from "@/domain/chess/types";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
 import { conceptExercisesForSlug } from "./library";
+import { withTrainingTaxonomy } from "./taxonomy";
 
 export const PEDAGOGY_PROMPT_VERSION = "training-phase1-v1";
 const CACHE_STORAGE_KEY = "chesspath-pedagogy-cache-v1";
@@ -185,10 +186,12 @@ function applyDecisions(
       personal.push(exercise);
       continue;
     }
-    personal.push({
+    personal.push(withTrainingTaxonomy({
       ...exercise,
       category: decision.category,
       conceptSlug: decision.conceptSlug,
+      domain: decision.category,
+      primaryConcept: decision.conceptSlug,
       prompt: decision.question,
       concept: decision.learningGoal,
       pedagogy: {
@@ -203,7 +206,7 @@ function applyDecisions(
         question: decision.question,
         conceptMoveUcis: decision.conceptMoveUcis,
       },
-    });
+    }));
   }
 
   const bridge = personal[0]

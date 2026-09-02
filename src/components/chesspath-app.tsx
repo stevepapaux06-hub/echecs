@@ -26,7 +26,12 @@ import type {
 import { analyzePayload } from "@/domain/chess/analyze";
 import { parsePgnCollection } from "@/domain/chess/pgn";
 import { allConceptExercises } from "@/domain/training/library";
-import { buildTrainingSession, type TrainingFilter } from "@/domain/training/session";
+import {
+  buildTrainingSession,
+  type TrainingFilter,
+  type TrainingSourceFilter,
+} from "@/domain/training/session";
+import { withTrainingTaxonomy } from "@/domain/training/taxonomy";
 import { StockfishClient } from "@/infrastructure/engine/stockfish-client";
 import { getSupabaseClient } from "@/infrastructure/supabase/client";
 import {
@@ -318,6 +323,7 @@ export function ChessPathApp() {
   const [result, setResult] = useState<CompleteAnalysis | null>(null);
   const [trainingExercises, setTrainingExercises] = useState<TrainingExercise[]>([]);
   const [trainingFilter, setTrainingFilter] = useState<TrainingFilter>("recommended");
+  const [trainingSourceFilter, setTrainingSourceFilter] = useState<TrainingSourceFilter>("mix");
   const [trainingSeenIds, setTrainingSeenIds] = useState<ReadonlySet<string>>(new Set());
   const [trainingEngine, setTrainingEngine] = useState<StockfishClient | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -512,7 +518,11 @@ export function ChessPathApp() {
     }
   }
 
-  async function startTraining(exercises: TrainingExercise[], filter: TrainingFilter = "recommended") {
+  async function startTraining(
+    exercises: TrainingExercise[],
+    filter: TrainingFilter = "recommended",
+    sourceFilter: TrainingSourceFilter = "mix",
+  ) {
     if (!exercises.length) return;
     setScreen("loading");
     setProgress(15);
@@ -521,6 +531,7 @@ export function ChessPathApp() {
       await ensureEngine();
       setTrainingExercises(exercises);
       setTrainingFilter(filter);
+      setTrainingSourceFilter(sourceFilter);
       setTrainingSeenIds(new Set());
       setProgress(100);
       setScreen("training");
@@ -549,22 +560,29 @@ export function ChessPathApp() {
     }
   }
 
-  async function continueTraining(currentExerciseIds: string[]): Promise<boolean> {
+  async function continueTraining(
+    currentExerciseIds: string[],
+    requestedFilter: TrainingFilter = trainingFilter,
+  ): Promise<boolean> {
     const seen = new Set([...trainingSeenIds, ...currentExerciseIds]);
     const priorityConcept = result?.metrics.primaryTheme.id ?? persistent?.analyses[0]?.metrics.primaryTheme.id;
+    const priorityDomain = result?.metrics.primaryTheme.category ?? persistent?.analyses[0]?.metrics.primaryTheme.category;
     const next = buildTrainingSession(
       hubExercises,
       persistent?.trainingAttempts ?? [],
-      trainingFilter,
+      requestedFilter,
       7,
       {
         userRating: result?.profile.rating ?? persistent?.chess?.rating,
         priorityConcept,
+        priorityDomain,
         excludeExerciseIds: seen,
+        sourceFilter: trainingSourceFilter,
       },
     );
     setTrainingSeenIds(seen);
     if (!next.length) return false;
+    setTrainingFilter(requestedFilter);
     setTrainingExercises(next);
     return true;
   }
@@ -623,20 +641,20 @@ export function ChessPathApp() {
     const historical = [...new Map([
       ...(result?.exercises ?? []),
       ...(persistent?.analyses.flatMap((analysis) => analysis.exercises) ?? []),
-    ].map((exercise) => [exercise.id, exercise])).values()];
+    ].map((exercise) => [exercise.id, withTrainingTaxonomy(exercise)])).values()];
     const historicalIds = new Set(historical.map((exercise) => exercise.id));
     return [
       ...historical,
-      ...allConceptExercises().filter((exercise) => !historicalIds.has(exercise.id)),
+      ...allConceptExercises().map(withTrainingTaxonomy).filter((exercise) => !historicalIds.has(exercise.id)),
     ];
   }, [persistent?.analyses, result?.exercises]);
   const navProps = { onNavigate: navigate, connected };
 
   if (screen === "loading") return <LoadingScreen label={loadingLabel} progress={progress} {...navProps} />;
   if (screen === "dashboard" && result) return <Dashboard result={result} saveStatus={saveStatus} onTrain={() => navigate("training-hub")} onReset={() => navigate("analyze")} {...navProps} />;
-  if (screen === "training" && trainingExercises.length && trainingEngine) return <TrainingBoard key={trainingExercises[0].id} exercises={trainingExercises} engine={trainingEngine} onBack={() => navigate("training-hub")} onContinue={continueTraining} onAttempt={(...args) => void recordAttempt(...args)} />;
+  if (screen === "training" && trainingExercises.length && trainingEngine) return <TrainingBoard key={trainingExercises[0].id} exercises={trainingExercises} engine={trainingEngine} activeFilter={trainingFilter} onBack={() => navigate("training-hub")} onContinue={continueTraining} onAttempt={(...args) => void recordAttempt(...args)} />;
   if (screen === "analyze") return <AnalyzeScreen username={persistent?.chess?.username} error={error} onAnalyze={(request) => void startAnalysis(request)} {...navProps} />;
-  if (screen === "training-hub") return <main className="app-page"><AppNav active="training-hub" {...navProps} /><TrainingHub exercises={hubExercises} attempts={persistent?.trainingAttempts ?? []} priority={result?.metrics.priorityTitle ?? persistent?.analyses[0]?.metrics.priorityTitle} priorityConcept={result?.metrics.primaryTheme.id ?? persistent?.analyses[0]?.metrics.primaryTheme.id} userRating={result?.profile.rating ?? persistent?.chess?.rating} onStart={(items, filter) => void startTraining(items, filter)} onAnalyze={() => navigate("analyze")} /></main>;
+  if (screen === "training-hub") return <main className="app-page"><AppNav active="training-hub" {...navProps} /><TrainingHub exercises={hubExercises} attempts={persistent?.trainingAttempts ?? []} priority={result?.metrics.priorityTitle ?? persistent?.analyses[0]?.metrics.priorityTitle} priorityConcept={result?.metrics.primaryTheme.id ?? persistent?.analyses[0]?.metrics.primaryTheme.id} priorityDomain={result?.metrics.primaryTheme.category ?? persistent?.analyses[0]?.metrics.primaryTheme.category} conceptStats={(persistent?.conceptStats.length ? persistent.conceptStats : result?.metrics.conceptStats ?? []).map((stat) => ({ conceptSlug: stat.conceptSlug, opportunities: stat.opportunities, failures: stat.failures, confidence: "high", lastSeenAt: "lastSeenAt" in stat ? stat.lastSeenAt : null }))} userRating={result?.profile.rating ?? persistent?.chess?.rating} onStart={(items, filter, source) => void startTraining(items, filter, source)} onAnalyze={() => navigate("analyze")} /></main>;
   if (screen === "progress") return <main className="app-page"><AppNav active="progress" {...navProps} /><ProgressView profile={persistent} onProfile={() => navigate("profile")} /></main>;
   if (screen === "profile") return <main className="app-page"><AppNav active="profile" {...navProps} />{authNotice ? <p className={`global-notice ${authNotice.kind === "error" ? "error" : ""}`} role={authNotice.kind === "error" ? "alert" : "status"}>{authNotice.message}</p> : null}{saveStatus ? <p className="global-notice">{saveStatus}</p> : null}{error ? <p className="global-notice error">{error}</p> : null}<ProfileView key={user?.id ?? "guest"} user={user} profile={persistent} loading={profileLoading} profileError={profileError} initialAuthMode={authEntryMode} passwordRecovery={passwordRecovery} onPasswordRecovered={() => setPasswordRecovery(false)} onRetryProfile={() => refreshProfile(user)} onSync={synchronize} onLinkChess={linkChessAccount} onUnlinkChess={unlinkChessAccount} onOpenAnalysis={openAnalysis} /></main>;
   return <HomeScreen profile={persistent} error={error} onAnalyze={(request) => void startAnalysis(request)} onNavigate={navigate} />;

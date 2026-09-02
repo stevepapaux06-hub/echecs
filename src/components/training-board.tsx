@@ -28,7 +28,12 @@ import {
   type TrainingResult,
 } from "@/domain/training/sequence";
 import { isLegalTrainingDrop } from "@/domain/training/interaction";
-import { nextExerciseIndex, sharesPreciseConcept } from "@/domain/training/session";
+import {
+  nextExerciseIndex,
+  sharesPreciseConcept,
+  type TrainingFilter,
+} from "@/domain/training/session";
+import { trainingTaxonomy } from "@/domain/training/taxonomy";
 import { detectMovePatterns } from "@/domain/patterns/engine";
 import type { StockfishClient } from "@/infrastructure/engine/stockfish-client";
 import { evaluationForPlayer, formatWhiteCentricEvaluation } from "@/infrastructure/engine/uci";
@@ -74,14 +79,16 @@ function waitForReplyAnimation(): Promise<void> {
 export function TrainingBoard({
   exercises,
   engine,
+  activeFilter,
   onBack,
   onAttempt,
   onContinue,
 }: {
   exercises: TrainingExercise[];
   engine: StockfishClient;
+  activeFilter: TrainingFilter;
   onBack: () => void;
-  onContinue?: (seenExerciseIds: string[]) => Promise<boolean>;
+  onContinue?: (seenExerciseIds: string[], filter?: TrainingFilter) => Promise<boolean>;
   onAttempt?: (
     exercise: TrainingExercise,
     result: TrainingResult,
@@ -130,7 +137,7 @@ export function TrainingBoard({
     firstMovePedagogy.current = null;
   }
 
-  async function nextExercise() {
+  async function nextExercise(nextFilter = activeFilter) {
     const next = nextExerciseIndex(index, exercises.length);
     if (next === null) {
       if (!onContinue) {
@@ -138,9 +145,14 @@ export function TrainingBoard({
         return;
       }
       setContinuing(true);
-      const continued = await onContinue(exercises.map((candidate) => candidate.id));
-      if (!continued) onBack();
-      else setContinuing(false);
+      try {
+        const continued = await onContinue(exercises.map((candidate) => candidate.id), nextFilter);
+        if (!continued) onBack();
+      } catch {
+        setEngineError("La prochaine série n’a pas pu être chargée. Tu peux réessayer ou changer de thème.");
+      } finally {
+        setContinuing(false);
+      }
       return;
     }
     setIndex(next);
@@ -360,6 +372,7 @@ export function TrainingBoard({
   const sameConceptNext = Boolean(
     followingExercise && sharesPreciseConcept(exercise, followingExercise),
   );
+  const currentDomainFilter = trainingTaxonomy(exercise).domain as TrainingFilter;
 
   const options: ChessboardOptions = {
     id: `chesspath-training-${exercise.id}`,
@@ -489,13 +502,22 @@ export function TrainingBoard({
 
           <div className="exercise-footer">
             {exercise.gameUrl ? <a href={exercise.gameUrl} target="_blank" rel="noreferrer">Voir la partie source <ExternalLink size={14} /></a> : <span className="concept-source">Position pédagogique vérifiée avec Stockfish</span>}
-            <button type="button" className="primary-button" onClick={() => void nextExercise()} disabled={!result || continuing}>
-              {followingExercise
-                ? sameConceptNext
-                  ? "Nouvelle position sur ce concept"
-                  : "Exercice suivant"
-                : continuing ? "Chargement…" : "Continuer"} <ArrowRight size={17} />
-            </button>
+            <div className="continuous-training-actions">
+              <button type="button" className="primary-button" onClick={() => void nextExercise()} disabled={!result || continuing}>
+                {followingExercise
+                  ? sameConceptNext
+                    ? "Nouvelle position sur ce concept"
+                    : "Exercice suivant"
+                  : continuing ? "Chargement…" : "Continuer ce thème"} <ArrowRight size={17} />
+              </button>
+              {!followingExercise && result && onContinue ? (
+                <div>
+                  <button type="button" onClick={() => void nextExercise(currentDomainFilter)} disabled={continuing}>Même domaine</button>
+                  <button type="button" onClick={() => void nextExercise("mix")} disabled={continuing}>Mix</button>
+                  <button type="button" onClick={onBack} disabled={continuing}>Changer de thème</button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </aside>
       </section>
