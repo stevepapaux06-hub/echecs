@@ -100,6 +100,16 @@ function isKnownPawnBreak(fen: string, moveUci: string): boolean {
   return Boolean(definition?.pawnBreaks.some((move) => move.replace("-", "") === moveUci.slice(0, 4)));
 }
 
+function rookFileHasPurpose(chess: Chess, rookSquare: Square, moverColor: Color): boolean {
+  const attacks = attackedSquaresByPiece(chess, rookSquare);
+  const enemyTarget = attacks.some((square) => {
+    const target = chess.get(square);
+    return target?.color === opposite(moverColor);
+  });
+  const entryRank = moverColor === "w" ? "7" : "2";
+  return enemyTarget || attacks.includes(`${rookSquare[0]}${entryRank}` as Square);
+}
+
 export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePattern[] {
   const original = new Chess(fen);
   const before = new Chess(fen);
@@ -134,6 +144,14 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
     .map((piece) => piece.square);
   const resolvedThreat = wasInCheck || (hadEndangeredPiece && endangeredAfter.length < endangeredBefore.length);
   if (resolvedThreat) add("opponent_threat", wasInCheck ? 0.98 : 0.9);
+  if (resolvedThreat && (move.captured || after.inCheck() || endangeredAfter.length === 0)) {
+    add("defensive_resource", wasInCheck ? 0.94 : 0.86);
+  }
+  if (move.captured && capturedPiece && materialBefore <= 0
+    && PIECE_VALUE[capturedPiece.type] >= 3
+    && PIECE_VALUE[capturedPiece.type] >= PIECE_VALUE[move.piece]) {
+    add("defensive_resource", 0.88);
+  }
 
   const attackedTargets = attackedSquaresByPiece(after, move.to as Square)
     .map((square) => after.get(square))
@@ -146,7 +164,8 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
 
   if (move.piece === "r") {
     const status = fileStatus(after.fen(), move.to[0]);
-    if (status === "open" || status === (moverColor === "w" ? "white-semi-open" : "black-semi-open")) {
+    if ((status === "open" || status === (moverColor === "w" ? "white-semi-open" : "black-semi-open"))
+      && rookFileHasPurpose(after, move.to as Square, moverColor)) {
       add("open_file", status === "open" ? 0.92 : 0.84);
     }
     const rank = Number(move.to[1]);

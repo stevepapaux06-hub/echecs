@@ -11,6 +11,7 @@ export type TrainingSourceFilter = "mix" | "personal" | "bank";
 
 const BROAD_META_CONCEPTS = new Set(["forcing_moves"]);
 const DOMAINS = new Set<DiagnosticCategory>(["tactic", "strategy", "endgame", "opening", "conversion", "defense"]);
+export const DEFAULT_TRAINING_BATCH_SIZE = 12;
 
 export function conceptTrainingFilter(
   conceptSlug: string,
@@ -116,7 +117,7 @@ function uniquePositions(exercises: TrainingExercise[]): TrainingExercise[] {
 }
 
 /**
- * Builds a deterministic spaced-practice session:
+ * Builds a deterministic spaced-practice batch for a continuous training flow:
  * personal position → different position on the same precise concept → fresh material →
  * a previously failed review. A recently solved exact FEN is postponed while a
  * different position from the same category is available.
@@ -125,7 +126,7 @@ export function buildTrainingSession(
   exercises: TrainingExercise[],
   attempts: TrainingAttemptRecord[],
   filter: TrainingFilter,
-  limit = 7,
+  batchSize = DEFAULT_TRAINING_BATCH_SIZE,
   options: {
     now?: number;
     userRating?: number;
@@ -231,12 +232,12 @@ export function buildTrainingSession(
     ...(primary ? [primary] : []),
     ...conceptBridge,
     // Failed material returns after a short context change, not immediately and
-    // not so late that a seven-position session can omit it altogether.
+    // not so late that a short recommended batch can omit it altogether.
     ...failed.slice(0, 1),
     ...remainingFresh,
     ...partial,
     ...failed.slice(1),
     ...reviewSuccess,
   ]);
-  return ordered.slice(0, limit);
+  return ordered.slice(0, batchSize);
 }

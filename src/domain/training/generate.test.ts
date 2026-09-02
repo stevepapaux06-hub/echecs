@@ -192,7 +192,7 @@ describe("personal exercise generation", () => {
     expect(personal.solutionLine).toEqual(["d1d2", "e8f7", "d2d7"]);
   });
 
-  it("keeps a reserve larger than a seven-position session", () => {
+  it("keeps a reserve larger than one loaded training batch", () => {
     const base = (() => {
       const fen = "4k3/8/8/8/8/8/3q4/3QK3 w - - 0 1";
       return {

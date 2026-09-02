@@ -8,6 +8,8 @@ import LICHESS_BANK from "./lichess-bank.generated.json";
 import type { TrainingPosition } from "./positions";
 import { withTrainingTaxonomy } from "./taxonomy";
 import { STRUCTURED_TRAINING_BANK } from "./structured-bank";
+import { withPedagogicalContract } from "./contract";
+import { gateTrainingExercises } from "./validation";
 
 type ConceptExercise = Omit<
   TrainingExercise,
@@ -158,11 +160,11 @@ const CONCEPT_LIBRARY: ConceptExercise[] = [
   },
   {
     key: "technical-rook-conversion",
-    type: "conversion",
+    type: "endgame",
     origin: "concept",
     mode: "playout",
     conceptSlug: "rook_activity",
-    category: "conversion",
+    category: "endgame",
     title: "Transforme l’avantage",
     prompt: "Comment limiterais-tu le contre-jeu avant de progresser ?",
     fen: "8/5pk1/6p1/8/8/5P2/5KPP/3R4 w - - 0 1",
@@ -347,7 +349,7 @@ function exerciseFromLichess(position: TrainingPosition): TrainingExercise | nul
     category: classification.category,
     title: concept?.labelFr ?? "Tactique Lichess",
     prompt: "Trouve la suite concrète, puis vérifie la meilleure réponse adverse.",
-    sourceLabel: `Lichess Puzzle · ${concept?.labelFr ?? position.conceptSlug}`,
+    sourceLabel: "Lichess Puzzle · position vérifiée",
     fen: position.fen,
     playerColor: position.playerColor,
     bestMove: position.solutionMoves[0],
@@ -360,6 +362,11 @@ function exerciseFromLichess(position: TrainingPosition): TrainingExercise | nul
     difficulty: position.difficulty,
     source: "lichess",
     sourceId: position.sourceGameId,
+    verificationSource: "Official Lichess puzzle solution",
+    verification: {
+      engine: "Lichess puzzle pipeline",
+      multiPv: 1,
+    },
     qualityScore: position.qualityScore,
     isVerified: position.isVerified,
     explanation: teaching?.explanation,
@@ -394,22 +401,73 @@ function curatedExercise(exercise: ConceptExercise): TrainingExercise {
     sourceLabel: exercise.sourceLabel ?? "Bibliothèque pédagogique ChessPath",
     source: exercise.source ?? "chesspath_curated",
     isVerified: exercise.isVerified ?? true,
-    explanation: exercise.explanation ?? teaching?.explanation,
+    verificationSource: exercise.verificationSource ?? "ChessPath Stockfish reference suite · depth 9",
+    verification: exercise.verification ?? {
+      engine: "Stockfish",
+      version: "18 lite",
+      depth: 9,
+      multiPv: 1,
+    },
+    explanation: teaching?.explanation
+      ? { ...teaching.explanation, ...(exercise.explanation ?? {}) }
+      : exercise.explanation,
     planArrows: exercise.planArrows?.length ? exercise.planArrows : teaching?.planArrows,
     planSquares: exercise.planSquares?.length ? exercise.planSquares : teaching?.planSquares,
   });
 }
 
-const EXERCISE_POOL = [
+function verifiedStructuredExercise(exercise: TrainingExercise): TrainingExercise {
+  const teaching = buildExerciseTeaching(
+    exercise.fen,
+    exercise.bestMove,
+    exercise.conceptSlug,
+    exercise.solutionLine,
+  );
+  const enriched = {
+    ...exercise,
+    explanation: teaching?.explanation
+      ? { ...teaching.explanation, ...(exercise.explanation ?? {}) }
+      : exercise.explanation,
+    planArrows: exercise.planArrows?.length ? exercise.planArrows : teaching?.planArrows,
+    planSquares: exercise.planSquares?.length ? exercise.planSquares : teaching?.planSquares,
+  };
+  const verification = exercise.verification ?? (exercise.source === "lichess_tablebase"
+    ? { tablebase: "Lichess seven-piece tablebase" }
+    : {
+        engine: "Stockfish",
+        version: "18 lite",
+        depth: 9,
+        multiPv: 1,
+      });
+  return {
+    ...enriched,
+    verificationSource: exercise.verificationSource ?? "ChessPath Stockfish reference suite · depth 9",
+    verification,
+  };
+}
+
+const RAW_EXERCISE_POOL = [
   ...CONCEPT_LIBRARY
     .filter((exercise) => ![
       "strategy-castle-open-file",
       "opening-italian-center",
     ].includes(exercise.key))
     .map(curatedExercise),
-  ...STRUCTURED_TRAINING_BANK.map(withTrainingTaxonomy),
+  ...STRUCTURED_TRAINING_BANK.map(verifiedStructuredExercise).map(withTrainingTaxonomy),
   ...LICHESS_LIBRARY,
-];
+].map(withPedagogicalContract);
+
+const GATED_EXERCISE_POOL = gateTrainingExercises(RAW_EXERCISE_POOL);
+const EXERCISE_POOL = GATED_EXERCISE_POOL.active;
+
+export const TRAINING_BANK_GATE_REPORT = {
+  total: RAW_EXERCISE_POOL.length,
+  active: GATED_EXERCISE_POOL.active.length,
+  needsVerification: GATED_EXERCISE_POOL.needsVerification.length,
+  rejected: GATED_EXERCISE_POOL.rejected.length,
+  needsVerificationIds: GATED_EXERCISE_POOL.needsVerification.map((exercise) => exercise.id),
+  rejectedIds: GATED_EXERCISE_POOL.rejected.map((exercise) => exercise.id),
+} as const;
 
 function exercisePool(): TrainingExercise[] {
   return EXERCISE_POOL;

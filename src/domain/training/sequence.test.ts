@@ -103,7 +103,9 @@ describe("multi-move training sequences", () => {
   });
 
   it("validates conversion over a technical sequence and stops on a true error", () => {
-    const conversion = exercise("conversion-rook-pawn");
+    const conversion = allConceptExercises().find((candidate) => (
+      candidate.id === "bank-conversion-simplify-queens"
+    ))!;
     expect(decideSequence({
       exercise: conversion,
       playerMoves: 1,

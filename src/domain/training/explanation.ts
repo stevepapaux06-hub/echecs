@@ -365,6 +365,16 @@ export function buildExerciseTeaching(
     if (opponentReply) {
       explanation.opponentIdea = `La ligne de référence teste le plan par ${opponentReply.slice(0, 2)}–${opponentReply.slice(2, 4)}.`;
     }
+    explanation.positionEssentials = explanation.notice;
+    explanation.reasonablePlans = [explanation.plan];
+    explanation.chosenPlanRationale = explanation.objective;
+    explanation.planSteps = [
+      `${from}–${to}`,
+      ...(nextOwnMove ? [`${nextOwnMove.slice(0, 2)}–${nextOwnMove.slice(2, 4)}`] : []),
+    ];
+    explanation.resultingPositionChange = explanation.objective;
+    explanation.transferRule = explanation.rule;
+    explanation.primaryConceptRationale = explanation.focus;
     return {
       explanation,
       planArrows: arrows.slice(0, 3),

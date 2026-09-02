@@ -28,6 +28,7 @@ import { parsePgnCollection } from "@/domain/chess/pgn";
 import { allConceptExercises } from "@/domain/training/library";
 import {
   buildTrainingSession,
+  DEFAULT_TRAINING_BATCH_SIZE,
   type TrainingFilter,
   type TrainingSourceFilter,
 } from "@/domain/training/session";
@@ -571,7 +572,7 @@ export function ChessPathApp() {
       hubExercises,
       persistent?.trainingAttempts ?? [],
       requestedFilter,
-      7,
+      DEFAULT_TRAINING_BATCH_SIZE,
       {
         userRating: result?.profile.rating ?? persistent?.chess?.rating,
         priorityConcept,

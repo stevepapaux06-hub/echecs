@@ -200,7 +200,24 @@ export type TrainingType =
   | "opening";
 export type TrainingOrigin = "personal" | "concept";
 export type TrainingMode = "one-move" | "line" | "playout";
+export type PedagogicalUnit =
+  | "single_move"
+  | "decision_then_continuation"
+  | "short_plan_sequence"
+  | "theoretical_method";
+export type ExerciseVerificationStatus = "active" | "needs_verification" | "rejected";
+export type SequenceStopCondition =
+  | "first_decision"
+  | "required_steps"
+  | "evaluation_target"
+  | "promotion_or_terminal";
 export type PedagogyExerciseType = "move" | "plan" | "defense" | "conversion" | "principle";
+
+export type RequiredTrainingStep = {
+  label: string;
+  /** Alternative UCI moves that all demonstrate this step from the current position. */
+  acceptedMoveUcis: string[];
+};
 
 export type TrainingCandidateLine = {
   uci: string;
@@ -243,6 +260,17 @@ export type StructuredExerciseExplanation = {
   objective: string;
   opponentIdea?: string;
   rule: string;
+  positionEssentials?: string;
+  reasonablePlans?: string[];
+  chosenPlanRationale?: string;
+  planSteps?: string[];
+  naturalAlternative?: string;
+  whyNaturalAlternativeIsInferior?: string;
+  resultingPositionChange?: string;
+  commonMistake?: string;
+  whyCommonMistakeFails?: string;
+  transferRule?: string;
+  primaryConceptRationale?: string;
 };
 
 export type TrainingExercise = {
@@ -250,6 +278,11 @@ export type TrainingExercise = {
   type: TrainingType;
   origin: TrainingOrigin;
   mode: TrainingMode;
+  /** Learning contract. `mode` remains only for backward-compatible storage. */
+  pedagogicalUnit?: PedagogicalUnit;
+  sequenceGoal?: string;
+  requiredSteps?: RequiredTrainingStep[];
+  sequenceStopCondition?: SequenceStopCondition;
   theme: string;
   /** Precise pedagogical concept. Unlike `theme`, this is never a broad category. */
   conceptSlug: string;
@@ -297,6 +330,15 @@ export type TrainingExercise = {
   sourceId?: string;
   /** Deterministic verifier used before an exercise entered the bank. */
   verificationSource?: string;
+  verificationStatus?: ExerciseVerificationStatus;
+  verification?: {
+    engine?: string;
+    version?: string;
+    depth?: number;
+    multiPv?: number;
+    tablebase?: string;
+    checkedAt?: string;
+  };
   /** Root result returned by a seven-piece-or-fewer tablebase, when available. */
   tablebaseWdl?: "win" | "draw" | "loss" | "cursed-win" | "blessed-loss" | "unknown";
   qualityScore?: number;

@@ -4,6 +4,7 @@ import { allConceptExercises } from "./library";
 import {
   buildTrainingSession,
   conceptTrainingFilter,
+  DEFAULT_TRAINING_BATCH_SIZE,
   nextExerciseIndex,
   sharesPreciseConcept,
   trainingPoolForFilter,
@@ -41,7 +42,7 @@ describe("personalized training session", () => {
       [personal, sameTheme, ...concepts],
       [attempt(personal.id, "success")],
       "mix",
-      7,
+      DEFAULT_TRAINING_BATCH_SIZE,
       { now: Date.parse("2026-08-31T10:00:00.000Z") },
     );
     expect(session[0].id).not.toBe(personal.id);
@@ -54,21 +55,22 @@ describe("personalized training session", () => {
       [personal, sameTheme, ...concepts],
       [attempt(failed.id, "failed")],
       "recommended",
-      7,
+      DEFAULT_TRAINING_BATCH_SIZE,
       { now: Date.parse("2026-08-31T10:00:00.000Z") },
     );
     expect(session.findIndex((exercise) => exercise.id === failed.id)).toBeGreaterThan(0);
     expect(session.some((exercise) => exercise.id === failed.id)).toBe(true);
   });
 
-  it("never wraps a seven-position session back to the first exercise", () => {
+  it("never wraps a loaded batch back to the first exercise", () => {
     const progress: string[] = [];
     let index: number | null = 0;
     while (index !== null) {
-      progress.push(`${index + 1}/7`);
-      index = nextExerciseIndex(index, 7);
+      progress.push(`${index + 1}`);
+      index = nextExerciseIndex(index, DEFAULT_TRAINING_BATCH_SIZE);
     }
-    expect(progress).toEqual(["1/7", "2/7", "3/7", "4/7", "5/7", "6/7", "7/7"]);
+    expect(progress).toHaveLength(DEFAULT_TRAINING_BATCH_SIZE);
+    expect(progress.at(-1)).toBe(String(DEFAULT_TRAINING_BATCH_SIZE));
   });
 
   it("does not call two exercises the same concept merely because their categories match", () => {
@@ -78,12 +80,12 @@ describe("personalized training session", () => {
     expect(sharesPreciseConcept(rook, outpost)).toBe(false);
   });
 
-  it("uses fresh positions in the next session instead of restarting the same seven", () => {
-    const pool = concepts.slice(0, 20);
-    const first = buildTrainingSession(pool, [], "mix", 7, { now: Date.parse(now) });
+  it("uses fresh positions in the next batch instead of restarting the same material", () => {
+    const pool = concepts.slice(0, DEFAULT_TRAINING_BATCH_SIZE * 3);
+    const first = buildTrainingSession(pool, [], "mix", DEFAULT_TRAINING_BATCH_SIZE, { now: Date.parse(now) });
     const completed = first.map((exercise) => attempt(exercise.id, "success"));
-    const second = buildTrainingSession(pool, completed, "mix", 7, { now: Date.parse(now) });
-    expect(second).toHaveLength(7);
+    const second = buildTrainingSession(pool, completed, "mix", DEFAULT_TRAINING_BATCH_SIZE, { now: Date.parse(now) });
+    expect(second).toHaveLength(DEFAULT_TRAINING_BATCH_SIZE);
     expect(second.every((exercise) => !first.some((seen) => seen.id === exercise.id))).toBe(true);
   });
 
@@ -93,7 +95,7 @@ describe("personalized training session", () => {
       ...attempt(`old-${index}`, "success"),
       theme: "fork",
     }));
-    const session = buildTrainingSession(forkPool, successes, "tactic", 7, {
+    const session = buildTrainingSession(forkPool, successes, "tactic", DEFAULT_TRAINING_BATCH_SIZE, {
       now: Date.parse(now),
       userRating: 1_200,
     });
@@ -105,21 +107,21 @@ describe("personalized training session", () => {
       concepts,
       [],
       conceptTrainingFilter("fork"),
-      7,
+      DEFAULT_TRAINING_BATCH_SIZE,
       { userRating: 1_300 },
     );
-    expect(session).toHaveLength(7);
+    expect(session).toHaveLength(DEFAULT_TRAINING_BATCH_SIZE);
     expect(session.every((exercise) => exercise.conceptSlug === "fork")).toBe(true);
   });
 
-  it("continues after seven with new positions from the same exact concept", () => {
+  it("continues after one batch with new positions from the same exact concept", () => {
     const filter = conceptTrainingFilter("fork");
-    const first = buildTrainingSession(concepts, [], filter, 7, { userRating: 1_300 });
-    const second = buildTrainingSession(concepts, [], filter, 7, {
+    const first = buildTrainingSession(concepts, [], filter, DEFAULT_TRAINING_BATCH_SIZE, { userRating: 1_300 });
+    const second = buildTrainingSession(concepts, [], filter, DEFAULT_TRAINING_BATCH_SIZE, {
       userRating: 1_300,
       excludeExerciseIds: new Set(first.map((exercise) => exercise.id)),
     });
-    expect(second).toHaveLength(7);
+    expect(second).toHaveLength(DEFAULT_TRAINING_BATCH_SIZE);
     expect(second.every((exercise) => exercise.conceptSlug === "fork")).toBe(true);
     expect(second.every((exercise) => !first.some((seen) => seen.id === exercise.id))).toBe(true);
   });
@@ -132,7 +134,7 @@ describe("personalized training session", () => {
 
     expect(personalOnly).toHaveLength(1);
     expect(personalOnly.every((exercise) => exercise.origin === "personal")).toBe(true);
-    expect(bankOnly.length).toBeGreaterThan(7);
+    expect(bankOnly.length).toBeGreaterThan(DEFAULT_TRAINING_BATCH_SIZE);
     expect(bankOnly.every((exercise) => exercise.origin === "concept" && exercise.conceptSlug === "fork")).toBe(true);
     expect(mixed.some((exercise) => exercise.origin === "personal")).toBe(true);
     expect(mixed.some((exercise) => exercise.origin === "concept")).toBe(true);
@@ -143,7 +145,7 @@ describe("personalized training session", () => {
       [personal, sameTheme, ...concepts],
       [],
       "recommended",
-      7,
+      DEFAULT_TRAINING_BATCH_SIZE,
       { priorityConcept: "fork", userRating: 1_300 },
     );
     expect(session[0].origin).toBe("personal");

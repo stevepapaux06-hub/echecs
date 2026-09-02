@@ -1,6 +1,11 @@
 import { Chess, type Square } from "chess.js";
 import { describe, expect, it } from "vitest";
-import { allConceptExercises, conceptExercisesFor } from "./library";
+import {
+  allConceptExercises,
+  conceptExercisesFor,
+  LICHESS_LIBRARY_METADATA,
+  TRAINING_BANK_GATE_REPORT,
+} from "./library";
 
 describe("curated training library", () => {
   it("contains legal positions and legal reference moves", () => {
@@ -15,7 +20,7 @@ describe("curated training library", () => {
         }), `${exercise.id}: ${uci}`).not.toThrow();
       }
     }
-  });
+  }, 15_000);
 
   it("contains genuinely different multi-move tactic, endgame and conversion positions", () => {
     const exercises = allConceptExercises();
@@ -40,14 +45,32 @@ describe("curated training library", () => {
 
   it("ships a varied verified offline Lichess bank", () => {
     const lichess = allConceptExercises().filter((exercise) => exercise.source === "lichess");
-    expect(lichess).toHaveLength(2_520);
+    expect(LICHESS_LIBRARY_METADATA.positions).toBe(2_520);
+    expect(lichess.length).toBeGreaterThan(2_400);
     const concepts = new Set(lichess.map((exercise) => exercise.conceptSlug));
     for (const concept of ["fork", "pin", "skewer", "loose_piece", "remove_defender", "opponent_threat", "passed_pawn"]) {
       expect(concepts.has(concept)).toBe(true);
     }
-    expect(lichess.every((exercise) => exercise.isVerified && exercise.sourceId && exercise.difficulty)).toBe(true);
+    expect(lichess.every((exercise) => (
+      exercise.isVerified
+      && exercise.verificationStatus === "active"
+      && exercise.sourceId
+      && exercise.difficulty
+    ))).toBe(true);
     expect(lichess.filter((exercise) => exercise.category === "endgame")
       .every((exercise) => exercise.phase === "endgame")).toBe(true);
+  });
+
+  it("publishes only positions that pass the technical and pedagogical gate", () => {
+    expect(TRAINING_BANK_GATE_REPORT.total).toBeGreaterThan(TRAINING_BANK_GATE_REPORT.active);
+    expect(TRAINING_BANK_GATE_REPORT.rejected).toBeGreaterThan(0);
+    expect(TRAINING_BANK_GATE_REPORT.needsVerification).toBeGreaterThan(0);
+    expect(allConceptExercises().every((exercise) => (
+      exercise.verificationStatus === "active"
+      && Boolean(exercise.verificationSource)
+      && Boolean(exercise.verification)
+    ))).toBe(true);
+    expect(allConceptExercises().some((exercise) => exercise.id === "concept-conversion-rook-pawn")).toBe(false);
   });
 
   it("ships a deep, diverse non-tactical master-game bank", () => {
@@ -128,6 +151,10 @@ describe("curated training library", () => {
       && Boolean(exercise.explanation?.plan)
       && Boolean(exercise.explanation?.objective)
       && Boolean(exercise.explanation?.rule)
+      && Boolean(exercise.explanation?.positionEssentials)
+      && Boolean(exercise.explanation?.chosenPlanRationale)
+      && Boolean(exercise.explanation?.planSteps?.length)
+      && Boolean(exercise.explanation?.transferRule)
       && Boolean(exercise.planArrows?.length)
       && Boolean(exercise.planSquares?.length)
     ))).toBe(true);

@@ -12,6 +12,7 @@ import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
 import { detectMovePatterns } from "../patterns/engine";
 import { buildExerciseTeaching } from "./explanation";
 import { withTrainingTaxonomy } from "./taxonomy";
+import { withPedagogicalContract } from "./contract";
 
 export const DEFAULT_TRAINING_FILTER_CONFIG = {
   lostPositionThresholdCp: 200,
@@ -52,7 +53,10 @@ export function isPedagogicallyEligiblePersonalMove(move: AnalyzedMove): boolean
   if (!assessment?.worthy || assessment.score < 55) return false;
   if (!move.before.bestMove || !move.before.lines[0]?.pv[0]) return false;
   const reliableConcept = (move.patterns ?? []).some((pattern) => (
-    pattern.opportunity && !pattern.success && pattern.confidence >= 0.84
+    pattern.opportunity
+    && !pattern.success
+    && pattern.confidence >= 0.84
+    && pattern.conceptSlug !== "forcing_moves"
   ));
   const stateBased = STATE_BASED_MOMENTS.has(assessment.kind);
   if (!reliableConcept && !stateBased) return false;
@@ -273,7 +277,7 @@ export function generateExercises(
     const secondaryConceptSlugs = [...new Set((move.patterns ?? [])
       .filter((pattern) => pattern.conceptSlug !== conceptSlug && pattern.confidence >= 0.84)
       .map((pattern) => pattern.conceptSlug))];
-    return withTrainingTaxonomy({
+    return withPedagogicalContract(withTrainingTaxonomy({
       // Stable across analyses: reordering the reserve cannot make a solved
       // personal position look new again.
       id: `personal-${game.id}-${move.ply}`,
@@ -325,10 +329,17 @@ export function generateExercises(
       difficulty: game.playerRating || undefined,
       source: "personal_game",
       sourceId: game.id,
+      verificationSource: "Stockfish analysis from the saved personal game",
+      verification: {
+        engine: "Stockfish",
+        depth: move.before.depth,
+        multiPv: move.before.lines.length,
+      },
       qualityScore: move.pedagogical?.score
         ?? (detectedPattern ? Math.round(detectedPattern.confidence * 100) : undefined),
       isVerified: true,
-    });
+      verificationStatus: "active",
+    }));
   }).filter((exercise) => (
     Boolean(exercise.explanation)
     && (exercise.classificationConfidence ?? 0) >= 0.8
@@ -337,7 +348,7 @@ export function generateExercises(
   const concepts = conceptExercisesFor(
     metrics.primaryTheme.category,
     primaryConceptSlug,
-    Math.max(0, Math.min(2, 7 - personal.length)),
+    2,
     games[0]?.playerRating,
   );
 

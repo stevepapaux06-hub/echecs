@@ -8,6 +8,7 @@ import { rankWeaknesses, type WeaknessSignal } from "@/domain/training/prioritie
 import {
   buildTrainingSession,
   conceptTrainingFilter,
+  DEFAULT_TRAINING_BATCH_SIZE,
   sharesPreciseConcept,
   supportsExactTransfer,
   trainingPoolForFilter,
@@ -15,6 +16,7 @@ import {
   type TrainingSourceFilter,
 } from "@/domain/training/session";
 import { trainingTaxonomy } from "@/domain/training/taxonomy";
+import { pedagogicalUnitFor } from "@/domain/training/contract";
 
 type LibraryFilter = Exclude<TrainingFilter, "recommended">;
 
@@ -86,7 +88,7 @@ export function TrainingHub({
 }) {
   const [libraryDomain, setLibraryDomain] = useState<LibraryFilter>("mix");
   const [sourceFilter, setSourceFilter] = useState<TrainingSourceFilter>("mix");
-  const recommended = useMemo(() => buildTrainingSession(exercises, attempts, "recommended", 7, {
+  const recommended = useMemo(() => buildTrainingSession(exercises, attempts, "recommended", DEFAULT_TRAINING_BATCH_SIZE, {
     userRating,
     priorityConcept,
     priorityDomain,
@@ -94,7 +96,7 @@ export function TrainingHub({
   const counts = {
     personal: recommended.filter((exercise) => exercise.origin === "personal").length,
     concept: recommended.filter((exercise) => exercise.origin === "concept").length,
-    multi: recommended.filter((exercise) => exercise.mode !== "one-move").length,
+    multi: recommended.filter((exercise) => pedagogicalUnitFor(exercise) !== "single_move").length,
   };
   const firstPersonal = recommended.find((exercise) => exercise.origin === "personal");
   const hasConceptBridge = Boolean(firstPersonal && recommended.some((exercise) => (
@@ -111,7 +113,7 @@ export function TrainingHub({
   );
   const libraryPool = domainPools.get(libraryDomain) ?? [];
 
-  function sessionFor(filter: TrainingFilter, source: TrainingSourceFilter, size = 7) {
+  function sessionFor(filter: TrainingFilter, source: TrainingSourceFilter, size = DEFAULT_TRAINING_BATCH_SIZE) {
     return buildTrainingSession(exercises, attempts, filter, size, {
       userRating,
       priorityConcept,
@@ -136,7 +138,7 @@ export function TrainingHub({
       <section className="training-section training-weaknesses">
         <div className="training-section-heading">
           <div><span className="section-index">01</span><div><p>Mes faiblesses</p><h2>Une prescription courte, issue de ton profil.</h2></div></div>
-          <small>7 exercices recommandés · puis tu peux continuer</small>
+          <small>Priorités recommandées · entraînement continu</small>
         </div>
 
         {rankedWeaknesses.length ? (
@@ -165,7 +167,7 @@ export function TrainingHub({
             </div>
           </div>
           <button className="lime-button" type="button" onClick={() => onStart(recommended, "recommended", "mix")} disabled={!recommended.length}>
-            Commencer mes 7 priorités <ArrowRight size={17} />
+            Commencer mon entraînement <ArrowRight size={17} />
           </button>
         </article>
       </section>

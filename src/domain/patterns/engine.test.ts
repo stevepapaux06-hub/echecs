@@ -33,12 +33,16 @@ describe("deterministic Pattern Engine", () => {
       .toBe(true);
   });
 
-  it("finds a quiet open-file plan independently of an evaluation drop", () => {
-    const fen = "rn4k1/pbp1q1pp/1p1pp3/5r2/3P2Nb/1PP1PP1Q/PB1NK2P/R6R w - - 2 17";
-    const patterns = detectMovePatterns(fen, "h1g1");
+  it("keeps only an open-file plan with a real target or entry square", () => {
+    const purposeless = "rn4k1/pbp1q1pp/1p1pp3/5r2/3P2Nb/1PP1PP1Q/PB1NK2P/R6R w - - 2 17";
+    expect(detectMovePatterns(purposeless, "h1g1")
+      .some((pattern) => pattern.conceptSlug === "open_file")).toBe(false);
+
+    const fen = "r2q1rk1/pp1nbppp/2p1pn2/8/8/2N1PN2/PPQ1BPPP/R4RK1 w - - 2 13";
+    const patterns = detectMovePatterns(fen, "a1d1");
     expect(patterns.some((pattern) => pattern.conceptSlug === "open_file" && pattern.confidence >= 0.84))
       .toBe(true);
-    expect(patternCandidatesForPosition(fen, { phase: "middlegame", ply: 33 })
+    expect(patternCandidatesForPosition(fen, { phase: "middlegame", ply: 25 })
       .some((candidate) => candidate.conceptSlug === "open_file")).toBe(true);
   });
 
@@ -78,6 +82,17 @@ describe("deterministic Pattern Engine", () => {
       conceptSlug: "convert_small_advantage",
       opportunity: true,
       success: true,
+    }));
+  });
+
+  it("labels an active answer to a concrete threat as a defensive resource", () => {
+    const patterns = detectMovePatterns(
+      "6k1/5ppp/8/8/2p5/3r4/5PPP/3R2K1 w - - 0 1",
+      "d1d3",
+    );
+    expect(patterns).toContainEqual(expect.objectContaining({
+      conceptSlug: "defensive_resource",
+      confidence: expect.any(Number),
     }));
   });
 });

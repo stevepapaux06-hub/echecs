@@ -34,6 +34,7 @@ import {
   type TrainingFilter,
 } from "@/domain/training/session";
 import { trainingTaxonomy } from "@/domain/training/taxonomy";
+import { pedagogicalUnitFor } from "@/domain/training/contract";
 import { detectMovePatterns } from "@/domain/patterns/engine";
 import type { StockfishClient } from "@/infrastructure/engine/stockfish-client";
 import { evaluationForPlayer, formatWhiteCentricEvaluation } from "@/infrastructure/engine/uci";
@@ -280,6 +281,7 @@ export function TrainingBoard({
       const decision = decideSequence({
         exercise,
         playerMoves: nextPlayerMoves,
+        playedMoveUcis: movesAfterPlayer.filter((_, moveIndex) => moveIndex % 2 === 0),
         decisionLossCp: decisionFeedback.lossCp,
         totalLossCp,
         afterPlayerCp: decisionFeedback.afterPlayerCp,
@@ -373,6 +375,14 @@ export function TrainingBoard({
     followingExercise && sharesPreciseConcept(exercise, followingExercise),
   );
   const currentDomainFilter = trainingTaxonomy(exercise).domain as TrainingFilter;
+  const pedagogicalUnit = pedagogicalUnitFor(exercise);
+  const unitLabel = pedagogicalUnit === "single_move"
+    ? "Décision ciblée"
+    : pedagogicalUnit === "theoretical_method"
+      ? "Méthode technique"
+      : pedagogicalUnit === "short_plan_sequence"
+        ? "Plan à conduire"
+        : "Décision et continuation";
 
   const options: ChessboardOptions = {
     id: `chesspath-training-${exercise.id}`,
@@ -416,8 +426,7 @@ export function TrainingBoard({
     <main className="training-shell" id="top">
       <nav className="training-nav">
         <Brand />
-        <div className="exercise-progress"><span style={{ width: `${((index + 1) / exercises.length) * 100}%` }} /></div>
-        <span>{index + 1} / {exercises.length}</span>
+        <span>Entraînement continu · position {index + 1}</span>
       </nav>
 
       <section className="training-layout">
@@ -426,7 +435,7 @@ export function TrainingBoard({
           <div className="board-frame"><Chessboard key={`${exercise.id}:${boardRevision}`} options={options} /></div>
           <div className="board-actions">
             <button type="button" onClick={() => resetBoard()}><RotateCcw size={16} /> Recommencer</button>
-            <span>{exercise.mode === "one-move" ? "Décision ciblée" : `Séquence · ${playerMoves}/${exercise.maxPlayerMoves} coups joués`}</span>
+            <span>{unitLabel}{pedagogicalUnit === "single_move" ? "" : ` · ${playerMoves} décision${playerMoves > 1 ? "s" : ""} jouée${playerMoves > 1 ? "s" : ""}`}</span>
           </div>
         </div>
 
@@ -450,7 +459,10 @@ export function TrainingBoard({
                   <small>Ce qu’il fallait remarquer</small><p>{feedback.explanation.notice}</p>
                   <small>Pièce ou faiblesse</small><p>{feedback.explanation.focus}</p>
                   <small>Plan et objectif</small><p>{feedback.explanation.plan} {feedback.explanation.objective}</p>
+                  {feedback.explanation.planSteps?.length ? <><small>Étapes du plan</small><p>{feedback.explanation.planSteps.join(" → ")}</p></> : null}
                   {feedback.explanation.opponentIdea ? <><small>Réaction adverse</small><p>{feedback.explanation.opponentIdea}</p></> : null}
+                  {feedback.explanation.naturalAlternative ? <><small>Alternative naturelle</small><p>{feedback.explanation.naturalAlternative}{feedback.explanation.whyNaturalAlternativeIsInferior ? ` — ${feedback.explanation.whyNaturalAlternativeIsInferior}` : ""}</p></> : null}
+                  {feedback.explanation.resultingPositionChange ? <><small>Ce qui change</small><p>{feedback.explanation.resultingPositionChange}</p></> : null}
                   <small>Règle à retenir</small><p>{feedback.explanation.rule}</p>
                 </div>
               ) : <div className="why-block"><small>Concept travaillé</small><p>{feedback.idea}</p></div>}
@@ -488,15 +500,15 @@ export function TrainingBoard({
                     ? "La prochaine position réutilise exactement ce concept dans un autre contexte."
                     : followingExercise
                       ? "La séance continue avec une nouvelle décision."
-                      : "Cette séance est terminée."}</span>
+                      : "Ce lot est terminé : tu peux poursuivre sans recommencer."}</span>
               </div>
             </div>
           ) : engineError ? (
             <div className="engine-training-error" role="alert"><strong>Analyse interrompue</strong><p>{engineError}</p></div>
           ) : (
             <>
-              <div className="hint-card"><Sparkles size={20} /><p><strong>Avant de jouer</strong>{exercise.mode === "one-move" ? "Identifie le plan ou la décision clé." : "Calcule aussi la meilleure réponse adverse : la position continuera sans revenir en arrière."}</p></div>
-              {exercise.mode !== "one-move" ? <div className="sequence-status"><span>Objectif</span><strong>{playerMoves ? `Continue la séquence · coup ${playerMoves + 1}` : `Joue jusqu’au résultat concret · jusqu’à ${exercise.maxPlayerMoves} coups`}</strong></div> : null}
+              <div className="hint-card"><Sparkles size={20} /><p><strong>Avant de jouer</strong>{pedagogicalUnit === "single_move" ? "Identifie le plan ou la décision clé." : "Calcule aussi la meilleure réponse adverse : la position continue jusqu’à ce que l’objectif pédagogique soit atteint."}</p></div>
+              {pedagogicalUnit !== "single_move" ? <div className="sequence-status"><span>Objectif</span><strong>{exercise.sequenceGoal}</strong></div> : null}
             </>
           )}
 

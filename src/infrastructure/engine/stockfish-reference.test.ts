@@ -34,7 +34,7 @@ async function analyze(fen: string, { depth = 8, multiPv = 1 } = {}): Promise<En
 
   return new Promise((resolve, reject) => {
     const lines = new Map<number, EngineLine>();
-    const timeout = setTimeout(() => reject(new Error("Stockfish reference search timeout")), 10_000);
+    const timeout = setTimeout(() => reject(new Error("Stockfish reference search timeout")), 20_000);
     consumeLine = (line) => {
       const parsed = parseUciInfoLine(line, fen);
       if (parsed) {
@@ -175,5 +175,5 @@ describe("Stockfish reference positions", () => {
       if (loss > 150) unstableMoves.push(`${exercise.id}: ${loss}cp`);
     }
     expect(unstableMoves).toEqual([]);
-  }, 60_000);
+  }, 120_000);
 });

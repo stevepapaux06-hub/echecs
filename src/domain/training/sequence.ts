@@ -1,4 +1,5 @@
 import type { TrainingExercise } from "@/domain/chess/types";
+import { pedagogicalUnitFor } from "./contract";
 
 export type TrainingResult = "success" | "partial" | "failed";
 export type PedagogicalMoveResult = "concept" | "good-alternative" | "error";
@@ -47,6 +48,7 @@ export function classifyPedagogicalMove(
 export function decideSequence({
   exercise,
   playerMoves,
+  playedMoveUcis = [],
   decisionLossCp,
   totalLossCp,
   afterPlayerCp,
@@ -58,6 +60,7 @@ export function decideSequence({
 }: {
   exercise: TrainingExercise;
   playerMoves: number;
+  playedMoveUcis?: string[];
   decisionLossCp: number;
   totalLossCp: number;
   afterPlayerCp: number;
@@ -87,8 +90,12 @@ export function decideSequence({
 
   const threshold = exercise.successThresholdCp;
   const targetReached = threshold === undefined || afterPlayerCp >= threshold;
+  const pedagogicalUnit = pedagogicalUnitFor(exercise);
+  const requiredStepsReached = !exercise.requiredSteps?.length || exercise.requiredSteps.every((step, index) => (
+    Boolean(playedMoveUcis[index]) && step.acceptedMoveUcis.includes(playedMoveUcis[index])
+  ));
 
-  if (exercise.mode === "one-move") {
+  if (pedagogicalUnit === "single_move") {
     return {
       finished: true,
       result: pedagogicalMove === "concept" && targetReached ? "success" : "partial",
@@ -96,7 +103,7 @@ export function decideSequence({
     };
   }
 
-  if (promoted && (exercise.type === "endgame" || exercise.type === "conversion")) {
+  if (promoted && (pedagogicalUnit === "theoretical_method" || exercise.type === "conversion")) {
     return {
       finished: true,
       result: targetReached && pedagogicalMove === "concept" ? "success" : "partial",
@@ -104,7 +111,9 @@ export function decideSequence({
     };
   }
 
-  if (exercise.type === "tactic" && captured && playerMoves >= 2) {
+  if (pedagogicalUnit === "decision_then_continuation" && playerMoves >= 2 && (
+    captured || requiredStepsReached
+  )) {
     return {
       finished: true,
       result: targetReached && pedagogicalMove === "concept" ? "success" : "partial",
@@ -112,7 +121,7 @@ export function decideSequence({
     };
   }
 
-  if (exercise.type === "defense" && playerMoves >= 2 && targetReached) {
+  if (exercise.type === "defense" && playerMoves >= 2 && targetReached && requiredStepsReached) {
     return {
       finished: true,
       result: pedagogicalMove === "concept" ? "success" : "partial",
@@ -123,7 +132,7 @@ export function decideSequence({
   if (playerMoves >= exercise.maxPlayerMoves) {
     return {
       finished: true,
-      result: targetReached && totalLossCp <= 140 && pedagogicalMove === "concept"
+      result: targetReached && requiredStepsReached && totalLossCp <= 140 && pedagogicalMove === "concept"
         ? "success"
         : "partial",
       reason: "length",
