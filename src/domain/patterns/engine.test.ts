@@ -1,5 +1,7 @@
+import { Chess } from "chess.js";
 import { describe, expect, it } from "vitest";
-import { detectMovePatterns, patternCandidatesForPosition } from "./engine";
+import type { AnalyzedMove } from "../chess/types";
+import { detectMovePatterns, patternCandidatesForPosition, patternsForAnalyzedMove } from "./engine";
 
 describe("deterministic Pattern Engine", () => {
   it("recognizes an obvious knight fork", () => {
@@ -29,5 +31,53 @@ describe("deterministic Pattern Engine", () => {
     });
     expect(candidates.some((candidate) => candidate.conceptSlug === "fork" && candidate.moveUci === "d3f4"))
       .toBe(true);
+  });
+
+  it("finds a quiet open-file plan independently of an evaluation drop", () => {
+    const fen = "rn4k1/pbp1q1pp/1p1pp3/5r2/3P2Nb/1PP1PP1Q/PB1NK2P/R6R w - - 2 17";
+    const patterns = detectMovePatterns(fen, "h1g1");
+    expect(patterns.some((pattern) => pattern.conceptSlug === "open_file" && pattern.confidence >= 0.84))
+      .toBe(true);
+    expect(patternCandidatesForPosition(fen, { phase: "middlegame", ply: 33 })
+      .some((candidate) => candidate.conceptSlug === "open_file")).toBe(true);
+  });
+
+  it("recognizes a real rook ending and rejects a transition as king-and-pawn", () => {
+    const rookEnding = detectMovePatterns("8/5p2/2r2k2/p5p1/P7/4P1KP/R4P2/8 w - - 0 37", "a2d2");
+    expect(rookEnding.some((pattern) => pattern.conceptSlug === "rook_endgame")).toBe(true);
+
+    const transition = detectMovePatterns(
+      "5R2/p5k1/2p1p2p/1p2P1p1/3P2P1/P1P2K2/2P4P/8 b - - 0 27",
+      "g7f8",
+    );
+    expect(transition.some((pattern) => pattern.conceptSlug === "king_and_pawn")).toBe(false);
+  });
+
+  it("records a Stockfish-validated small advantage as a conversion opportunity", () => {
+    const fen = "2b3nr/1pp2k2/1p5p/2bP4/r2N1p1P/2P3p1/PP2B1P1/R1B3KR b - - 2 17";
+    const chess = new Chess(fen);
+    chess.move({ from: "c5", to: "d4" });
+    const analyzed = {
+      ply: 34,
+      san: "Bd4",
+      uci: "c5d4",
+      from: "c5",
+      to: "d4",
+      color: "b",
+      fenBefore: fen,
+      fenAfter: chess.fen(),
+      phase: "middlegame",
+      playerCpBefore: 160,
+      playerCpAfter: 125,
+      lossCp: 35,
+      before: { bestMove: "c5d4", lines: [] },
+      after: {},
+    } as unknown as AnalyzedMove;
+    const occurrences = patternsForAnalyzedMove(analyzed);
+    expect(occurrences).toContainEqual(expect.objectContaining({
+      conceptSlug: "convert_small_advantage",
+      opportunity: true,
+      success: true,
+    }));
   });
 });

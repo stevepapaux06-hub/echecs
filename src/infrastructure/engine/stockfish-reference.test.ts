@@ -139,6 +139,7 @@ describe("Stockfish reference positions", () => {
   it("validates every curated teaching move against Stockfish", async () => {
     const all = allConceptExercises();
     const curated = all.filter((exercise) => exercise.source !== "lichess");
+    const unstableMoves: string[] = [];
     const lichessByConcept = new Map<string, (typeof all)[number]>();
     for (const exercise of all.filter((candidate) => candidate.source === "lichess")) {
       if (!lichessByConcept.has(exercise.conceptSlug)) lichessByConcept.set(exercise.conceptSlug, exercise);
@@ -170,10 +171,9 @@ describe("Stockfish reference positions", () => {
 
       const after = await analyze(chess.fen(), { depth: 9 });
       const afterPlayerCp = exercise.playerColor === "white" ? after.whiteCp : -after.whiteCp;
-      expect(
-        beforePlayerCp - afterPlayerCp,
-        `${exercise.id} should preserve the engine evaluation`,
-      ).toBeLessThanOrEqual(150);
+      const loss = beforePlayerCp - afterPlayerCp;
+      if (loss > 150) unstableMoves.push(`${exercise.id}: ${loss}cp`);
     }
+    expect(unstableMoves).toEqual([]);
   }, 60_000);
 });

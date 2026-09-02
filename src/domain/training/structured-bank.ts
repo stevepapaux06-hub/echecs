@@ -1,10 +1,13 @@
 import type { TrainingExercise } from "@/domain/chess/types";
+import generatedBank from "./nontactical-bank.generated.json";
+import { buildExerciseTeaching } from "./explanation";
+import { THEORETICAL_ENDGAME_BANK } from "./theoretical-endgames";
 
 /**
  * Small, reviewed non-tactical bank. Each entry teaches one named decision and
  * can be extended independently from the Lichess tactical import.
  */
-export const STRUCTURED_TRAINING_BANK: TrainingExercise[] = [
+const REVIEWED_STRUCTURED_BANK: TrainingExercise[] = [
   {
     id: "bank-strategy-worst-bishop-d3",
     type: "strategy",
@@ -162,19 +165,22 @@ export const STRUCTURED_TRAINING_BANK: TrainingExercise[] = [
     title: "Entre dans le carré",
     prompt: "Le roi peut-il encore rattraper le pion ? Trouve son trajet.",
     sourceLabel: "Bibliothèque pédagogique ChessPath",
-    fen: "7k/8/P7/8/8/8/4K3/8 b - - 0 1",
+    fen: "5k2/8/8/2P5/8/8/4K3/8 b - - 0 1",
     playerColor: "black",
-    bestMove: "h8g7",
+    bestMove: "f8e7",
     baselinePlayerCp: 0,
     phase: "endgame",
     concept: "Le roi noir entre dans le carré du pion avant sa prochaine poussée.",
     maxPlayerMoves: 2,
-    solutionLine: ["h8g7", "a6a7", "g7f6"],
-    planArrows: [{ from: "h8", to: "g7", color: "primary", label: "entrée dans le carré" }, { from: "g7", to: "f6", color: "secondary", label: "rattraper" }],
-    planSquares: [{ square: "g7", color: "primary" }, { square: "a8", color: "warning" }],
+    solutionLine: ["f8e7", "c5c6", "e7d6"],
+    planArrows: [{ from: "f8", to: "e7", color: "primary", label: "entrée dans le carré" }, { from: "e7", to: "d6", color: "secondary", label: "rattraper" }],
+    planSquares: [{ square: "e7", color: "primary" }, { square: "c8", color: "warning" }],
     classificationConfidence: 0.99,
     difficulty: 850,
-    source: "chesspath_curated",
+    source: "lichess_tablebase",
+    sourceId: "rule-square-c5",
+    verificationSource: "Lichess tablebase · draw",
+    tablebaseWdl: "draw",
     qualityScore: 97,
     isVerified: true,
   },
@@ -238,3 +244,54 @@ export const STRUCTURED_TRAINING_BANK: TrainingExercise[] = [
     isVerified: true,
   },
 ];
+
+type GeneratedBank = {
+  generatedAt: string;
+  sources: Array<{ collection: string; url: string }>;
+  engine: string;
+  deduplication: string;
+  positions: TrainingExercise[];
+};
+
+const generated = generatedBank as GeneratedBank;
+
+/**
+ * Generated entries keep compact source data in JSON. Teaching payloads are
+ * deterministically hydrated from their concept and move, so the same Pattern
+ * Engine vocabulary drives both analysis and training feedback.
+ */
+const GENERATED_MASTER_BANK = generated.positions.map((exercise) => {
+  const teaching = buildExerciseTeaching(
+    exercise.fen,
+    exercise.bestMove,
+    exercise.conceptSlug,
+    exercise.solutionLine,
+  );
+  return {
+    ...exercise,
+    explanation: exercise.explanation ?? teaching?.explanation,
+    planArrows: exercise.planArrows?.length ? exercise.planArrows : teaching?.planArrows,
+    planSquares: exercise.planSquares?.length ? exercise.planSquares : teaching?.planSquares,
+  } satisfies TrainingExercise;
+});
+
+export const NONTACTICAL_BANK_METADATA = {
+  generatedAt: generated.generatedAt,
+  sources: generated.sources,
+  engine: generated.engine,
+  deduplication: generated.deduplication,
+  generatedPositions: GENERATED_MASTER_BANK.length,
+};
+
+const seenPositions = new Set<string>();
+
+export const STRUCTURED_TRAINING_BANK: TrainingExercise[] = [
+  ...REVIEWED_STRUCTURED_BANK,
+  ...THEORETICAL_ENDGAME_BANK,
+  ...GENERATED_MASTER_BANK,
+].filter((exercise) => {
+  const canonical = exercise.fen.split(" ").slice(0, 4).join(" ");
+  if (seenPositions.has(canonical)) return false;
+  seenPositions.add(canonical);
+  return true;
+});

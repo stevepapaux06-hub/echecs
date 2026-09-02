@@ -293,8 +293,12 @@ export type TrainingExercise = {
   /** Kept for persisted V2 exercises; new exercises use secondaryConceptSlugs. */
   secondaryConceptSlug?: import("@/domain/knowledge/concepts").ConceptSlug;
   difficulty?: number;
-  source?: "personal_game" | "chesspath_curated" | "lichess";
+  source?: "personal_game" | "chesspath_curated" | "lichess" | "master_game" | "lichess_tablebase";
   sourceId?: string;
+  /** Deterministic verifier used before an exercise entered the bank. */
+  verificationSource?: string;
+  /** Root result returned by a seven-piece-or-fewer tablebase, when available. */
+  tablebaseWdl?: "win" | "draw" | "loss" | "cursed-win" | "blessed-loss" | "unknown";
   qualityScore?: number;
   isVerified?: boolean;
 };

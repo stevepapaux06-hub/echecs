@@ -18,6 +18,8 @@ export type ConceptSlug =
   | "weak_square"
   | "weak_pawn"
   | "favorable_exchange"
+  | "piece_activity"
+  | "pawn_structure"
   | "prophylaxis"
   | "development"
   | "center_control"
@@ -26,13 +28,24 @@ export type ConceptSlug =
   | "restrict_counterplay"
   | "simplify_when_ahead"
   | "use_material_advantage"
+  | "convert_small_advantage"
+  | "favorable_endgame_transition"
+  | "preserve_activity"
+  | "create_second_weakness"
+  | "avoid_forcing_too_soon"
   | "defensive_resource"
   | "king_activity"
   | "opposition"
   | "rule_of_square"
   | "passed_pawn"
+  | "king_and_pawn"
+  | "rook_endgame"
   | "rook_activity"
-  | "rook_behind_pawn";
+  | "rook_behind_pawn"
+  | "lucena"
+  | "philidor"
+  | "bishop_endgame"
+  | "knight_endgame";
 
 export type ConceptDefinition = {
   conceptSlug: ConceptSlug;
@@ -57,24 +70,37 @@ export const CHESSPATH_CONCEPTS: readonly ConceptDefinition[] = [
   { conceptSlug: "open_file", category: "strategy", labelFr: "Colonne ouverte", shortDescription: "Activer une tour sur une colonne sans pion propre.", detectionStatus: "detected", detectionMethod: "Déplacement de tour vers une colonne ouverte ou semi-ouverte." },
   { conceptSlug: "outpost", category: "strategy", labelFr: "Avant-poste", shortDescription: "Installer une pièce sur une case avancée stable.", detectionStatus: "detected", detectionMethod: "Cavalier avancé soutenu par un pion et non chassable par un pion adverse." },
   { conceptSlug: "pawn_break", category: "strategy", labelFr: "Rupture de pions", shortDescription: "Changer la structure par une poussée préparée.", detectionStatus: "detected", detectionMethod: "Poussée structurelle connue dans une structure de pions reconnue avec forte confiance." },
-  { conceptSlug: "weak_square", category: "strategy", labelFr: "Case faible", shortDescription: "Exploiter une case difficile à contrôler par les pions adverses.", detectionStatus: "planned", detectionMethod: "La feature existe ; le diagnostic reste désactivé pour éviter les faux positifs." },
+  { conceptSlug: "weak_square", category: "strategy", labelFr: "Case faible", shortDescription: "Exploiter une case difficile à contrôler par les pions adverses.", detectionStatus: "detected", detectionMethod: "Pièce installée sur une case avancée, soutenue et hors du contrôle des pions adverses." },
   { conceptSlug: "weak_pawn", category: "strategy", labelFr: "Pion faible", shortDescription: "Fixer puis attaquer un pion durablement vulnérable.", detectionStatus: "detected", detectionMethod: "Activation légale d’une pièce contre un pion isolé identifié géométriquement." },
-  { conceptSlug: "favorable_exchange", category: "strategy", labelFr: "Échange favorable", shortDescription: "Échanger pour améliorer durablement la position.", detectionStatus: "planned", detectionMethod: "Prévu avec comparaison des positions avant et après échange." },
+  { conceptSlug: "favorable_exchange", category: "strategy", labelFr: "Échange favorable", shortDescription: "Échanger pour améliorer durablement la position.", detectionStatus: "detected", detectionMethod: "Capture d’une pièce au moins équivalente par une pièce défendue, confirmée par Stockfish." },
+  { conceptSlug: "piece_activity", category: "strategy", labelFr: "Activité des pièces", shortDescription: "Gagner de la mobilité et des cibles avec une pièce jusque-là limitée.", detectionStatus: "detected", detectionMethod: "Gain net de mobilité utile sur un coup calme, sans motif tactique immédiat." },
+  { conceptSlug: "pawn_structure", category: "strategy", labelFr: "Structure de pions", shortDescription: "Choisir un plan cohérent avec la structure de pions présente.", detectionStatus: "detected", detectionMethod: "Structure connue reconnue avec forte confiance et coup jouant vers une case ou une rupture caractéristique." },
   { conceptSlug: "prophylaxis", category: "strategy", labelFr: "Prophylaxie", shortDescription: "Limiter le meilleur plan adverse avant de poursuivre le sien.", detectionStatus: "planned", detectionMethod: "Prévu avec comparaison MultiPV." },
   { conceptSlug: "development", category: "opening", labelFr: "Développement", shortDescription: "Sortir les pièces vers des cases utiles.", detectionStatus: "planned", detectionMethod: "Prévu avec règles d’ouverture strictes." },
   { conceptSlug: "center_control", category: "opening", labelFr: "Contrôle du centre", shortDescription: "Influencer les cases centrales sans perdre de temps.", detectionStatus: "planned", detectionMethod: "Prévu avec règles d’ouverture strictes." },
   { conceptSlug: "king_safety", category: "opening", labelFr: "Sécurité du roi", shortDescription: "Mettre le roi à l’abri avant les opérations tactiques.", detectionStatus: "planned", detectionMethod: "Prévu avec roque et exposition du roi." },
   { conceptSlug: "opening_tempo", category: "opening", labelFr: "Tempo d’ouverture", shortDescription: "Développer avec gain de temps ou éviter les répétitions inutiles.", detectionStatus: "planned", detectionMethod: "Prévu avec historique complet des coups." },
-  { conceptSlug: "restrict_counterplay", category: "conversion", labelFr: "Limiter le contre-jeu", shortDescription: "Réduire les ressources adverses avant de convertir.", detectionStatus: "planned", detectionMethod: "Prévu avec comparaison de mobilité et MultiPV." },
-  { conceptSlug: "simplify_when_ahead", category: "conversion", labelFr: "Simplifier avec avantage", shortDescription: "Échanger les bonnes pièces sans rendre de matériel.", detectionStatus: "planned", detectionMethod: "Prévu avec bilan matériel et évaluation Stockfish." },
-  { conceptSlug: "use_material_advantage", category: "conversion", labelFr: "Utiliser l’avantage matériel", shortDescription: "Coordonner les pièces supplémentaires pour convertir.", detectionStatus: "planned", detectionMethod: "Prévu avec bilan matériel et sécurité du roi." },
+  { conceptSlug: "restrict_counterplay", category: "conversion", labelFr: "Limiter le contre-jeu", shortDescription: "Réduire les ressources adverses avant de convertir.", detectionStatus: "detected", detectionMethod: "Avantage mesuré, coup sain et réduction nette des réponses légales adverses." },
+  { conceptSlug: "simplify_when_ahead", category: "conversion", labelFr: "Simplifier avec avantage", shortDescription: "Échanger les bonnes pièces sans rendre de matériel.", detectionStatus: "detected", detectionMethod: "Réduction du matériel non-pion dans une position entre +1 et +3, sans dissiper l’avantage." },
+  { conceptSlug: "use_material_advantage", category: "conversion", labelFr: "Exploiter l’avantage matériel", shortDescription: "Coordonner les pièces supplémentaires pour convertir.", detectionStatus: "detected", detectionMethod: "Avantage matériel vérifié et décision Stockfish qui conserve un avantage pratique mesuré." },
+  { conceptSlug: "convert_small_advantage", category: "conversion", labelFr: "Convertir un petit avantage", shortDescription: "Faire progresser un avantage de +1 à +3 sans chercher un gain forcé prématuré.", detectionStatus: "detected", detectionMethod: "État légèrement meilleur ou gagnant conservé après une décision Stockfish saine." },
+  { conceptSlug: "favorable_endgame_transition", category: "conversion", labelFr: "Transition vers une finale favorable", shortDescription: "Échanger vers une finale où l’avantage reste exploitable.", detectionStatus: "detected", detectionMethod: "Passage objectif du milieu de jeu à la finale en conservant un avantage mesuré." },
+  { conceptSlug: "preserve_activity", category: "conversion", labelFr: "Conserver l’activité", shortDescription: "Garder les pièces actives pendant la conversion.", detectionStatus: "detected", detectionMethod: "Avantage mesuré et gain d’activité d’une tour ou pièce mineure sur un coup sain." },
+  { conceptSlug: "create_second_weakness", category: "conversion", labelFr: "Créer une deuxième faiblesse", shortDescription: "Fixer une cible puis ouvrir un second front.", detectionStatus: "planned", detectionMethod: "Différé jusqu’à une détection fiable de deux fronts distincts ; aucun chiffre n’est inventé entre-temps." },
+  { conceptSlug: "avoid_forcing_too_soon", category: "conversion", labelFr: "Ne pas forcer trop tôt", shortDescription: "Améliorer la position avant de déclencher les opérations concrètes.", detectionStatus: "planned", detectionMethod: "Nécessite une comparaison MultiPV plus fine avant d’alimenter le diagnostic ou la banque." },
   { conceptSlug: "defensive_resource", category: "defense", labelFr: "Ressource défensive", shortDescription: "Trouver une suite qui sauve réellement une position difficile.", detectionStatus: "planned", detectionMethod: "Point d’extension Stockfish/Syzygy ; aucune détection spéculative en V1." },
   { conceptSlug: "king_activity", category: "endgame", labelFr: "Activité du roi", shortDescription: "Rapprocher le roi des cases et pions importants en finale.", detectionStatus: "detected", detectionMethod: "Coup de roi vers le centre dans une finale à matériel réduit." },
   { conceptSlug: "opposition", category: "endgame", labelFr: "Opposition", shortDescription: "Placer les rois face à face avec une case entre eux.", detectionStatus: "detected", detectionMethod: "Géométrie exacte des rois en finale de pions." },
-  { conceptSlug: "rule_of_square", category: "endgame", labelFr: "Règle du carré", shortDescription: "Savoir si un roi peut rattraper un pion passé.", detectionStatus: "planned", detectionMethod: "Prévu avec cas de courses de pions strictement validés." },
+  { conceptSlug: "rule_of_square", category: "endgame", labelFr: "Règle du carré", shortDescription: "Savoir si un roi peut rattraper un pion passé.", detectionStatus: "detected", detectionMethod: "Distance de Chebyshev exacte entre le roi et la case de promotion du pion passé." },
   { conceptSlug: "passed_pawn", category: "endgame", labelFr: "Pion passé", shortDescription: "Créer ou faire progresser un pion sans bloqueur adverse.", detectionStatus: "detected", detectionMethod: "Absence de pion adverse devant sur la même colonne ou une colonne voisine." },
+  { conceptSlug: "king_and_pawn", category: "endgame", labelFr: "Roi et pion", shortDescription: "Coordonner le roi et les pions dans une finale sans autre pièce.", detectionStatus: "detected", detectionMethod: "Classification matérielle exacte : uniquement rois et pions." },
+  { conceptSlug: "rook_endgame", category: "endgame", labelFr: "Finales de tours", shortDescription: "Jouer une finale où les tours et l’activité dominent.", detectionStatus: "detected", detectionMethod: "Classification matérielle exacte : tours, rois et pions, avec au moins une tour par camp." },
   { conceptSlug: "rook_activity", category: "endgame", labelFr: "Activité de la tour", shortDescription: "Donner à la tour des cibles, des lignes et du contre-jeu.", detectionStatus: "detected", detectionMethod: "Gain net de mobilité ou accès à une rangée active dans une finale à matériel réduit." },
-  { conceptSlug: "rook_behind_pawn", category: "endgame", labelFr: "Tour derrière le pion", shortDescription: "Placer la tour derrière un pion passé, ami ou adverse.", detectionStatus: "planned", detectionMethod: "Prévu avec validation des exceptions tactiques." },
+  { conceptSlug: "rook_behind_pawn", category: "endgame", labelFr: "Tour derrière le pion", shortDescription: "Placer la tour derrière un pion passé, ami ou adverse.", detectionStatus: "detected", detectionMethod: "Alignement exact de la tour et d’un pion passé sur la même colonne, validé par Stockfish." },
+  { conceptSlug: "lucena", category: "endgame", labelFr: "Lucena", shortDescription: "Construire un pont pour libérer le roi devant son pion.", detectionStatus: "planned", detectionMethod: "Positions de banque vérifiées ; reconnaissance automatique volontairement différée." },
+  { conceptSlug: "philidor", category: "endgame", labelFr: "Philidor", shortDescription: "Tenir une finale de tours par la troisième rangée puis les échecs arrière.", detectionStatus: "planned", detectionMethod: "Positions de banque vérifiées ; reconnaissance automatique volontairement différée." },
+  { conceptSlug: "bishop_endgame", category: "endgame", labelFr: "Finales de fous", shortDescription: "Activer le roi et le fou selon la couleur des cases et des pions.", detectionStatus: "detected", detectionMethod: "Classification matérielle exacte : fous, rois et pions, sans tour, dame ni cavalier." },
+  { conceptSlug: "knight_endgame", category: "endgame", labelFr: "Finales de cavaliers", shortDescription: "Coordonner roi, cavalier et pions dans une finale fermée.", detectionStatus: "detected", detectionMethod: "Classification matérielle exacte : cavaliers, rois et pions, sans tour, dame ni fou." },
 ] as const;
 
 const CONCEPTS_BY_SLUG = new Map(CHESSPATH_CONCEPTS.map((concept) => [concept.conceptSlug, concept]));

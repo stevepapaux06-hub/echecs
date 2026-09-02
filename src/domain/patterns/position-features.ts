@@ -7,6 +7,8 @@ const FILES = "abcdefgh";
 
 export const PIECE_VALUE: Record<PieceSymbol, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
 
+const CENTIPAWN_VALUE: Record<PieceSymbol, number> = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
+
 export function pieces(chess: Chess): BoardPiece[] {
   return chess.board().flatMap((row) => row.filter((piece): piece is BoardPiece => Boolean(piece)));
 }
@@ -145,6 +147,96 @@ export function attackedSquaresByPiece(chess: Chess, from: Square): Square[] {
 
 export function mobility(fen: string): number {
   return new Chess(fen).moves().length;
+}
+
+export function materialAdvantage(fen: string, color: Color): number {
+  return pieces(new Chess(fen)).reduce((total, piece) => (
+    total + (piece.color === color ? 1 : -1) * CENTIPAWN_VALUE[piece.type]
+  ), 0);
+}
+
+export function nonPawnMaterial(fen: string): number {
+  return pieces(new Chess(fen)).reduce((total, piece) => (
+    total + (piece.type === "p" || piece.type === "k" ? 0 : CENTIPAWN_VALUE[piece.type])
+  ), 0);
+}
+
+export function pieceActivity(chess: Chess, square: Square): number {
+  const piece = chess.get(square);
+  if (!piece) return 0;
+  const usefulSquares = attackedSquaresByPiece(chess, square)
+    .filter((target) => chess.get(target)?.color !== piece.color);
+  const enemyHalfBonus = usefulSquares.filter((target) => {
+    const rank = Number(target[1]);
+    return piece.color === "w" ? rank >= 5 : rank <= 4;
+  }).length;
+  return usefulSquares.length * 2 + enemyHalfBonus - distanceToCenter(square);
+}
+
+export function worstActivePiece(chess: Chess, color: Color): Square | null {
+  const candidates = pieces(chess).filter((piece) => (
+    piece.color === color && ["n", "b", "r"].includes(piece.type)
+  ));
+  return candidates.toSorted((first, second) => (
+    pieceActivity(chess, first.square) - pieceActivity(chess, second.square)
+  ))[0]?.square ?? null;
+}
+
+function exactMaterialFamily(fen: string, allowed: PieceSymbol[]): boolean {
+  return pieces(new Chess(fen)).every((piece) => (
+    piece.type === "k" || piece.type === "p" || allowed.includes(piece.type)
+  ));
+}
+
+export function isPawnEndgame(fen: string): boolean {
+  return exactMaterialFamily(fen, []) && pieces(new Chess(fen)).some((piece) => piece.type === "p");
+}
+
+export function isRookEndgame(fen: string): boolean {
+  const rooks = pieces(new Chess(fen)).filter((piece) => piece.type === "r");
+  return exactMaterialFamily(fen, ["r"])
+    && rooks.some((piece) => piece.color === "w")
+    && rooks.some((piece) => piece.color === "b");
+}
+
+export function isBishopEndgame(fen: string): boolean {
+  const bishops = pieces(new Chess(fen)).filter((piece) => piece.type === "b");
+  return exactMaterialFamily(fen, ["b"])
+    && bishops.some((piece) => piece.color === "w")
+    && bishops.some((piece) => piece.color === "b");
+}
+
+export function isKnightEndgame(fen: string): boolean {
+  const knights = pieces(new Chess(fen)).filter((piece) => piece.type === "n");
+  return exactMaterialFamily(fen, ["n"])
+    && knights.some((piece) => piece.color === "w")
+    && knights.some((piece) => piece.color === "b");
+}
+
+export function kingInsidePassedPawnSquare(fen: string, kingColor: Color): boolean {
+  const chess = new Chess(fen);
+  const king = pieces(chess).find((piece) => piece.type === "k" && piece.color === kingColor);
+  const enemyPassers = passedPawns(fen, opposite(kingColor));
+  if (!king || enemyPassers.length !== 1) return false;
+  const pawn = enemyPassers[0];
+  const [kingFile, kingRank] = coordinates(king.square);
+  const [pawnFile, pawnRank] = coordinates(pawn.square);
+  const promotionRank = pawn.color === "w" ? 7 : 0;
+  const movesToPromote = Math.abs(promotionRank - pawnRank);
+  const kingDistance = Math.max(Math.abs(kingFile - pawnFile), Math.abs(kingRank - promotionRank));
+  return kingDistance <= movesToPromote;
+}
+
+export function rookBehindPassedPawn(fen: string, rookSquare: Square): BoardPiece | null {
+  const [rookFile, rookRank] = coordinates(rookSquare);
+  return [...passedPawns(fen, "w"), ...passedPawns(fen, "b")].find((pawn) => {
+    const [pawnFile, pawnRank] = coordinates(pawn.square);
+    if (pawnFile !== rookFile) return false;
+    // Behind means farther from the pawn's promotion square. The rule applies
+    // to both an allied and an enemy passer.
+    const behind = pawn.color === "w" ? rookRank < pawnRank : rookRank > pawnRank;
+    return behind;
+  }) ?? null;
 }
 
 export function isLowMaterialEndgame(fen: string): boolean {

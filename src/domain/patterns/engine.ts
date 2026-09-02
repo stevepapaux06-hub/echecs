@@ -1,5 +1,6 @@
 import { Chess, type Color, type Move, type Square } from "chess.js";
 import type { AnalyzedMove } from "../chess/types";
+import { classifyPhase } from "../chess/phase";
 import type { ConceptSlug } from "../knowledge/concepts";
 import {
   PAWN_STRUCTURES,
@@ -11,14 +12,24 @@ import {
   distanceToCenter,
   fileStatus,
   isolatedPawns,
+  isBishopEndgame,
+  isKnightEndgame,
   isLowMaterialEndgame,
+  isPawnEndgame,
+  isRookEndgame,
+  kingInsidePassedPawnSquare,
   loosePieces,
+  materialAdvantage,
+  nonPawnMaterial,
   opposite,
   passedPawns,
   pawnAttackSquares,
+  pieceActivity,
   pieces,
   PIECE_VALUE,
+  rookBehindPassedPawn,
   squareCoordinates,
+  worstActivePiece,
 } from "./position-features";
 
 export type PatternSource = "pattern_engine" | "pattern_engine_stockfish_validated";
@@ -82,22 +93,6 @@ function hasOpposition(chess: Chess): boolean {
     || (firstRank === secondRank && Math.abs(firstFile - secondFile) === 2);
 }
 
-function pieceActivity(chess: Chess, square: Square): number {
-  const piece = chess.get(square);
-  if (!piece) return 0;
-  const usefulSquares = attackedSquaresByPiece(chess, square).filter((target) => chess.get(target)?.color !== piece.color);
-  return usefulSquares.length * 2 - distanceToCenter(square);
-}
-
-function worstActivePiece(chess: Chess, color: Color): Square | null {
-  const candidates = pieces(chess).filter((piece) => (
-    piece.color === color && ["n", "b", "r"].includes(piece.type)
-  ));
-  return candidates.toSorted((first, second) => (
-    pieceActivity(chess, first.square) - pieceActivity(chess, second.square)
-  ))[0]?.square ?? null;
-}
-
 function isKnownPawnBreak(fen: string, moveUci: string): boolean {
   const recognition = recognizePawnStructure(fen);
   if (recognition.confidence < 0.9 || recognition.structureSlug === "unknown") return false;
@@ -117,6 +112,9 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
   const worstPiece = worstActivePiece(original, moverColor);
   const activityBefore = worstPiece ? pieceActivity(original, worstPiece) : 0;
   const capturedPiece = before.get(moveUci.slice(2, 4) as Square);
+  const materialBefore = materialAdvantage(fen, moverColor);
+  const nonPawnBefore = nonPawnMaterial(fen);
+  const kingWasInsideSquare = kingInsidePassedPawnSquare(fen, moverColor);
   const capturedWasLoose = Boolean(capturedPiece
     && capturedPiece.type !== "p"
     && before.attackers(moveUci.slice(2, 4) as Square, capturedPiece.color).length === 0);
@@ -156,18 +154,32 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
     if (isLowMaterialEndgame(after.fen()) && (
       activeRank || pieceActivity(after, move.to as Square) >= pieceActivity(original, move.from as Square) + 4
     )) add("rook_activity", activeRank ? 0.9 : 0.84);
+    if (isRookEndgame(fen) && isRookEndgame(after.fen()) && rookBehindPassedPawn(after.fen(), move.to as Square)) {
+      add("rook_behind_pawn", 0.92);
+    }
   }
-  if (move.piece === "n") {
+  if (move.piece === "n" || move.piece === "b") {
     const rank = Number(move.to[1]);
     const advanced = moverColor === "w" ? rank >= 5 : rank <= 4;
     const supportedByPawn = pawnAttackSquares(after.fen(), moverColor).has(move.to as Square);
     const chasedByEnemyPawn = pawnAttackSquares(after.fen(), opposite(moverColor)).has(move.to as Square);
-    if (advanced && supportedByPawn && !chasedByEnemyPawn) add("outpost", 0.91);
+    const supportedByPiece = after.attackers(move.to as Square, moverColor)
+      .some((square) => square !== move.to);
+    if (move.piece === "n" && advanced && supportedByPawn && !chasedByEnemyPawn) add("outpost", 0.91);
+    if (advanced && supportedByPiece && !supportedByPawn && !chasedByEnemyPawn
+      && pieceActivity(after, move.to as Square) >= pieceActivity(original, move.from as Square) + 2) {
+      add("weak_square", 0.86);
+    }
   }
   if (move.piece === "p" && passedPawns(after.fen(), moverColor).some((pawn) => pawn.square === move.to)) {
     add("passed_pawn", 0.9);
   }
   if (move.piece === "p" && isKnownPawnBreak(fen, moveUci)) add("pawn_break", 0.91);
+  const structure = recognizePawnStructure(fen);
+  if (structure.confidence >= 0.9 && structure.structureSlug !== "unknown") {
+    const definition = PAWN_STRUCTURES.find((candidate) => candidate.structureSlug === structure.structureSlug);
+    if (definition?.keySquares.includes(move.to)) add("pawn_structure", 0.86);
+  }
 
   const attackedWeakPawn = isolatedPawns(after.fen(), opposite(moverColor)).some((pawn) => (
     attackedSquaresByPiece(after, move.to as Square).includes(pawn.square)
@@ -179,10 +191,47 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
     const activityAfter = pieceActivity(after, move.to as Square);
     if (activityAfter >= activityBefore + 5) add("improve_worst_piece", 0.86);
   }
+  if (quietMove && ["n", "b", "r"].includes(move.piece)
+    && worstPiece !== move.from
+    && pieceActivity(after, move.to as Square) >= pieceActivity(original, move.from as Square) + 5) {
+    add("piece_activity", 0.84);
+  }
+
+  if (move.captured && capturedPiece && capturedPiece.type !== "p" && capturedPiece.type !== "k") {
+    const movingValue = PIECE_VALUE[move.piece];
+    const capturedValue = PIECE_VALUE[capturedPiece.type];
+    const stillDefended = after.attackers(move.to as Square, moverColor).length > 0;
+    if (!after.inCheck() && stillDefended && capturedValue >= movingValue) add("favorable_exchange", 0.85);
+  }
+
+  const activityGain = ["n", "b", "r"].includes(move.piece)
+    ? pieceActivity(after, move.to as Square) - pieceActivity(original, move.from as Square)
+    : 0;
+  if (materialBefore >= 100 && materialBefore <= 500) {
+    if (nonPawnMaterial(after.fen()) <= nonPawnBefore - 300) add("simplify_when_ahead", 0.85);
+    if (activityGain >= 5) add("preserve_activity", 0.84);
+    if (after.moves().length <= 14 && quietMove) add("restrict_counterplay", 0.84);
+    add("use_material_advantage", 0.82);
+  }
+
   if (move.piece === "k" && isLowMaterialEndgame(after.fen())) {
-    if (hasOpposition(after)) add("opposition", 0.96);
+    const remainedPawnEndgame = isPawnEndgame(fen) && isPawnEndgame(after.fen());
+    if (remainedPawnEndgame && hasOpposition(after)) add("opposition", 0.96);
+    if (remainedPawnEndgame && !kingWasInsideSquare && kingInsidePassedPawnSquare(after.fen(), moverColor)) {
+      add("rule_of_square", 0.94);
+    }
     if (distanceToCenter(move.to as Square) < distanceToCenter(move.from as Square)) add("king_activity", 0.83);
   }
+  if (isPawnEndgame(fen) && isPawnEndgame(after.fen()) && (
+    move.piece === "k" || move.piece === "p"
+  ) && [...detected.keys()].some((concept) => ["opposition", "rule_of_square", "king_activity", "passed_pawn"].includes(concept))) {
+    add("king_and_pawn", 0.88);
+  }
+  if (isRookEndgame(fen) && isRookEndgame(after.fen()) && [...detected.keys()].some((concept) => (
+    ["rook_activity", "rook_behind_pawn", "favorable_exchange"].includes(concept)
+  ))) add("rook_endgame", 0.87);
+  if (isBishopEndgame(fen) && isBishopEndgame(after.fen()) && move.piece === "b" && activityGain >= 3) add("bishop_endgame", 0.86);
+  if (isKnightEndgame(fen) && isKnightEndgame(after.fen()) && move.piece === "n" && activityGain >= 3) add("knight_endgame", 0.86);
 
   return [...detected.entries()].map(([conceptSlug, confidence]) => ({ conceptSlug, confidence }));
 }
@@ -264,6 +313,45 @@ export function patternsForAnalyzedMove(move: AnalyzedMove, minConfidence = 0.8)
         success: true,
         source: "pattern_engine",
         moveUci: move.uci,
+      });
+    }
+  }
+
+  const inSmallAdvantage = move.playerCpBefore >= 80 && move.playerCpBefore <= 350;
+  if (inSmallAdvantage) {
+    const afterPhase = classifyPhase(move.fenAfter, move.ply + 1);
+    const played = new Chess(move.fenBefore).move({
+      from: move.uci.slice(0, 2) as Square,
+      to: move.uci.slice(2, 4) as Square,
+      promotion: move.uci.slice(4, 5) || "q",
+    });
+    const material = materialAdvantage(move.fenBefore, move.color);
+    const conversionConcepts: ConceptSlug[] = ["convert_small_advantage"];
+    if (material >= 100) conversionConcepts.push("use_material_advantage");
+    if (nonPawnMaterial(move.fenAfter) <= nonPawnMaterial(move.fenBefore) - 300) {
+      conversionConcepts.push("simplify_when_ahead");
+    }
+    if (move.phase === "middlegame" && afterPhase === "endgame") {
+      conversionConcepts.push("favorable_endgame_transition");
+    }
+    const playedConceptsForConversion = detectMovePatterns(move.fenBefore, move.uci);
+    if (playedConceptsForConversion.some((pattern) => pattern.conceptSlug === "preserve_activity")) {
+      conversionConcepts.push("preserve_activity");
+    }
+    if (playedConceptsForConversion.some((pattern) => pattern.conceptSlug === "restrict_counterplay")) {
+      conversionConcepts.push("restrict_counterplay");
+    }
+    for (const conceptSlug of conversionConcepts) {
+      if (occurrences.has(conceptSlug)) continue;
+      occurrences.set(conceptSlug, {
+        conceptSlug,
+        fen: move.fenBefore,
+        ply: move.ply,
+        confidence: conceptSlug === "convert_small_advantage" ? 0.9 : 0.85,
+        opportunity: true,
+        success: move.lossCp <= 80 && Boolean(played),
+        source: "pattern_engine_stockfish_validated",
+        moveUci: move.before.bestMove || move.uci,
       });
     }
   }

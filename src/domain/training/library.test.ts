@@ -49,4 +49,97 @@ describe("curated training library", () => {
     expect(lichess.filter((exercise) => exercise.category === "endgame")
       .every((exercise) => exercise.phase === "endgame")).toBe(true);
   });
+
+  it("ships a deep, diverse non-tactical master-game bank", () => {
+    const master = allConceptExercises().filter((exercise) => exercise.source === "master_game");
+    const byDomain = (domain: string) => master.filter((exercise) => exercise.domain === domain);
+    expect(master.length).toBeGreaterThanOrEqual(530);
+    expect(byDomain("strategy").length).toBeGreaterThanOrEqual(200);
+    expect(byDomain("endgame").length).toBeGreaterThanOrEqual(185);
+    expect(byDomain("conversion").length).toBeGreaterThanOrEqual(130);
+
+    const strategyMinimums: Record<string, number> = {
+      improve_worst_piece: 20,
+      outpost: 20,
+      open_file: 24,
+      weak_square: 16,
+      weak_pawn: 20,
+      pawn_break: 24,
+      favorable_exchange: 18,
+      piece_activity: 20,
+      pawn_structure: 20,
+    };
+    for (const [concept, minimum] of Object.entries(strategyMinimums)) {
+      expect(master.filter((exercise) => exercise.conceptSlug === concept).length, concept)
+        .toBeGreaterThanOrEqual(minimum);
+    }
+  });
+
+  it("keeps strategy quiet, conversion modest and ending families honest", () => {
+    const master = allConceptExercises().filter((exercise) => exercise.source === "master_game");
+    const strategy = master.filter((exercise) => exercise.domain === "strategy");
+    expect(strategy.every((exercise) => (
+      exercise.phase === "middlegame"
+      && exercise.baselinePlayerCp >= -120
+      && exercise.baselinePlayerCp <= 120
+    ))).toBe(true);
+
+    const conversion = master.filter((exercise) => exercise.domain === "conversion");
+    expect(conversion.every((exercise) => (
+      exercise.baselinePlayerCp >= 80 && exercise.baselinePlayerCp <= 320
+    ))).toBe(true);
+
+    const nonPawnFamily = (exercise: (typeof master)[number]) => {
+      const chess = new Chess(exercise.fen);
+      return chess.board().flat().filter((piece) => piece && !["p", "k"].includes(piece.type));
+    };
+    expect(master.filter((exercise) => exercise.conceptSlug === "king_and_pawn")
+      .every((exercise) => nonPawnFamily(exercise).length === 0)).toBe(true);
+    expect(master.filter((exercise) => exercise.conceptSlug === "rook_endgame")
+      .every((exercise) => nonPawnFamily(exercise).every((piece) => piece?.type === "r"))).toBe(true);
+    expect(master.filter((exercise) => exercise.conceptSlug === "bishop_endgame")
+      .every((exercise) => nonPawnFamily(exercise).every((piece) => piece?.type === "b"))).toBe(true);
+    expect(master.filter((exercise) => exercise.conceptSlug === "knight_endgame")
+      .every((exercise) => nonPawnFamily(exercise).every((piece) => piece?.type === "n"))).toBe(true);
+  });
+
+  it("deduplicates positions and keeps one concept varied across long training", () => {
+    const master = allConceptExercises().filter((exercise) => exercise.source === "master_game");
+    const canonicalFens = master.map((exercise) => exercise.fen.split(" ").slice(0, 4).join(" "));
+    expect(new Set(canonicalFens).size).toBe(master.length);
+
+    const openFiles = master.filter((exercise) => exercise.conceptSlug === "open_file");
+    const targetFiles = new Set(openFiles.map((exercise) => exercise.bestMove[2]));
+    const materialProfiles = new Set(openFiles.map((exercise) => (
+      exercise.fen.split(" ")[0].replace(/[1-8/]/g, "").toLowerCase().split("").toSorted().join("")
+    )));
+    expect(targetFiles.size).toBeGreaterThanOrEqual(6);
+    expect(materialProfiles.size).toBeGreaterThanOrEqual(8);
+
+    const continuous = conceptExercisesFor("strategy", "open_file", 20, 1_500);
+    expect(continuous).toHaveLength(20);
+    expect(new Set(continuous.map((exercise) => exercise.fen)).size).toBe(20);
+  });
+
+  it("hydrates master positions with causal teaching and board annotations", () => {
+    const master = allConceptExercises().filter((exercise) => exercise.source === "master_game");
+    expect(master.every((exercise) => (
+      Boolean(exercise.explanation?.notice)
+      && Boolean(exercise.explanation?.plan)
+      && Boolean(exercise.explanation?.objective)
+      && Boolean(exercise.explanation?.rule)
+      && Boolean(exercise.planArrows?.length)
+      && Boolean(exercise.planSquares?.length)
+    ))).toBe(true);
+  });
+
+  it("includes tablebase-verified Lucena, Philidor and rule-of-square lessons", () => {
+    const verified = allConceptExercises().filter((exercise) => exercise.source === "lichess_tablebase");
+    for (const concept of ["lucena", "philidor", "rule_of_square"]) {
+      const exercise = verified.find((candidate) => candidate.conceptSlug === concept);
+      expect(exercise, concept).toBeDefined();
+      expect(exercise?.phase).toBe("endgame");
+      expect(exercise?.tablebaseWdl).toMatch(/win|draw|loss/);
+    }
+  });
 });
