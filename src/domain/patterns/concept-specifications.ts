@@ -17,6 +17,9 @@ export type ConceptSpecification = {
   contextual_signals: string[];
   hard_negatives: string[];
   human_decision_criteria: string[];
+  human_alternative_patterns: string[];
+  meaningful_state_change: string[];
+  acceptable_outcome_changes: string[];
   acceptable_outcome_states: string[];
   preferred_exercise_unit: PedagogicalUnit;
   sequence_termination_condition: string;
@@ -30,7 +33,11 @@ function specification(domain: DiagnosticCategory, signal: string, rule: string,
     necessary_signals: [signal], supporting_signals: ["safe_destination", "observable_change"],
     contextual_signals: domain === "conversion" ? ["advantage_already_exists", "opponent_resources"] : ["material_family", "legal_alternatives"],
     hard_negatives: negatives,
-    human_decision_criteria: ["distinct_plausible_alternative", "natural_noncatastrophic_mistake", "transferable_change"],
+    human_decision_criteria: ["distinct_plausible_alternative", "causal_consequence", "transferable_change"],
+    human_alternative_patterns: ["another_piece_or_target", "natural_exchange", "reasonable_check", "competing_concept"],
+    meaningful_state_change: [signal],
+    acceptable_outcome_changes: domain === "endgame" || domain === "defense"
+      ? ["win_to_draw", "draw_to_loss"] : ["advantage_dissipated", "mechanism_missed_with_objective_cost"],
     acceptable_outcome_states: domain === "conversion" ? ["advantage_preserved"] : ["tenable", "draw", "win"],
     preferred_exercise_unit: domain === "endgame" ? "theoretical_method" : "decision_then_continuation",
     sequence_termination_condition: signal,
@@ -79,6 +86,43 @@ export const CONCEPT_SPECIFICATIONS: Record<string, ConceptSpecification> = {
 for (const [concept, spec] of Object.entries(CONCEPT_SPECIFICATIONS)) {
   spec.holdout_validation_examples = CONCEPT_HOLDOUT.filter((example) => example.concept === concept).map((example) => example.id);
 }
+// Concept-specific alternatives guide the offline comparison audit. They are
+// hypotheses to test, never labels sufficient to activate a position.
+const HUMAN_ALTERNATIVES: Record<string,string[]> = {
+  open_file:["occupy_other_file","double_without_entry","keep_rook_defending"],
+  outpost:["develop_toward_other_target","exchange_knight","occupy_chaseable_square"],
+  weak_square:["attack_pawn_instead","use_another_entry","leave_weak_square_unused"],
+  improve_worst_piece:["move_already_active_piece","direct_route_instead_of_maneuver","premature_pawn_action"],
+  piece_activity:["defend_passively","exchange_active_piece","target_other_wing"],
+  weak_pawn:["attack_other_target","premature_capture","allow_weakness_to_advance"],
+  pawn_break:["prepare_instead_of_break","break_on_other_wing","close_structure"],
+  pawn_structure:["recapture_with_other_pawn","preserve_tension","release_tension"],
+  favorable_exchange:["maintain_tension","exchange_other_piece","retreat_passive_piece"],
+  opposition:["direct_king_approach","pawn_tempo","different_king_route"],
+  rule_of_square:["advance_own_pawn","wrong_king_route","king_capture_detour"],
+  passed_pawn:["premature_push","king_support_first","other_pawn_race"],
+  king_and_pawn:["pawn_tempo","direct_king_route","capture_instead_of_key_square"],
+  king_activity:["hold_pawns","king_defends_instead_of_infiltrating","target_other_pawn"],
+  rook_behind_pawn:["side_support","frontal_blockade","check_instead_of_blockade"],
+  rook_activity:["passive_pawn_defense","check_from_short_distance","capture_instead_of_activity"],
+  rook_endgame:["passive_pawn_defense","premature_liquidation","check_instead_of_cutoff"],
+  bishop_endgame:["defend_pawn_instead_of_active_diagonal","exchange_pawns","king_route"],
+  knight_endgame:["direct_knight_route","king_activation","pawn_push"],
+  convert_small_advantage:["premature_forcing_action","ignore_counterplay","preserve_structure"],
+  simplify_when_ahead:["keep_active_pieces","exchange_wrong_piece","capture_pawn"],
+  restrict_counterplay:["pursue_own_plan","material_gain","passive_defense"],
+  use_material_advantage:["collect_more_material","keep_surplus_piece_passive","premature_trade"],
+  favorable_endgame_transition:["keep_middlegame","different_exchange","pawn_capture"],
+  preserve_activity:["defend_pawn_passively","exchange_active_piece","advance_pawn_first"],
+  active_defense:["passive_cover","exchange_attacker","countercheck"],
+  defensive_resource:["natural_defense","counterattack","escape_threat"],
+  exchange_attacker:["defend_target","exchange_other_piece","king_escape"],
+  defensive_counterplay:["meet_threat_directly","quiet_defense","countercheck_on_other_square"],
+  simplification_to_hold:["keep_material","different_exchange","passive_defense"],
+  defensive_endgame_activity:["passive_defense","pawn_push","exchange_active_piece"],
+  return_material:["keep_material","escape_with_piece","exchange_other_attacker"],
+};
+for(const [concept,patterns]of Object.entries(HUMAN_ALTERNATIVES))CONCEPT_SPECIFICATIONS[concept].human_alternative_patterns=patterns;
 
 function distance(a: Square, b: Square): number {
   const [af, ar] = squareCoordinates(a); const [bf, br] = squareCoordinates(b);
@@ -185,7 +229,15 @@ export function causalFeatures(fen: string, uci: string): CausalFeatures | null 
   add("pawn_structure_changed", signals.has("pawn_contact_created") && passedPawns(after.fen(), color).length !== passedPawns(before.fen(), color).length);
   const queenTrade = move.piece === "q" && move.captured === "q";
   const removedActivePiece = Boolean(move.captured && checkingPieces.some((p) => p.square === move.to));
-  add("useful_exchange", Boolean(move.captured) && !queenTrade && removedActivePiece && safeDestination);
+  // Exchanges are not automatically tactical. Removing an active minor piece
+  // with our less active minor piece is observable even after an equal recapture.
+  const capturedPiece = before.get(move.to);
+  const roleExchange = Boolean(capturedPiece && ["n", "b"].includes(move.piece)
+    && ["n", "b"].includes(capturedPiece.type)
+    && pieceActivity(before, move.to) - pieceActivity(before, move.from) >= 5
+    && before.attackers(move.to, opposite(color)).length > 0);
+  add("useful_exchange", Boolean(move.captured) && (removedActivePiece || roleExchange)
+    && (!queenTrade || threatReduced));
   add("attacker_removed", removedActivePiece);
   add("threat_reduced", threatReduced);
   add("active_threat_answer", threatReduced && (usefulGain || after.inCheck()));
@@ -225,6 +277,22 @@ export function causalFeatures(fen: string, uci: string): CausalFeatures | null 
 export function matchesConceptSpecification(concept: string, features: CausalFeatures): boolean {
   const spec = CONCEPT_SPECIFICATIONS[concept];
   return !spec || spec.necessary_signals.every((s) => features.signals.includes(s));
+}
+
+/** Narrow preparatory maneuver: the SAME safe piece moves twice and the second
+ * decision establishes the concept. The compiler separately verifies the reply
+ * and both decisions. This is not permission to label an arbitrary engine PV. */
+export function causalPlanFeatures(fen: string, line: string[], concept: string): CausalFeatures | null {
+  const root = causalFeatures(fen, line[0] ?? "");
+  if (!root || matchesConceptSpecification(concept, root) || line.length < 3) return root;
+  if (root.capture || !root.signals.includes("safe_destination") || line[2].slice(0,2) !== root.to) return root;
+  try {
+    const chess = new Chess(fen);
+    for (const uci of line.slice(0,2)) chess.move({from:uci.slice(0,2) as Square,to:uci.slice(2,4) as Square,promotion:uci[4]||"q"});
+    const next = causalFeatures(chess.fen(),line[2]);
+    if (!next || !matchesConceptSpecification(concept,next) || next.to === root.from) return root;
+    return {...root,signals:[...new Set([...root.signals,...next.signals,"preparatory_maneuver"])],targetSquares:next.targetSquares};
+  } catch { return root; }
 }
 
 /** A verified tactical defense may realize its mechanism on the second own

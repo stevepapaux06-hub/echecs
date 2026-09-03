@@ -1,0 +1,5325 @@
+{
+  "baseline": {
+    "commit": "c10ff16",
+    "strategy": 127,
+    "endgame": 38,
+    "conversion": 161,
+    "defense": 28
+  },
+  "trainingNonTactical": 2869,
+  "byDomain": {
+    "defense": 284,
+    "endgame": 534,
+    "conversion": 1316,
+    "strategy": 735
+  },
+  "byConcept": {
+    "defense/active_defense": 28,
+    "defense/defensive_endgame_activity": 11,
+    "defense/exchange_attacker": 13,
+    "defense/simplification_to_hold": 11,
+    "defense/defensive_counterplay": 30,
+    "defense/return_material": 1,
+    "endgame/rook_behind_pawn": 84,
+    "endgame/king_activity": 305,
+    "conversion/use_material_advantage": 285,
+    "strategy/weak_pawn": 92,
+    "strategy/piece_activity": 92,
+    "endgame/king_and_pawn": 54,
+    "endgame/opposition": 13,
+    "endgame/rook_activity": 38,
+    "conversion/favorable_endgame_transition": 72,
+    "conversion/preserve_activity": 285,
+    "endgame/passed_pawn": 17,
+    "strategy/improve_worst_piece": 91,
+    "strategy/outpost": 92,
+    "conversion/convert_small_advantage": 287,
+    "conversion/simplify_when_ahead": 94,
+    "conversion/restrict_counterplay": 293,
+    "strategy/open_file": 92,
+    "strategy/pawn_break": 92,
+    "strategy/favorable_exchange": 92,
+    "strategy/weak_square": 92,
+    "endgame/rook_endgame": 21,
+    "endgame/knight_endgame": 2,
+    "defense/defensive_resource": 190
+  },
+  "examined": 17919,
+  "newAccepted": 2206,
+  "rejectedByGate": {
+    "outcome": 3723,
+    "causality": 2461,
+    "triviality": 2003,
+    "verification": 1124,
+    "decision_contrast": 3123,
+    "human_value": 3144,
+    "sequence": 1413,
+    "domain": 1
+  },
+  "funnel": {
+    "strategy/open_file": {
+      "candidates": 576,
+      "domain": 576,
+      "outcome": 321,
+      "decision_contrast": 299,
+      "concept": 299,
+      "human_value": 299,
+      "sequence": 298,
+      "dedup": 92,
+      "training_active": 92
+    },
+    "endgame/opposition": {
+      "candidates": 115,
+      "domain": 115,
+      "outcome": 33,
+      "decision_contrast": 15,
+      "concept": 15,
+      "human_value": 15,
+      "sequence": 15,
+      "dedup": 13,
+      "training_active": 13
+    },
+    "defense/defensive_resource": {
+      "candidates": 719,
+      "domain": 719,
+      "outcome": 463,
+      "decision_contrast": 207,
+      "concept": 207,
+      "human_value": 207,
+      "sequence": 207,
+      "dedup": 190,
+      "training_active": 190
+    },
+    "conversion/restrict_counterplay": {
+      "candidates": 687,
+      "domain": 687,
+      "outcome": 328,
+      "decision_contrast": 300,
+      "concept": 300,
+      "human_value": 300,
+      "sequence": 300,
+      "dedup": 293,
+      "training_active": 293
+    },
+    "strategy/weak_pawn": {
+      "candidates": 539,
+      "domain": 539,
+      "outcome": 344,
+      "decision_contrast": 322,
+      "concept": 320,
+      "human_value": 320,
+      "sequence": 318,
+      "dedup": 92,
+      "training_active": 92
+    },
+    "strategy/pawn_break": {
+      "candidates": 802,
+      "domain": 802,
+      "outcome": 605,
+      "decision_contrast": 550,
+      "concept": 548,
+      "human_value": 548,
+      "sequence": 546,
+      "dedup": 92,
+      "training_active": 92
+    },
+    "conversion/simplify_when_ahead": {
+      "candidates": 711,
+      "domain": 711,
+      "outcome": 97,
+      "decision_contrast": 95,
+      "concept": 95,
+      "human_value": 94,
+      "sequence": 94,
+      "dedup": 94,
+      "training_active": 94
+    },
+    "endgame/lucena": {
+      "candidates": 1,
+      "domain": 1
+    },
+    "strategy/improve_worst_piece": {
+      "candidates": 459,
+      "domain": 459,
+      "outcome": 320,
+      "decision_contrast": 293,
+      "concept": 293,
+      "human_value": 293,
+      "sequence": 292,
+      "dedup": 91,
+      "training_active": 91
+    },
+    "strategy/outpost": {
+      "candidates": 310,
+      "domain": 310,
+      "outcome": 179,
+      "decision_contrast": 168,
+      "concept": 168,
+      "human_value": 166,
+      "sequence": 164,
+      "dedup": 92,
+      "training_active": 92
+    },
+    "strategy/weak_square": {
+      "candidates": 352,
+      "domain": 352,
+      "outcome": 188,
+      "decision_contrast": 181,
+      "concept": 180,
+      "human_value": 180,
+      "sequence": 180,
+      "dedup": 92,
+      "training_active": 92
+    },
+    "strategy/favorable_exchange": {
+      "candidates": 911,
+      "domain": 911,
+      "outcome": 248,
+      "decision_contrast": 236,
+      "concept": 228,
+      "human_value": 228,
+      "sequence": 224,
+      "dedup": 92,
+      "training_active": 92
+    },
+    "strategy/piece_activity": {
+      "candidates": 688,
+      "domain": 688,
+      "outcome": 461,
+      "decision_contrast": 414,
+      "concept": 414,
+      "human_value": 414,
+      "sequence": 409,
+      "dedup": 92,
+      "training_active": 92
+    },
+    "strategy/pawn_structure": {
+      "candidates": 120,
+      "domain": 120
+    },
+    "endgame/king_and_pawn": {
+      "candidates": 348,
+      "domain": 348,
+      "outcome": 133,
+      "decision_contrast": 80,
+      "concept": 80,
+      "human_value": 80,
+      "sequence": 58,
+      "dedup": 54,
+      "training_active": 54
+    },
+    "endgame/passed_pawn": {
+      "candidates": 1584,
+      "domain": 1584,
+      "outcome": 899,
+      "decision_contrast": 463,
+      "concept": 463,
+      "human_value": 455,
+      "sequence": 17,
+      "dedup": 17,
+      "training_active": 17
+    },
+    "endgame/rook_endgame": {
+      "candidates": 759,
+      "domain": 759,
+      "outcome": 370,
+      "decision_contrast": 170,
+      "concept": 170,
+      "human_value": 170,
+      "sequence": 21,
+      "dedup": 21,
+      "training_active": 21
+    },
+    "endgame/rook_activity": {
+      "candidates": 1206,
+      "domain": 1206,
+      "outcome": 688,
+      "decision_contrast": 316,
+      "concept": 316,
+      "human_value": 316,
+      "sequence": 38,
+      "dedup": 38,
+      "training_active": 38
+    },
+    "endgame/rook_behind_pawn": {
+      "candidates": 367,
+      "domain": 367,
+      "outcome": 167,
+      "decision_contrast": 87,
+      "concept": 87,
+      "human_value": 87,
+      "sequence": 86,
+      "dedup": 84,
+      "training_active": 84
+    },
+    "endgame/bishop_endgame": {
+      "candidates": 147,
+      "domain": 147,
+      "outcome": 42,
+      "decision_contrast": 13,
+      "concept": 13,
+      "human_value": 13
+    },
+    "endgame/knight_endgame": {
+      "candidates": 145,
+      "domain": 145,
+      "outcome": 27,
+      "decision_contrast": 14,
+      "concept": 14,
+      "human_value": 14,
+      "sequence": 2,
+      "dedup": 2,
+      "training_active": 2
+    },
+    "endgame/king_activity": {
+      "candidates": 3519,
+      "domain": 3519,
+      "outcome": 2093,
+      "decision_contrast": 783,
+      "concept": 783,
+      "human_value": 783,
+      "sequence": 308,
+      "dedup": 305,
+      "training_active": 305
+    },
+    "conversion/convert_small_advantage": {
+      "candidates": 637,
+      "domain": 637,
+      "outcome": 322,
+      "decision_contrast": 300,
+      "concept": 300,
+      "human_value": 300,
+      "sequence": 300,
+      "dedup": 287,
+      "training_active": 287
+    },
+    "conversion/use_material_advantage": {
+      "candidates": 635,
+      "domain": 635,
+      "outcome": 330,
+      "decision_contrast": 290,
+      "concept": 290,
+      "human_value": 290,
+      "sequence": 290,
+      "dedup": 285,
+      "training_active": 285
+    },
+    "conversion/favorable_endgame_transition": {
+      "candidates": 157,
+      "domain": 157,
+      "outcome": 74,
+      "decision_contrast": 72,
+      "concept": 72,
+      "human_value": 72,
+      "sequence": 72,
+      "dedup": 72,
+      "training_active": 72
+    },
+    "conversion/preserve_activity": {
+      "candidates": 671,
+      "domain": 671,
+      "outcome": 317,
+      "decision_contrast": 290,
+      "concept": 290,
+      "human_value": 290,
+      "sequence": 290,
+      "dedup": 285,
+      "training_active": 285
+    },
+    "endgame/rule_of_square": {
+      "candidates": 45,
+      "domain": 45
+    },
+    "strategy/passed_pawn": {
+      "candidates": 72,
+      "domain": 71
+    },
+    "defense/active_defense": {
+      "candidates": 128,
+      "domain": 128,
+      "outcome": 34,
+      "decision_contrast": 30,
+      "concept": 30,
+      "human_value": 30,
+      "sequence": 30,
+      "dedup": 28,
+      "training_active": 28
+    },
+    "defense/defensive_counterplay": {
+      "candidates": 123,
+      "domain": 123,
+      "outcome": 54,
+      "decision_contrast": 33,
+      "concept": 33,
+      "human_value": 32,
+      "sequence": 32,
+      "dedup": 30,
+      "training_active": 30
+    },
+    "defense/defensive_endgame_activity": {
+      "candidates": 129,
+      "domain": 129,
+      "outcome": 17,
+      "decision_contrast": 12,
+      "concept": 12,
+      "human_value": 12,
+      "sequence": 12,
+      "dedup": 11,
+      "training_active": 11
+    },
+    "defense/exchange_attacker": {
+      "candidates": 196,
+      "domain": 196,
+      "outcome": 15,
+      "decision_contrast": 14,
+      "concept": 14,
+      "human_value": 13,
+      "sequence": 13,
+      "dedup": 13,
+      "training_active": 13
+    },
+    "defense/return_material": {
+      "candidates": 2,
+      "domain": 2,
+      "outcome": 1,
+      "decision_contrast": 1,
+      "concept": 1,
+      "human_value": 1,
+      "sequence": 1,
+      "dedup": 1,
+      "training_active": 1
+    },
+    "defense/simplification_to_hold": {
+      "candidates": 58,
+      "domain": 58,
+      "outcome": 11,
+      "decision_contrast": 11,
+      "concept": 11,
+      "human_value": 11,
+      "sequence": 11,
+      "dedup": 11,
+      "training_active": 11
+    },
+    "endgame/philidor": {
+      "candidates": 1,
+      "domain": 1,
+      "outcome": 1
+    }
+  },
+  "referenceOnlyTrivialCandidates": 5126,
+  "selectionExclusions": {
+    "mirrored_or_exact_geometry": 10,
+    "strategy_prioritises_multiple_decisions": 1656
+  },
+  "strategyUnits": {
+    "decision_then_continuation": 368,
+    "single_move": 367
+  },
+  "endgameMilestones": {
+    "rook_behind_passer": 84,
+    "concept_state": 420,
+    "opposition": 13,
+    "pawn_race_resolved": 17
+  },
+  "sources": [
+    {
+      "source": "lichess_db_broadcast_2026-05.pgn.zst",
+      "games": 37447,
+      "eligible": 10331,
+      "uniqueGames": 10331,
+      "uniquePlayers": 4562,
+      "license": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "lichess_db_broadcast_2026-06.pgn.zst",
+      "games": 36996,
+      "eligible": 10123,
+      "uniqueGames": 10123,
+      "uniquePlayers": 4530,
+      "license": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "lichess_db_broadcast_2026-07.pgn.zst",
+      "games": 40038,
+      "eligible": 12354,
+      "uniqueGames": 12354,
+      "uniquePlayers": 5024,
+      "license": "CC-BY-SA-4.0"
+    }
+  ],
+  "minedCorpora": {
+    "existing_reference": 4792,
+    "lichess_db_broadcast_2026-05.pgn.zst": 9752,
+    "lichess_db_broadcast_2026-06.pgn.zst": 2007,
+    "lichess_db_broadcast_2026-07.pgn.zst": 1368
+  },
+  "acceptedCorpora": {
+    "existing_reference": 663,
+    "lichess_db_broadcast_2026-05.pgn.zst": 1959,
+    "lichess_db_broadcast_2026-06.pgn.zst": 141,
+    "lichess_db_broadcast_2026-07.pgn.zst": 106
+  },
+  "candidateSourceGames": 6787,
+  "candidateKnownPlayers": 3914,
+  "sourceGames": 2051,
+  "knownPlayers": 2003,
+  "bySource": {
+    "lichess": 29,
+    "master_game": 81,
+    "lichess_standard": 553,
+    "lichess_broadcast": 2206
+  },
+  "referenceOnlyPublished": 4244,
+  "rejectionSamples": {
+    "open_file/outcome": [
+      {
+        "id": "concept-rook-open-file",
+        "fen": "r2q1rk1/pp1nbppp/2p1pn2/8/8/2N1PN2/PPQ1BPPP/R4RK1 w - - 2 13",
+        "move": "a1d1",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "quality-mine-open_file-54b323d265504c",
+        "fen": "2r2rk1/pp1b3p/4pp2/1P1p2p1/P2n4/2N3B1/2R2PPP/5RK1 w - - 0 22",
+        "move": "c2d2",
+        "reasons": [
+          "strategy_requires_balanced_plan_choice"
+        ]
+      },
+      {
+        "id": "quality-mine-open_file-08e485450e08be",
+        "fen": "N1bk3r/p3npp1/np2p3/7p/3P1B2/3Q1B2/PbP1NPPP/R4RK1 w - - 3 19",
+        "move": "a1b1",
+        "reasons": [
+          "strategy_requires_balanced_plan_choice"
+        ]
+      }
+    ],
+    "opposition/causality": [
+      {
+        "id": "concept-king-and-pawn-technique",
+        "fen": "2k5/8/8/3PK3/8/8/8/8 w - - 0 1",
+        "move": "e5e6",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "concept-endgame-opposition",
+        "fen": "8/8/4k3/8/4K3/8/4P3/8 w - - 0 1",
+        "move": "e2e3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-opposition-1b9bdd4b88c01b",
+        "fen": "8/2k5/2p3p1/1p1p1pP1/1K1P1P2/P1P5/8/8 w - - 5 45",
+        "move": "b4c5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "defensive_resource/causality": [
+      {
+        "id": "concept-active-defense",
+        "fen": "6k1/5ppp/8/8/2p5/3r4/5PPP/3R2K1 w - - 0 1",
+        "move": "d1d3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "restrict_counterplay/causality": [
+      {
+        "id": "concept-conversion-rook-pawn",
+        "fen": "8/8/8/4k3/8/4K3/4P3/3R4 w - - 0 1",
+        "move": "d1d2",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-restrict_counterplay-de370a63d95614",
+        "fen": "8/p1p1r2p/k1p1p2R/2Pp1p2/3P1P2/8/PP2KP1P/8 w - - 11 34",
+        "move": "e2d3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-restrict_counterplay-9d49289301ab0e",
+        "fen": "2k5/p1p1r2p/2p1p2R/2Pp1p2/3P1P1P/3K4/PP3P2/8 w - - 1 36",
+        "move": "h6h5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "weak_pawn/causality": [
+      {
+        "id": "bank-strategy-weak-pawn-d5",
+        "fen": "r2q1rk1/pp1nbppp/5n2/3p4/3P4/2N1PN2/PPQ1BPPP/R3R1K1 w - - 2 13",
+        "move": "e1d1",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-weak_pawn-8a51ec70b594b1",
+        "fen": "r5rk/pp1b1n1p/1q6/3pPpp1/3P4/PP1Q1N1P/1BP4K/4RR2 w - - 0 26",
+        "move": "c2c4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-weak_pawn-c0e34dac14313c",
+        "fen": "r2r2k1/p1p2pp1/2p2nbp/4N3/4P1P1/2P1B2P/P1P2P1K/R4R2 b - - 0 16",
+        "move": "g6e4",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "pawn_break/causality": [
+      {
+        "id": "bank-strategy-minority-break-b4",
+        "fen": "r2q1rk1/pp1nbppp/2p1pn2/3p4/3P4/2N1PN2/PPQ1BPPP/R3R1K1 w - - 2 13",
+        "move": "b2b4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "contrast-mine-pawn_break-1174471b90563a5176",
+        "fen": "2q2k1r/3n1ppb/2n1p2p/4P3/3P3N/2P5/5PPP/R2Q1RK1 w - - 2 22",
+        "move": "f2f4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-pawn_break-2eade1a65b647e5c23",
+        "fen": "2r3k1/2pn1rpp/pp2pp2/8/2PP1P2/BP2P3/P2R3P/2KR4 w - - 3 22",
+        "move": "e3e4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated",
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "simplify_when_ahead/triviality": [
+      {
+        "id": "bank-conversion-simplify-queens",
+        "fen": "3q1rk1/5ppp/8/8/8/8/5PPP/3QRRK1 w - - 0 1",
+        "move": "d1d8",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-simplify_when_ahead-fec28e11171049",
+        "fen": "3rk2r/1pq2ppp/2p1p1b1/P7/8/P1P2QP1/4BPP1/R4RK1 b k - 0 21",
+        "move": "c7a5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-simplify_when_ahead-8a815c5855921b",
+        "fen": "r2r2n1/2p3kp/p2q1pp1/1p6/4PQP1/1PP3NP/1P3P2/R3K2R w KQ - 2 23",
+        "move": "f4d6",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "simplify_when_ahead/causality": [
+      {
+        "id": "bank-conversion-simplify-queens",
+        "fen": "3q1rk1/5ppp/8/8/8/8/5PPP/3QRRK1 w - - 0 1",
+        "move": "d1d8",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-simplify_when_ahead-8703cbbbfe47fb",
+        "fen": "2b3nr/1pp2k2/1p5p/2bP4/r2N1p1P/2P3p1/PP2B1P1/R1B3KR b - - 2 17",
+        "move": "c5d4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-simplify_when_ahead-855fbfa5ee3105",
+        "fen": "5rk1/1RQ2ppp/5n2/4P3/8/7P/6P1/qB5K w - - 4 41",
+        "move": "e5f6",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "lucena/verification": [
+      {
+        "id": "tablebase-lucena-build-bridge",
+        "fen": "4K3/4P1k1/8/8/8/8/7r/R7 w - - 0 1",
+        "move": "a1a4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "improve_worst_piece/causality": [
+      {
+        "id": "master-improve_worst_piece-74413202cfb3c1",
+        "fen": "4rrk1/p5p1/1b1p4/1pp1p3/4Pp2/2PP1P1N/PP2K1P1/3R3R b - - 3 28",
+        "move": "f8f6",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-improve_worst_piece-9b3b5f613c2758",
+        "fen": "r1b2rk1/p1pnqppp/1p2p3/8/2BP4/1QP1PN2/P4PPP/R4RK1 w - - 0 12",
+        "move": "a1e1",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-improve_worst_piece-060940e502d0b8",
+        "fen": "1r3rk1/p1q2ppp/4b3/1p6/2p1Q3/P1R1P1P1/1P3PBP/R5K1 w - - 0 20",
+        "move": "g2f3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "outpost/causality": [
+      {
+        "id": "master-outpost-71f1ec713a995c",
+        "fen": "r6k/2p3p1/1p1p3p/p1nPp3/2P4r/1PN1PP1b/PB2KR1P/R7 w - - 2 28",
+        "move": "c3b5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-outpost-e3898c1b197cae",
+        "fen": "2r2rk1/pp1b1ppp/1qn1pn2/3p4/1bPP4/1P1BPN2/1BQN1PPP/R4RK1 w - - 5 14",
+        "move": "f3e5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-outpost-50c80ab99ee704",
+        "fen": "r4rk1/p4ppp/1pNq1n2/3p4/2pP4/2P1P3/P1Q2PPP/1R3RK1 w - - 1 21",
+        "move": "c6e5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "open_file/causality": [
+      {
+        "id": "master-open_file-0b9b309fbb517c",
+        "fen": "rn1q3r/pp1k3p/2pbb1p1/3p3P/3P1p2/3B2N1/PPP1QPP1/2KR2NR w - - 0 13",
+        "move": "d1e1",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-open_file-18a8bd92d1a289",
+        "fen": "2r2r2/pp2qkp1/4p2p/2bp4/Q7/4P1P1/PP3PBP/2R2RK1 w - - 1 18",
+        "move": "c1c3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-open_file-c01ace04c91ee9",
+        "fen": "rr4k1/5ppp/pp1q1n2/3pN3/P1pP4/2P1P3/2Q2PPP/1R3RK1 w - - 1 23",
+        "move": "b1b4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "open_file/decision_contrast": [
+      {
+        "id": "master-open_file-4620173bea0821",
+        "fen": "r4rk1/pp1n2pp/2p2p2/3p4/3P4/5BPP/PPP3P1/R4RK1 w - - 1 15",
+        "move": "f1e1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-open_file-64c11989c36ea4",
+        "fen": "r1br2k1/pp3p1p/4n1pB/q1n5/8/2P2N2/P1Q1BPPP/R4RK1 w - - 6 18",
+        "move": "f1d1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-open_file-db3237460bbaef",
+        "fen": "r2q1rk1/3nbpp1/p3p1p1/1p1pP3/8/2P1BN1P/PP1Q1PP1/R4RK1 b - - 1 16",
+        "move": "a8c8",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "open_file/human_value": [
+      {
+        "id": "master-open_file-4620173bea0821",
+        "fen": "r4rk1/pp1n2pp/2p2p2/3p4/3P4/5BPP/PPP3P1/R4RK1 w - - 1 15",
+        "move": "f1e1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-open_file-64c11989c36ea4",
+        "fen": "r1br2k1/pp3p1p/4n1pB/q1n5/8/2P2N2/P1Q1BPPP/R4RK1 w - - 6 18",
+        "move": "f1d1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-open_file-db3237460bbaef",
+        "fen": "r2q1rk1/3nbpp1/p3p1p1/1p1pP3/8/2P1BN1P/PP1Q1PP1/R4RK1 b - - 1 16",
+        "move": "a8c8",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "weak_square/causality": [
+      {
+        "id": "master-weak_square-b3a52ff384b774",
+        "fen": "r1bqr1k1/p1pp1ppp/2p5/8/4Q3/2B5/PPP2PPP/R3KB1R w KQ - 1 11",
+        "move": "c3e5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-weak_square-df91973ba86c91",
+        "fen": "2rr3k/p4p1p/1p1Pq1p1/n3p1QN/b1p5/2P1P3/B2R1PPP/4R1K1 w - - 3 25",
+        "move": "h5f6",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-weak_square-08c89e33a2dbb7",
+        "fen": "r2r2k1/2pqbp1p/p1n2np1/1p2p3/4P1P1/1PP2NNP/1P2QP2/R1B1K2R w KQ - 0 16",
+        "move": "c1g5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "weak_square/decision_contrast": [
+      {
+        "id": "master-weak_square-2a5d68588dcbd1",
+        "fen": "r3kb1r/1p1b1pp1/1pn1pn1p/3p4/3P3B/2N1PN2/PP3PPP/R3KB1R w KQkq - 1 11",
+        "move": "f1b5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-weak_square-6ef3cc02bde8f9b9d4",
+        "fen": "2bq1rk1/r1pn1ppp/4pn2/pp6/3P4/PN4P1/2Q1PPBP/R1B2RK1 w - - 1 13",
+        "move": "g2c6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-weak_square-1aef868493db6baa14",
+        "fen": "r1b2rk1/pp3ppp/1n3n2/q2p4/2pP1B2/P1P1P3/2QNBPPP/R3K2R w KQ - 2 13",
+        "move": "f4d6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "weak_square/human_value": [
+      {
+        "id": "master-weak_square-2a5d68588dcbd1",
+        "fen": "r3kb1r/1p1b1pp1/1pn1pn1p/3p4/3P3B/2N1PN2/PP3PPP/R3KB1R w KQkq - 1 11",
+        "move": "f1b5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-weak_square-6ef3cc02bde8f9b9d4",
+        "fen": "2bq1rk1/r1pn1ppp/4pn2/pp6/3P4/PN4P1/2Q1PPBP/R1B2RK1 w - - 1 13",
+        "move": "g2c6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-weak_square-1aef868493db6baa14",
+        "fen": "r1b2rk1/pp3ppp/1n3n2/q2p4/2pP1B2/P1P1P3/2QNBPPP/R3K2R w KQ - 2 13",
+        "move": "f4d6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "weak_pawn/triviality": [
+      {
+        "id": "master-weak_pawn-c0e34dac14313c",
+        "fen": "r2r2k1/p1p2pp1/2p2nbp/4N3/4P1P1/2P1B2P/P1P2P1K/R4R2 b - - 0 16",
+        "move": "g6e4",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-weak_pawn-a5c74e595882b6",
+        "fen": "5rk1/Q4ppp/1R1b1q2/3p4/3P4/2rB1P1P/P4PK1/2B2R2 b - - 0 19",
+        "move": "c3d3",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-weak_pawn-fc81b0024dee22",
+        "fen": "r4rk1/pp3p1p/2nqbp2/1Bbp4/8/2NQ1N2/PPP2PPP/R4RK1 w - - 6 12",
+        "move": "b5c6",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "pawn_break/outcome": [
+      {
+        "id": "master-pawn_break-ad3dcafb53be3d",
+        "fen": "r2q1rk1/ppp1bppn/2np2bp/1B2pN2/4P1P1/2PP1N2/PP3P1P/R1BQR1K1 b - - 2 12",
+        "move": "h6h5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-pawn_break-a8a45330f3cea6",
+        "fen": "r2q1rk1/ppp2pp1/2np2b1/1B2pNn1/4P1P1/2PP4/PP3PK1/R1BQR3 b - - 1 16",
+        "move": "d6d5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-pawn_break-7c6eb36de47dfb",
+        "fen": "r4rk1/ppp2ppp/2n2n2/3pp1q1/8/1PB1P1PB/P2PKPQP/RN5R b - - 0 11",
+        "move": "d5d4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "pawn_break/decision_contrast": [
+      {
+        "id": "master-pawn_break-0f15a99b2beda2",
+        "fen": "r2q1rk1/ppp2pp1/2np1n1p/1B2p2b/4P3/2PPBN1P/P1P2PPK/R2Q1R2 b - - 1 11",
+        "move": "d6d5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-pawn_break-43d6718c361889",
+        "fen": "r1br1nk1/ppq2ppp/2p5/3p4/3P4/1QPBPN2/P4PPP/1R2R1K1 w - - 10 15",
+        "move": "e3e4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-pawn_break-080e92deef5292",
+        "fen": "r2q4/5pk1/3p2p1/p1nPp2p/1pP1P3/1P2QPPP/6K1/RR6 w - - 2 38",
+        "move": "f3f4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "pawn_break/human_value": [
+      {
+        "id": "master-pawn_break-0f15a99b2beda2",
+        "fen": "r2q1rk1/ppp2pp1/2np1n1p/1B2p2b/4P3/2PPBN1P/P1P2PPK/R2Q1R2 b - - 1 11",
+        "move": "d6d5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-pawn_break-43d6718c361889",
+        "fen": "r1br1nk1/ppq2ppp/2p5/3p4/3P4/1QPBPN2/P4PPP/1R2R1K1 w - - 10 15",
+        "move": "e3e4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-pawn_break-080e92deef5292",
+        "fen": "r2q4/5pk1/3p2p1/p1nPp2p/1pP1P3/1P2QPPP/6K1/RR6 w - - 2 38",
+        "move": "f3f4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "pawn_break/verification": [
+      {
+        "id": "master-pawn_break-e514ccf5a2e82e",
+        "fen": "2k4r/1ppbnp2/p2bpq2/3p4/3P4/P1NQ1N2/1PP1BPP1/1K1R4 b - - 3 20",
+        "move": "c7c5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-pawn_break-6ec20cdcdf1356",
+        "fen": "4k1nr/1p2pp1p/3p2p1/1qp1n3/4P3/2PP2P1/5P1P/2BRK3 w k - 2 19",
+        "move": "d3d4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-pawn_break-663cfa58d29fb9",
+        "fen": "r1b2r1k/pp1qNpbp/2pp2p1/4p1B1/2B1P1n1/3P1N2/PPPQ1PPP/2KR3R w - - 5 13",
+        "move": "d3d4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "favorable_exchange/triviality": [
+      {
+        "id": "master-favorable_exchange-bf51bc9d3ae429",
+        "fen": "r4rk1/pp4p1/2ppp1np/b3p1qN/4P1Q1/2PP3P/PP1N1PP1/R4RK1 b - - 1 17",
+        "move": "g5g4",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-favorable_exchange-d0eca3de42c293",
+        "fen": "4rrk1/pp1n2pp/2p5/3p1p2/3P4/5BPP/PPP3P1/R3RK2 w - - 0 17",
+        "move": "e1e8",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-favorable_exchange-777549f1e5320c",
+        "fen": "r5rk/pp1b1n1p/4q3/3pPpp1/2PP4/PP1Q1N1P/1B5K/4RR2 w - - 1 27",
+        "move": "c4d5",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "favorable_exchange/causality": [
+      {
+        "id": "master-favorable_exchange-bf51bc9d3ae429",
+        "fen": "r4rk1/pp4p1/2ppp1np/b3p1qN/4P1Q1/2PP3P/PP1N1PP1/R4RK1 b - - 1 17",
+        "move": "g5g4",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-favorable_exchange-d0eca3de42c293",
+        "fen": "4rrk1/pp1n2pp/2p5/3p1p2/3P4/5BPP/PPP3P1/R3RK2 w - - 0 17",
+        "move": "e1e8",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-favorable_exchange-777549f1e5320c",
+        "fen": "r5rk/pp1b1n1p/4q3/3pPpp1/2PP4/PP1Q1N1P/1B5K/4RR2 w - - 1 27",
+        "move": "c4d5",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "piece_activity/causality": [
+      {
+        "id": "master-piece_activity-47e6e11e2106c8",
+        "fen": "r6k/2pn2pp/1p1p4/p2Pp3/2P4r/1P2PP1b/PB1NKR1P/R7 w - - 0 26",
+        "move": "d2e4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-piece_activity-a47c48a606690e",
+        "fen": "2rr2k1/1p1b1ppp/p1n5/2Pp4/B2P4/4P3/6PP/R1B2RK1 w - - 0 25",
+        "move": "c1d2",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-piece_activity-d9ba7fbbe5d6e4",
+        "fen": "r2q1rk1/ppp2pp1/2n3b1/1B1ppNn1/4P1P1/2PP4/PP2QPK1/R1B1R3 b - - 1 17",
+        "move": "f8e8",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "pawn_structure/triviality": [
+      {
+        "id": "master-pawn_structure-e77b639b67b201",
+        "fen": "r3r1k1/pb2qppp/2p5/1pn5/2PNP3/3B4/P1Q2PPP/2R2RK1 w - - 1 18",
+        "move": "c4b5",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-pawn_structure-31d65e65ec2350",
+        "fen": "r2qr1k1/1pp2pp1/p1bp3p/2nN4/2P1P3/4R1Q1/PP1N1PPP/3R2K1 b - - 3 19",
+        "move": "c6d5",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-pawn_structure-fa5da74212785c",
+        "fen": "2rq1rk1/pp1b1ppp/5n2/2nNp3/2P1P3/3B4/P3QPPP/R1B2RK1 b - - 2 17",
+        "move": "f6d5",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "pawn_structure/causality": [
+      {
+        "id": "master-pawn_structure-e77b639b67b201",
+        "fen": "r3r1k1/pb2qppp/2p5/1pn5/2PNP3/3B4/P1Q2PPP/2R2RK1 w - - 1 18",
+        "move": "c4b5",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-pawn_structure-31d65e65ec2350",
+        "fen": "r2qr1k1/1pp2pp1/p1bp3p/2nN4/2P1P3/4R1Q1/PP1N1PPP/3R2K1 b - - 3 19",
+        "move": "c6d5",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-pawn_structure-fa5da74212785c",
+        "fen": "2rq1rk1/pp1b1ppp/5n2/2nNp3/2P1P3/3B4/P3QPPP/R1B2RK1 b - - 2 17",
+        "move": "f6d5",
+        "reasons": [
+          "capture_requires_specific_exchange_evidence",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "king_and_pawn/causality": [
+      {
+        "id": "master-king_and_pawn-59a721ec4fb045",
+        "fen": "8/p3k3/2p1p2p/1p2P1p1/3P2P1/P1PK4/2P4P/8 b - - 3 29",
+        "move": "e7d7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-d02fff595ca000",
+        "fen": "8/3k4/2p1p2p/1p2P1p1/2PP2P1/P2K4/7P/8 b - - 0 32",
+        "move": "d7c7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-18b64c2b7991e0",
+        "fen": "8/8/5k1p/pp1p3P/2pP1K2/2P2P2/P1P5/8 w - - 0 43",
+        "move": "a2a3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "king_and_pawn/decision_contrast": [
+      {
+        "id": "master-king_and_pawn-72cdca4ad49aac",
+        "fen": "8/8/p3k2p/1p1p3P/2pP1p1K/2P2P2/P1P5/8 w - - 0 41",
+        "move": "h4g4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-d8d3834a130c10",
+        "fen": "8/5k2/7p/pp1p1P1P/2pP2K1/P1P5/2P5/8 w - - 1 47",
+        "move": "g4f3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-4c1f4b46c66607",
+        "fen": "8/8/1p4K1/1k6/p5P1/8/8/8 b - - 0 40",
+        "move": "a4a3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "king_and_pawn/human_value": [
+      {
+        "id": "master-king_and_pawn-72cdca4ad49aac",
+        "fen": "8/8/p3k2p/1p1p3P/2pP1p1K/2P2P2/P1P5/8 w - - 0 41",
+        "move": "h4g4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-d8d3834a130c10",
+        "fen": "8/5k2/7p/pp1p1P1P/2pP2K1/P1P5/2P5/8 w - - 1 47",
+        "move": "g4f3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-4c1f4b46c66607",
+        "fen": "8/8/1p4K1/1k6/p5P1/8/8/8 b - - 0 40",
+        "move": "a4a3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "king_and_pawn/triviality": [
+      {
+        "id": "master-king_and_pawn-810d1522741212",
+        "fen": "8/8/p4k1p/1p1p3P/2pP1pK1/2P2P2/P1P5/8 w - - 2 42",
+        "move": "g4f4",
+        "reasons": [
+          "free_material_capture"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-b430f3b96657b0",
+        "fen": "8/1p5p/5pp1/2k4P/2P2KP1/8/P7/8 b - - 0 38",
+        "move": "c5c4",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-9846bf18cc8bc6",
+        "fen": "6k1/8/7K/6PP/5P2/8/8/8 w - - 1 48",
+        "move": "h6g6",
+        "reasons": [
+          "forced_or_nearly_forced_choice"
+        ]
+      }
+    ],
+    "passed_pawn/causality": [
+      {
+        "id": "master-passed_pawn-df417e3b4dde6d",
+        "fen": "7k/2K5/3P3p/8/2P3p1/1N6/p6P/3r4 w - - 0 55",
+        "move": "d6d7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-09b94f3612bd69",
+        "fen": "8/5pk1/2b5/p1r3pp/P5P1/3BP2P/5P1K/R7 w - - 0 30",
+        "move": "g4h5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-a8fbd8abff1c48",
+        "fen": "8/1r6/6K1/p7/P4R2/1k5P/8/8 w - - 6 59",
+        "move": "h3h4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "passed_pawn/outcome": [
+      {
+        "id": "master-passed_pawn-9bf6f7598f56f4",
+        "fen": "3K3k/8/8/8/2P3pp/1N6/p6P/8 w - - 0 58",
+        "move": "c4c5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-90154b8de7cfbf",
+        "fen": "8/8/6kp/1Q3p2/P7/5PP1/b6K/q7 w - - 9 46",
+        "move": "a4a5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-0e1db365f98b49",
+        "fen": "8/k7/2P2p2/P7/1KP1P3/5p2/7P/8 w - - 1 45",
+        "move": "c6c7",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "passed_pawn/sequence": [
+      {
+        "id": "master-passed_pawn-431bfc703887b5",
+        "fen": "3K3k/8/8/2P5/8/1N4p1/p7/8 w - - 0 60",
+        "move": "c5c6",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-a04a91746d0f4d",
+        "fen": "3K3k/8/2P5/8/8/1N6/p5p1/8 w - - 0 61",
+        "move": "c6c7",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-d5d7f132868980",
+        "fen": "5r2/pp2N2k/8/3P2pp/8/PP5P/1B4K1/8 w - - 0 38",
+        "move": "d5d6",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      }
+    ],
+    "passed_pawn/triviality": [
+      {
+        "id": "master-passed_pawn-09b94f3612bd69",
+        "fen": "8/5pk1/2b5/p1r3pp/P5P1/3BP2P/5P1K/R7 w - - 0 30",
+        "move": "g4h5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-8edaabb72b5e75",
+        "fen": "8/4K3/r3p3/P1kp3p/R1p3RP/8/2r5/8 b - - 0 45",
+        "move": "h5g4",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-cbe27d3d62c63e",
+        "fen": "6k1/8/1pr3p1/3pbp1p/pP1P1P1P/P1r5/R4RK1/8 w - - 0 31",
+        "move": "f4e5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "rook_endgame/decision_contrast": [
+      {
+        "id": "master-rook_endgame-b484a454ec3b3a",
+        "fen": "8/5p2/2r2k2/p5p1/P7/4P1KP/R4P2/8 w - - 0 37",
+        "move": "a2d2",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-9a880016a6f08c",
+        "fen": "8/5p1R/3K4/p3Pr2/P7/1k5P/8/8 w - - 15 53",
+        "move": "h7h4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-0433eb4b48e5c2",
+        "fen": "8/4K3/r3p3/P1kp3P/R1p3p1/8/2r5/8 b - - 0 46",
+        "move": "c2h2",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "rook_endgame/human_value": [
+      {
+        "id": "master-rook_endgame-b484a454ec3b3a",
+        "fen": "8/5p2/2r2k2/p5p1/P7/4P1KP/R4P2/8 w - - 0 37",
+        "move": "a2d2",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-9a880016a6f08c",
+        "fen": "8/5p1R/3K4/p3Pr2/P7/1k5P/8/8 w - - 15 53",
+        "move": "h7h4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-0433eb4b48e5c2",
+        "fen": "8/4K3/r3p3/P1kp3P/R1p3p1/8/2r5/8 b - - 0 46",
+        "move": "c2h2",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "rook_endgame/causality": [
+      {
+        "id": "master-rook_endgame-10639f9eb8bfa3",
+        "fen": "8/5p2/4k3/p1r3p1/P5K1/4P2P/3R1P2/8 w - - 4 39",
+        "move": "d2d4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-588e2887dd723e",
+        "fen": "8/5p2/4k3/p5p1/P2R2K1/4P2P/2r2P2/8 w - - 6 40",
+        "move": "g4g5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-80dbce72102403",
+        "fen": "8/5p2/4k3/p5K1/P2R4/4P2P/5r2/8 w - - 0 41",
+        "move": "d4e4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "rook_endgame/triviality": [
+      {
+        "id": "master-rook_endgame-588e2887dd723e",
+        "fen": "8/5p2/4k3/p5p1/P2R2K1/4P2P/2r2P2/8 w - - 6 40",
+        "move": "g4g5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-e3952119be32a2",
+        "fen": "8/4k3/8/6R1/1pp3P1/6PK/P2P1r2/8 b - - 0 44",
+        "move": "f2d2",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-fc37d4cd6de7fe",
+        "fen": "6k1/R4pp1/p5p1/2p5/8/2P4P/P4PPK/2r5 w - - 4 32",
+        "move": "a7a6",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "rook_endgame/sequence": [
+      {
+        "id": "master-rook_endgame-3ef9aa6cc5ca00",
+        "fen": "8/5K2/8/p3r3/P6R/1k5P/8/8 w - - 0 56",
+        "move": "h4g4",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-f1cada1f0e4abb",
+        "fen": "R7/Pk3pp1/7p/8/r5P1/2K4P/8/8 w - - 9 40",
+        "move": "a8f8",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-7fa06644e6c53b",
+        "fen": "8/8/p1pk4/5R2/PP4P1/5p2/3rpK2/8 b - - 1 43",
+        "move": "d2d1",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      }
+    ],
+    "rook_activity/causality": [
+      {
+        "id": "master-rook_activity-a7e071ce6af34a",
+        "fen": "R7/5ppk/6p1/2p5/P7/r6P/5PPK/8 w - - 3 35",
+        "move": "a8a7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rook_activity-b9686a9fc506da",
+        "fen": "8/R7/8/5k2/1r3p2/5K2/P5PP/8 b - - 2 46",
+        "move": "b4b2",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rook_activity-dc3d0477af5d90",
+        "fen": "r7/p1pk1p1p/2p1r3/R1Pp1p2/3P4/4RP2/PP2KP1P/8 w - - 0 27",
+        "move": "e3e6",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "rook_activity/decision_contrast": [
+      {
+        "id": "master-rook_activity-505fff12433f82",
+        "fen": "8/R5pk/P4pp1/8/8/r1p4P/5PPK/8 w - - 0 38",
+        "move": "a7c7",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_activity-cf34d7005947a6",
+        "fen": "2r4r/pp4pp/3k4/3p4/2pP1p2/2P2P2/P1PK2PP/R6R w - - 2 19",
+        "move": "a1b1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_activity-6b39703a0b0600",
+        "fen": "2r4r/pp4pp/2k5/3p4/2pP1p2/2P2P2/P1PK2PP/1R5R w - - 4 20",
+        "move": "h1e1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "rook_activity/human_value": [
+      {
+        "id": "master-rook_activity-505fff12433f82",
+        "fen": "8/R5pk/P4pp1/8/8/r1p4P/5PPK/8 w - - 0 38",
+        "move": "a7c7",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_activity-cf34d7005947a6",
+        "fen": "2r4r/pp4pp/3k4/3p4/2pP1p2/2P2P2/P1PK2PP/R6R w - - 2 19",
+        "move": "a1b1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_activity-6b39703a0b0600",
+        "fen": "2r4r/pp4pp/2k5/3p4/2pP1p2/2P2P2/P1PK2PP/1R5R w - - 4 20",
+        "move": "h1e1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "rook_activity/triviality": [
+      {
+        "id": "master-rook_activity-6988d1876e6d98",
+        "fen": "1k6/2p3Rp/2P1p3/1K1p1p1P/3P1P2/8/r4P2/8 w - - 1 50",
+        "move": "g7h7",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rook_activity-575d168d702f0d",
+        "fen": "1r3k2/R5p1/5p2/7p/4R3/K3P2r/7P/8 b - - 3 32",
+        "move": "h3h2",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rook_activity-ae3da1c9f0c1f7",
+        "fen": "8/8/p6p/1p4k1/5R2/PP4P1/2Pr2r1/4RK2 b - - 1 42",
+        "move": "g2g3",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "rook_behind_pawn/causality": [
+      {
+        "id": "master-rook_behind_pawn-b105d43d6239d4",
+        "fen": "8/1p1R3p/p1k5/2p5/3p4/PP4P1/7r/4K3 w - - 2 35",
+        "move": "d7d8",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rook_behind_pawn-55665f120dceab",
+        "fen": "2R5/8/8/8/3p4/1k4r1/1p2K3/8 w - - 4 55",
+        "move": "c8b8",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rook_behind_pawn-082a3713942c95",
+        "fen": "1r6/1Pk5/1R3K2/6p1/8/5P1P/8/8 w - - 1 48",
+        "move": "b6b3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "rook_behind_pawn/outcome": [
+      {
+        "id": "master-rook_behind_pawn-df2cfe43bdf3ac",
+        "fen": "R7/8/8/3k4/3p4/6r1/1p2K3/8 w - - 0 53",
+        "move": "a8b8",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-rook_behind_pawn-6630a0ce3a4d56",
+        "fen": "8/6p1/5r2/2pkp3/3p4/5P2/5KPP/1R1R4 b - - 2 38",
+        "move": "f6c6",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-rook_behind_pawn-8d0a097fc175e1",
+        "fen": "8/6k1/R6p/8/P7/5PKP/1r6/8 b - - 0 45",
+        "move": "b2a2",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "rook_behind_pawn/decision_contrast": [
+      {
+        "id": "master-rook_behind_pawn-09be1f5f7fc056",
+        "fen": "8/r4pk1/1R2p1p1/4P2p/1Pp4P/4P3/5PK1/8 w - - 0 32",
+        "move": "b6c6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_behind_pawn-d699b5203c1c2e",
+        "fen": "3R4/5pkp/6p1/P7/8/6r1/8/2K5 b - - 0 43",
+        "move": "g3a3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_behind_pawn-acf964bab054fd",
+        "fen": "3R4/1p2r1pk/p6p/1Pp5/P7/4p2P/4K1P1/8 w - - 2 40",
+        "move": "d8c8",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "rook_behind_pawn/human_value": [
+      {
+        "id": "master-rook_behind_pawn-09be1f5f7fc056",
+        "fen": "8/r4pk1/1R2p1p1/4P2p/1Pp4P/4P3/5PK1/8 w - - 0 32",
+        "move": "b6c6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_behind_pawn-d699b5203c1c2e",
+        "fen": "3R4/5pkp/6p1/P7/8/6r1/8/2K5 b - - 0 43",
+        "move": "g3a3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-rook_behind_pawn-acf964bab054fd",
+        "fen": "3R4/1p2r1pk/p6p/1Pp5/P7/4p2P/4K1P1/8 w - - 2 40",
+        "move": "d8c8",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "bishop_endgame/causality": [
+      {
+        "id": "master-bishop_endgame-349369f4d9d947",
+        "fen": "8/1p4pp/p3k3/3b4/p7/P1P3P1/3B1K1P/8 b - - 0 44",
+        "move": "d5a2",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-bishop_endgame-00ee271f93456c",
+        "fen": "8/1p4pp/p2B4/8/p7/PkP3P1/b2K3P/8 b - - 8 48",
+        "move": "a2b1",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-bishop_endgame-d17bb4a0dfb1ee",
+        "fen": "8/5p2/3k1p2/3pp3/2bP4/2P1K1P1/2B2P2/8 b - - 2 45",
+        "move": "c4b5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "bishop_endgame/triviality": [
+      {
+        "id": "master-bishop_endgame-9156a955c23a46",
+        "fen": "b2b4/8/4p1k1/1p2PpPp/1PpPp3/2P1P1P1/3BBK2/8 b - - 0 32",
+        "move": "d8g5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-bishop_endgame-98230c3bc98dda",
+        "fen": "8/4K3/1p2Bp2/b4Pk1/P1p5/8/8/8 w - - 0 50",
+        "move": "e6c4",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-bishop_endgame-215aed30adc74d",
+        "fen": "8/pp2k2p/5p2/3B2p1/6P1/6b1/PPP5/3K4 w - - 0 32",
+        "move": "d5b7",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "bishop_endgame/outcome": [
+      {
+        "id": "master-bishop_endgame-ec6e5f7825ad22",
+        "fen": "8/6pp/2b1kp2/1p2p3/8/1P2BP2/3KB1PP/b7 w - - 2 29",
+        "move": "e2d3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-bishop_endgame-281926d387e3e2",
+        "fen": "8/5b1p/2B5/1Pk2p2/7P/4P1K1/8/8 b - - 4 41",
+        "move": "f7c4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-bishop_endgame-f00ec40a87ab567396",
+        "fen": "8/5B2/8/1P6/3b4/p4pk1/8/5K2 w - - 0 73",
+        "move": "f7d5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "knight_endgame/causality": [
+      {
+        "id": "master-knight_endgame-4754610f24f0f2",
+        "fen": "6k1/1p1Nn2p/3pp3/8/4P1p1/2pP4/P1P3PP/5K2 w - - 0 26",
+        "move": "d7f6",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-knight_endgame-1bd6100eb9c3ee",
+        "fen": "8/1p2nk1p/3ppN2/8/4P1p1/2pP4/P1P3PP/5K2 w - - 2 27",
+        "move": "f6g4",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-knight_endgame-f7de5e5a96ea00",
+        "fen": "8/1p3k1p/2npp3/8/4P1N1/2pP4/P1P3PP/5K2 w - - 1 28",
+        "move": "g4e3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "knight_endgame/triviality": [
+      {
+        "id": "master-knight_endgame-1bd6100eb9c3ee",
+        "fen": "8/1p2nk1p/3ppN2/8/4P1p1/2pP4/P1P3PP/5K2 w - - 2 27",
+        "move": "f6g4",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-knight_endgame-0b345991bb22c4",
+        "fen": "8/8/2n3kP/3p4/3P2K1/2p1N3/2P5/8 w - - 1 44",
+        "move": "e3d5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-knight_endgame-6262145b31037c",
+        "fen": "8/p4k2/1p6/1Nn5/2P1pp2/8/4K3/8 w - - 0 41",
+        "move": "b5a7",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "knight_endgame/outcome": [
+      {
+        "id": "master-knight_endgame-49cc51fde2f274",
+        "fen": "3n4/pp2k3/2p2p2/2P5/1P2P1N1/8/P4PPK/8 b - - 0 34",
+        "move": "d8e6",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-knight_endgame-80ebeef7a6ab3a",
+        "fen": "4k3/p4ppp/1p1p4/8/3n4/P4P2/3N1KPP/8 w - - 0 32",
+        "move": "d2c4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-knight_endgame-f53830768cb28d",
+        "fen": "8/8/1n6/4k3/2p5/4P1N1/1PK2P1P/8 b - - 0 51",
+        "move": "b6d5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "knight_endgame/sequence": [
+      {
+        "id": "master-knight_endgame-4a75afbdba0296",
+        "fen": "6k1/5pp1/p3p2p/1pn5/8/P3P2P/1P2NPP1/6K1 w - - 0 31",
+        "move": "e2d4",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-knight_endgame-82605dec6d5206",
+        "fen": "8/p6p/1p2k1p1/2p1p1P1/P1P1P1KP/1nP1N3/8/8 b - - 2 42",
+        "move": "b3d2",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "contrast-mine-knight_endgame-153b82f36b4a5fda34",
+        "fen": "8/8/1p5p/pPn2p1k/P4P2/K1N1P2P/8/8 w - - 9 55",
+        "move": "c3d5",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      }
+    ],
+    "king_activity/triviality": [
+      {
+        "id": "master-king_activity-bb5110d01fba2d",
+        "fen": "2K4k/2p5/7p/2pP2p1/p1P5/3N4/7P/1r6 w - - 2 51",
+        "move": "c8c7",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-king_activity-5642e3ebb7e803",
+        "fen": "8/p7/1b1p4/4p3/NPP1Pp2/5PkP/8/5K2 b - - 0 47",
+        "move": "g3f3",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-king_activity-45d4ccddb1fb42",
+        "fen": "6k1/pr3pBp/4p1p1/4P3/P2P4/1rP5/RP4PP/5RK1 b - - 0 22",
+        "move": "g8g7",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "king_activity/causality": [
+      {
+        "id": "master-king_activity-bb5110d01fba2d",
+        "fen": "2K4k/2p5/7p/2pP2p1/p1P5/3N4/7P/1r6 w - - 2 51",
+        "move": "c8c7",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-king_activity-30428f90e8fe90",
+        "fen": "6k1/p7/1b1p3p/1pp1p3/4Pp2/2PP1P1N/PP2K1P1/8 b - - 1 34",
+        "move": "g8g7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-king_activity-5642e3ebb7e803",
+        "fen": "8/p7/1b1p4/4p3/NPP1Pp2/5PkP/8/5K2 b - - 0 47",
+        "move": "g3f3",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "king_activity/decision_contrast": [
+      {
+        "id": "master-king_activity-d29a8557fe290c",
+        "fen": "8/p5k1/1b1p3p/2p1p3/2P1Pp2/5P1N/PP2K1P1/8 b - - 0 36",
+        "move": "g7g6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-king_activity-d4a51b024ab50a",
+        "fen": "8/p7/3p3p/b1p1p2k/2P1Pp2/5P2/PP2KNP1/8 b - - 6 39",
+        "move": "h5g5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-king_activity-916265fecfc138",
+        "fen": "4n3/p3k3/1p4P1/2p3K1/P1Bp4/1P6/2P5/8 w - - 13 45",
+        "move": "g5f5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "king_activity/human_value": [
+      {
+        "id": "master-king_activity-d29a8557fe290c",
+        "fen": "8/p5k1/1b1p3p/2p1p3/2P1Pp2/5P1N/PP2K1P1/8 b - - 0 36",
+        "move": "g7g6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-king_activity-d4a51b024ab50a",
+        "fen": "8/p7/3p3p/b1p1p2k/2P1Pp2/5P2/PP2KNP1/8 b - - 6 39",
+        "move": "h5g5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-king_activity-916265fecfc138",
+        "fen": "4n3/p3k3/1p4P1/2p3K1/P1Bp4/1P6/2P5/8 w - - 13 45",
+        "move": "g5f5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "convert_small_advantage/causality": [
+      {
+        "id": "master-convert_small_advantage-73a02235195c84",
+        "fen": "r1r3k1/p2q1ppp/Ppb5/2pp4/3P4/Q1P1PN2/5PPP/RR4K1 w - - 1 20",
+        "move": "d4c5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-convert_small_advantage-40b0df1788f313",
+        "fen": "r1r3k1/p2q1ppp/P1b5/2pp4/8/Q1P1PN2/5PPP/RR4K1 w - - 0 21",
+        "move": "a3c5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-convert_small_advantage-f43964a51b8062",
+        "fen": "r1b1r1k1/1p4pp/pn1B1p2/1p2p3/2P1P3/8/P1PN1PPP/1R1R2K1 b - - 0 18",
+        "move": "b6a4",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "convert_small_advantage/triviality": [
+      {
+        "id": "master-convert_small_advantage-40b0df1788f313",
+        "fen": "r1r3k1/p2q1ppp/P1b5/2pp4/8/Q1P1PN2/5PPP/RR4K1 w - - 0 21",
+        "move": "a3c5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-convert_small_advantage-b661e108940db0",
+        "fen": "r1br2k1/1p4pp/p4p2/1pB1p3/4P3/8/P1PN1PPP/1R2R1K1 b - - 0 21",
+        "move": "d8d2",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-convert_small_advantage-d76b6f8a2a91d3",
+        "fen": "6k1/1p4pp/p3b3/1p2pP2/r1r5/5P2/PRPB1KPP/R7 b - - 0 31",
+        "move": "e6f5",
+        "reasons": [
+          "free_material_capture"
+        ]
+      }
+    ],
+    "convert_small_advantage/decision_contrast": [
+      {
+        "id": "master-convert_small_advantage-9eb0ee86730dc4",
+        "fen": "6k1/1p4pp/p3bp2/1p2p3/r1r1P3/5P2/PRPB1KPP/R7 b - - 12 30",
+        "move": "f6f5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-convert_small_advantage-ae6e99d3f7653d",
+        "fen": "r1b2k1r/pppn1p1p/3b2p1/4p1B1/2B1P3/2N2P2/PPP3PP/3R1RK1 w - - 0 13",
+        "move": "f3f4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "quality-mine-convert_small_advantage-396f3d7b71badd",
+        "fen": "4r1k1/ppp2ppp/2n5/6b1/4P3/2P5/PP2B1PP/R4RK1 w - - 2 19",
+        "move": "e2f3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "convert_small_advantage/human_value": [
+      {
+        "id": "master-convert_small_advantage-9eb0ee86730dc4",
+        "fen": "6k1/1p4pp/p3bp2/1p2p3/r1r1P3/5P2/PRPB1KPP/R7 b - - 12 30",
+        "move": "f6f5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-convert_small_advantage-ae6e99d3f7653d",
+        "fen": "r1b2k1r/pppn1p1p/3b2p1/4p1B1/2B1P3/2N2P2/PPP3PP/3R1RK1 w - - 0 13",
+        "move": "f3f4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "quality-mine-convert_small_advantage-396f3d7b71badd",
+        "fen": "4r1k1/ppp2ppp/2n5/6b1/4P3/2P5/PP2B1PP/R4RK1 w - - 2 19",
+        "move": "e2f3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "restrict_counterplay/triviality": [
+      {
+        "id": "master-restrict_counterplay-e56cc2ee7903d7",
+        "fen": "8/4Rpk1/8/2P5/4pPp1/4P1Pp/2r5/7K b - - 2 39",
+        "move": "c2c5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-restrict_counterplay-7f7c2667e24d1c",
+        "fen": "r3r1k1/2p2ppp/p3p3/4P3/2pP4/B6P/PRRKQ1P1/6q1 b - - 6 32",
+        "move": "g1d4",
+        "reasons": [
+          "free_material_capture"
+        ]
+      },
+      {
+        "id": "master-restrict_counterplay-848d35cad03829",
+        "fen": "r5k1/1pp3pp/p1np4/4pr2/PP2P3/2PP1N1P/6P1/RNq1QK2 b - - 2 21",
+        "move": "c1e1",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "use_material_advantage/causality": [
+      {
+        "id": "master-use_material_advantage-2254d7f93762e1",
+        "fen": "rr4k1/p1b1n1p1/2p2p1p/1qPp4/3PPP2/1P3P2/2QB1K1P/RR6 b - - 0 24",
+        "move": "b8e8",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-use_material_advantage-93ff045d58632b",
+        "fen": "r3r1k1/p1b1n1p1/2p2p1p/1qPp4/3PPP2/1P3P2/2QB1K1P/R5R1 b - - 2 25",
+        "move": "f6f5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-use_material_advantage-2cce279231b15c",
+        "fen": "r4rk1/1pp1b1pp/p2pp3/3np1P1/6QN/2P3NP/PPq2PK1/R1BR4 w - - 2 23",
+        "move": "d1d2",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "use_material_advantage/triviality": [
+      {
+        "id": "master-use_material_advantage-8912c49d8e075c",
+        "fen": "3rr1k1/ppp2pp1/2p4p/5P1n/4qB2/7P/PPP3QN/R4RK1 w - - 5 24",
+        "move": "g2e4",
+        "reasons": [
+          "routine_queen_exchange"
+        ]
+      },
+      {
+        "id": "master-use_material_advantage-8bdcf01ef0aff8",
+        "fen": "r4rk1/n3bppp/2qp1n2/p1p1p3/P7/1Pp1PP2/1BQ3PP/1NKR1BNR w - - 0 18",
+        "move": "b2c3",
+        "reasons": [
+          "free_material_capture"
+        ]
+      },
+      {
+        "id": "quality-mine-use_material_advantage-43608013e7ea06",
+        "fen": "3r2k1/5pp1/2pr3p/4p3/2Q1PP2/1P3nPq/PBP4P/R4RK1 w - - 3 31",
+        "move": "g1f2",
+        "reasons": [
+          "forced_or_nearly_forced_choice"
+        ]
+      }
+    ],
+    "favorable_endgame_transition/triviality": [
+      {
+        "id": "master-favorable_endgame_transition-db23931c0f6992",
+        "fen": "6k1/5p2/2r1p1p1/3p1n2/pq1P3p/1P5P/P2QNPP1/3R2K1 b - - 1 33",
+        "move": "b4d2",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-favorable_endgame_transition-5ae64f5608670d",
+        "fen": "5rk1/5p1p/1p3qp1/5b2/3Q4/6P1/P5BP/3R3K b - - 2 29",
+        "move": "f6d4",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-favorable_endgame_transition-cf6966ea69ac5c",
+        "fen": "r6r/8/4ppkn/2pp2p1/R6p/P1PP1N1P/5PPB/4R1K1 b - - 0 22",
+        "move": "a8a4",
+        "reasons": [
+          "free_material_capture"
+        ]
+      }
+    ],
+    "favorable_endgame_transition/causality": [
+      {
+        "id": "master-favorable_endgame_transition-db23931c0f6992",
+        "fen": "6k1/5p2/2r1p1p1/3p1n2/pq1P3p/1P5P/P2QNPP1/3R2K1 b - - 1 33",
+        "move": "b4d2",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-favorable_endgame_transition-5ae64f5608670d",
+        "fen": "5rk1/5p1p/1p3qp1/5b2/3Q4/6P1/P5BP/3R3K b - - 2 29",
+        "move": "f6d4",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-favorable_endgame_transition-43f16cf982cc5d",
+        "fen": "4Rbk1/3r1pp1/p5qp/2p5/3p2N1/1P1Q1P1P/P1P3P1/7K w - - 4 29",
+        "move": "d3g6",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "favorable_endgame_transition/outcome": [
+      {
+        "id": "master-favorable_endgame_transition-6237612c6f9799",
+        "fen": "2r3k1/3r3p/pB2pp2/Pb6/3RpP2/1Pp5/2P3PP/2R3K1 w - - 0 39",
+        "move": "d4d7",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "master-favorable_endgame_transition-654a65bc2b6b3a",
+        "fen": "8/p3rk1p/1bp3p1/3nPN2/3P4/1BPn3P/P1R2PP1/6K1 w - - 3 28",
+        "move": "f5e7",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "master-favorable_endgame_transition-5a521020d793c3",
+        "fen": "5rk1/4npp1/3p3p/2p5/4PRP1/1pPP3P/1P1K1N2/r6R b - - 2 27",
+        "move": "a1h1",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      }
+    ],
+    "preserve_activity/causality": [
+      {
+        "id": "master-preserve_activity-00da2f9807b104",
+        "fen": "r2q1rk1/1b1nbppp/pp3n2/2ppN1B1/3P1P2/2PB1Q2/PP1N2PP/R4RK1 w - - 0 14",
+        "move": "a1e1",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-preserve_activity-d14450a60507f6",
+        "fen": "qr4kr/2p3p1/5b1p/8/2p1R1PP/2N2Q2/1P3P2/4R1K1 w - - 1 27",
+        "move": "c3d5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-preserve_activity-1f55641e09c4d0",
+        "fen": "q4rk1/2p4r/5p1p/5Q2/2p1R1PP/8/1P3P2/4R1K1 w - - 2 30",
+        "move": "e4e7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "preserve_activity/triviality": [
+      {
+        "id": "master-preserve_activity-a4a98bd6c618f6",
+        "fen": "5rk1/p5p1/8/3b1q1p/2BP1Bp1/2P2PQP/P7/6RK b - - 0 35",
+        "move": "d5c4",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-preserve_activity-263d585acd528b",
+        "fen": "1r1q3r/p3bkp1/3p1p1n/3Pp2b/Q6P/2N1B3/PP1N1P2/R3K2R b KQ - 3 19",
+        "move": "b8b2",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-preserve_activity-b19117e5e25593",
+        "fen": "r1bqk2r/p2nbppp/2p1pn2/2P5/4P3/P2P3P/3N2P1/RNBQKB1R b KQkq - 0 12",
+        "move": "e7c5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "improve_worst_piece/outcome": [
+      {
+        "id": "master-improve_worst_piece-8878c258530381",
+        "fen": "r3k2r/pp2pp2/2p3pb/6Np/bPpP1B2/2P4P/P4PP1/2R2RK1 w kq - 2 21",
+        "move": "f1e1",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-improve_worst_piece-b17ee515ba8fbb",
+        "fen": "r2qk2r/1b5p/2nbpnN1/p2p1p2/1ppP1P2/2P1P2Q/PPBN2PP/R1B2RK1 b kq - 2 14",
+        "move": "h8g8",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-improve_worst_piece-cc16832e79406a",
+        "fen": "2r1r1k1/2q1bppn/p2p3p/3P4/1p4P1/3PBB2/1PP1Q2P/2R2R1K w - - 7 22",
+        "move": "f3e4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "improve_worst_piece/decision_contrast": [
+      {
+        "id": "master-improve_worst_piece-32b5677443ad01",
+        "fen": "r3r1k1/5pp1/p1pqbn1p/3p4/P2P4/2P2P2/N1B3PP/1R1Q1RK1 b - - 2 20",
+        "move": "a8b8",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-improve_worst_piece-0059a0370887c2",
+        "fen": "r4rk1/1pp2ppp/p1n2q2/3p4/3P4/P4P1P/1P1QNPP1/R3R1K1 b - - 0 15",
+        "move": "a8e8",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-improve_worst_piece-db02cb273aad3e9751",
+        "fen": "2r2rk1/p3bppp/2p5/4Bb2/8/5N2/PP3PPP/2R2RK1 w - - 4 19",
+        "move": "f1d1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "improve_worst_piece/human_value": [
+      {
+        "id": "master-improve_worst_piece-32b5677443ad01",
+        "fen": "r3r1k1/5pp1/p1pqbn1p/3p4/P2P4/2P2P2/N1B3PP/1R1Q1RK1 b - - 2 20",
+        "move": "a8b8",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-improve_worst_piece-0059a0370887c2",
+        "fen": "r4rk1/1pp2ppp/p1n2q2/3p4/3P4/P4P1P/1P1QNPP1/R3R1K1 b - - 0 15",
+        "move": "a8e8",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-improve_worst_piece-db02cb273aad3e9751",
+        "fen": "2r2rk1/p3bppp/2p5/4Bb2/8/5N2/PP3PPP/2R2RK1 w - - 4 19",
+        "move": "f1d1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "outpost/decision_contrast": [
+      {
+        "id": "master-outpost-b61ba0bb2b0a09",
+        "fen": "r4rk1/p3b1p1/q1p3p1/2Pp1p1p/3P4/P3PN2/3Q1PPP/R4RK1 w - - 0 19",
+        "move": "f3e5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-outpost-45c46365fa6faa",
+        "fen": "r4rk1/2q1bppp/1p1pbn2/p1p1p3/P1P1P3/1PN1BN1P/2P1QPP1/3R1RK1 w - - 0 16",
+        "move": "c3b5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-outpost-861fea2491090734bf",
+        "fen": "r2qk2r/1b3pp1/ppnp4/4p3/2PbP1Pp/1PN1B2P/P3QPB1/2RR2K1 w kq - 2 22",
+        "move": "c3d5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "outpost/human_value": [
+      {
+        "id": "master-outpost-b61ba0bb2b0a09",
+        "fen": "r4rk1/p3b1p1/q1p3p1/2Pp1p1p/3P4/P3PN2/3Q1PPP/R4RK1 w - - 0 19",
+        "move": "f3e5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-outpost-45c46365fa6faa",
+        "fen": "r4rk1/2q1bppp/1p1pbn2/p1p1p3/P1P1P3/1PN1BN1P/2P1QPP1/3R1RK1 w - - 0 16",
+        "move": "c3b5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-outpost-861fea2491090734bf",
+        "fen": "r2qk2r/1b3pp1/ppnp4/4p3/2PbP1Pp/1PN1B2P/P3QPB1/2RR2K1 w kq - 2 22",
+        "move": "c3d5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "weak_square/outcome": [
+      {
+        "id": "master-weak_square-6738a817503539",
+        "fen": "r2qk2r/ppp1bppp/3pp1n1/8/3PP1n1/1B6/PPP1NB1P/RN1Q1RK1 b kq - 1 12",
+        "move": "e7h4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "quality-mine-weak_square-95d91653d01a56",
+        "fen": "3qk1nr/p1pp1ppp/4p3/N1b1P3/8/1R3QP1/1P2KP1P/2r3NR w k - 2 22",
+        "move": "a5b7",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "quality-mine-weak_square-a0a3fca76b1dd2",
+        "fen": "r4rk1/p2n1ppp/8/1p2p3/3b4/1B3Q2/PP3PPP/3RR1K1 w - - 0 19",
+        "move": "b3d5",
+        "reasons": [
+          "strategy_requires_balanced_plan_choice"
+        ]
+      }
+    ],
+    "weak_pawn/outcome": [
+      {
+        "id": "master-weak_pawn-4b10d17fe34c9e",
+        "fen": "2kr2r1/pp2p1bp/n3b1p1/8/4p3/2N1BN2/PPP3PP/R3K2R w KQ - 0 15",
+        "move": "f3g5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "quality-mine-weak_pawn-67b3307b4d820a",
+        "fen": "1r2k2r/p5pp/8/4p3/1P2b3/3Q3P/PP2N1q1/1RB1KR2 w k - 1 22",
+        "move": "d3d6",
+        "reasons": [
+          "strategy_requires_balanced_plan_choice"
+        ]
+      },
+      {
+        "id": "quality-mine-weak_pawn-8bf37c53854436",
+        "fen": "r3r1k1/p4p2/5n1p/3pbq2/2pQ4/2N4P/PP3PP1/R3R1K1 w - - 2 22",
+        "move": "d4d2",
+        "reasons": [
+          "strategy_requires_balanced_plan_choice"
+        ]
+      }
+    ],
+    "weak_pawn/decision_contrast": [
+      {
+        "id": "master-weak_pawn-576fb9b149fee6",
+        "fen": "r4rk1/p4ppp/2p2n2/2bp4/6q1/1Q2P3/PPP2PPP/RNB2RK1 w - - 2 12",
+        "move": "b3b7",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-weak_pawn-e31cda6acde04b6c21",
+        "fen": "2r2r1k/4Q1p1/6p1/2p5/3p1P2/4PB2/bq4PP/R4RK1 w - - 0 25",
+        "move": "e7g5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-weak_pawn-b10ceaa59e1b92afa7",
+        "fen": "r2q1rk1/p2b1nb1/3p4/2pPp1pp/2P1Pp2/P1N2P2/4BBPP/1R1Q1R1K w - - 2 22",
+        "move": "b1b7",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "weak_pawn/human_value": [
+      {
+        "id": "master-weak_pawn-576fb9b149fee6",
+        "fen": "r4rk1/p4ppp/2p2n2/2bp4/6q1/1Q2P3/PPP2PPP/RNB2RK1 w - - 2 12",
+        "move": "b3b7",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-weak_pawn-e31cda6acde04b6c21",
+        "fen": "2r2r1k/4Q1p1/6p1/2p5/3p1P2/4PB2/bq4PP/R4RK1 w - - 0 25",
+        "move": "e7g5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-weak_pawn-b10ceaa59e1b92afa7",
+        "fen": "r2q1rk1/p2b1nb1/3p4/2pPp1pp/2P1Pp2/P1N2P2/4BBPP/1R1Q1R1K w - - 2 22",
+        "move": "b1b7",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "favorable_exchange/outcome": [
+      {
+        "id": "master-favorable_exchange-b41ceca21d58bf",
+        "fen": "r1bqkb1r/pp1n2p1/2p1pp1p/7n/3P4/2N2NB1/PPP1BPPP/R2Q1RK1 b kq - 1 11",
+        "move": "h5g3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_exchange-e2250d2cfc9c33b585",
+        "fen": "r4rk1/1bq2pbp/pp4p1/3np3/P2N1n2/N1P2BB1/1P3PPP/R2QR1K1 w - - 0 19",
+        "move": "g3f4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_exchange-ad4b21d41484b2f94d",
+        "fen": "4r1k1/1bq1bppp/6n1/1pp3PB/rP2PP2/2Q1B2P/2P1NK2/1R5R w - - 3 22",
+        "move": "h5g6",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "piece_activity/outcome": [
+      {
+        "id": "master-piece_activity-f2d743979457b4",
+        "fen": "r2q1rk1/1pp2ppp/p1n2n2/2b1pb2/2P5/2N1P1P1/PB1P1PBP/R2QK1NR w KQ - 2 11",
+        "move": "g1f3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-piece_activity-d4df8487f3c143",
+        "fen": "r4knr/p4ppp/8/3Ppb2/1nB5/2N1P3/3K1PPP/R5NR b - - 4 15",
+        "move": "g8f6",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-piece_activity-257341c534e357",
+        "fen": "r3kbnr/pp1b1ppp/8/n1p1p3/2PpP3/PP1P4/3N1PPP/R1B1KBNR w KQkq - 0 11",
+        "move": "g1f3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "piece_activity/verification": [
+      {
+        "id": "master-piece_activity-bb968759afb310",
+        "fen": "1r3rk1/1bp1qppp/p4b2/np2N3/3Pp3/2P5/PPB1NPPP/R2Q1RK1 w - - 1 15",
+        "move": "e2g3",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "master-piece_activity-f5117dc5a50651",
+        "fen": "r2q1rk1/1b1pppbp/p4np1/np4N1/4P2P/1BN5/PPP2PP1/R1BQ1RK1 w - - 1 13",
+        "move": "b3d5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "master-piece_activity-56566252d813ad",
+        "fen": "r2qk2r/pp2bppp/2b1p3/3pPn2/3P1P2/5N2/PP4PP/RNBQ1RK1 w kq - 1 11",
+        "move": "b1c3",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "piece_activity/decision_contrast": [
+      {
+        "id": "master-piece_activity-182382b44927b6",
+        "fen": "r1b2rk1/4qpp1/2pp3p/1p2p3/p3P3/P2P1PQ1/BPP1K1PP/R6R b - - 1 17",
+        "move": "c8e6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "quality-mine-piece_activity-d59e3a46575c88",
+        "fen": "rn2k2r/ppqb1ppp/3bp3/3p2B1/4n3/1NP2NP1/PP2PPBP/R2Q1RK1 w kq - 12 13",
+        "move": "b3d4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "quality-mine-piece_activity-4a90eac26246d3",
+        "fen": "r2q1rk1/p2nbppp/1p2pn2/2p5/5B2/2NP1N2/PPP2PPP/R2QR1K1 w - - 4 13",
+        "move": "c3e4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "piece_activity/human_value": [
+      {
+        "id": "master-piece_activity-182382b44927b6",
+        "fen": "r1b2rk1/4qpp1/2pp3p/1p2p3/p3P3/P2P1PQ1/BPP1K1PP/R6R b - - 1 17",
+        "move": "c8e6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "quality-mine-piece_activity-d59e3a46575c88",
+        "fen": "rn2k2r/ppqb1ppp/3bp3/3p2B1/4n3/1NP2NP1/PP2PPBP/R2Q1RK1 w kq - 12 13",
+        "move": "b3d4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "quality-mine-piece_activity-4a90eac26246d3",
+        "fen": "r2q1rk1/p2nbppp/1p2pn2/2p5/5B2/2NP1N2/PPP2PPP/R2QR1K1 w - - 4 13",
+        "move": "c3e4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "king_and_pawn/outcome": [
+      {
+        "id": "master-king_and_pawn-87c9a4ec607421",
+        "fen": "1k6/8/P4p2/1KP5/4P3/8/5p1P/8 w - - 0 49",
+        "move": "b5b6",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-cdc39a9902cc3f",
+        "fen": "8/p4Pk1/1p5p/8/2P1p3/4P2K/6P1/8 w - - 0 41",
+        "move": "h3g4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-c8257383e9ec3d",
+        "fen": "8/8/p4pp1/P1p5/3p2K1/1Pk5/8/8 w - - 2 47",
+        "move": "g4f4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "king_and_pawn/verification": [
+      {
+        "id": "master-king_and_pawn-18960fe3f3ad2f",
+        "fen": "8/5p2/p4kp1/2p5/3p4/PP1P3P/6K1/8 w - - 1 35",
+        "move": "g2f3",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-king_and_pawn-12b4e3ff48172c3a63",
+        "fen": "8/8/p1k5/8/1p1K1P2/8/P7/8 b - - 1 47",
+        "move": "c6d6",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-0476a358665e8e",
+        "fen": "8/8/8/8/7p/5K1P/6P1/5k2 w - - 0 49",
+        "move": "f3g4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "king_and_pawn/sequence": [
+      {
+        "id": "master-king_and_pawn-269fb4bce18dec",
+        "fen": "8/8/p7/7p/7P/k1K5/8/8 w - - 7 54",
+        "move": "c3c4",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-5a5a635462f9f9",
+        "fen": "8/p7/4P1p1/6k1/2pP4/6K1/7P/8 w - - 0 45",
+        "move": "e6e7",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-king_and_pawn-9b6b056189e881",
+        "fen": "8/p3kP2/P5K1/8/2p5/8/8/8 w - - 1 41",
+        "move": "g6g7",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      }
+    ],
+    "opposition/outcome": [
+      {
+        "id": "master-opposition-f14914e6f420e7",
+        "fen": "8/1kP5/5p2/P7/1KP1P3/5p2/7P/8 w - - 1 46",
+        "move": "b4b5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-opposition-0550eaaa4a1309",
+        "fen": "8/4k3/2p3P1/8/1P1p1K2/8/8/8 b - - 0 38",
+        "move": "e7f6",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-opposition-7328d23448b14f",
+        "fen": "8/8/2k2p2/2P3p1/p2K2P1/8/8/8 w - - 0 49",
+        "move": "d4c4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "opposition/triviality": [
+      {
+        "id": "master-opposition-4bdd19d5aaa654",
+        "fen": "k7/P2K4/1P6/8/8/8/8/8 b - - 6 53",
+        "move": "a8b7",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-opposition-b8d00b4f83d450",
+        "fen": "8/8/8/6p1/7p/6kP/8/7K w - - 8 48",
+        "move": "h1g1",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-opposition-2c55b1cc03f252",
+        "fen": "8/8/8/6p1/8/7p/5k2/7K w - - 2 52",
+        "move": "h1h2",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "opposition/decision_contrast": [
+      {
+        "id": "master-opposition-a0e0141713698c",
+        "fen": "8/8/6p1/p5P1/P1k5/3pK3/8/8 b - - 7 63",
+        "move": "c4c3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-opposition-94ed069b340447",
+        "fen": "8/8/7p/2k3p1/2P3P1/3K3P/5P2/8 w - - 0 45",
+        "move": "d3c3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-opposition-b81ed0d64d3e0f",
+        "fen": "8/7p/4k1p1/p4p2/2p5/2P1K2P/1P6/8 b - - 3 49",
+        "move": "e6e5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "opposition/human_value": [
+      {
+        "id": "master-opposition-a0e0141713698c",
+        "fen": "8/8/6p1/p5P1/P1k5/3pK3/8/8 b - - 7 63",
+        "move": "c4c3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-opposition-94ed069b340447",
+        "fen": "8/8/7p/2k3p1/2P3P1/3K3P/5P2/8 w - - 0 45",
+        "move": "d3c3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-opposition-b81ed0d64d3e0f",
+        "fen": "8/7p/4k1p1/p4p2/2p5/2P1K2P/1P6/8 b - - 3 49",
+        "move": "e6e5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "opposition/verification": [
+      {
+        "id": "master-opposition-96fcbe6a89f70b",
+        "fen": "8/7p/pp3k2/2p3p1/5pK1/7P/PPP5/8 b - - 1 40",
+        "move": "f6g6",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-opposition-1a3c09f5acaf183129",
+        "fen": "8/5p2/8/8/7p/4k2P/5pK1/8 b - - 1 62",
+        "move": "e3e2",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-opposition-adabe842754d631389",
+        "fen": "8/7p/5P2/3k4/4p3/4K2P/8/8 b - - 0 68",
+        "move": "d5e5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "rule_of_square/triviality": [
+      {
+        "id": "master-rule_of_square-13272772d4ac59",
+        "fen": "8/8/8/8/6p1/8/5k1p/7K w - - 0 54",
+        "move": "h1h2",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rule_of_square-48e48542d660bc",
+        "fen": "8/8/8/8/1Pk5/P4pPp/5K2/8 w - - 0 43",
+        "move": "f2f3",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rule_of_square-8a4b2841b2a67b",
+        "fen": "8/8/p5k1/1p4P1/8/1P3K2/P6P/8 b - - 2 46",
+        "move": "g6g5",
+        "reasons": [
+          "free_material_capture",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "rule_of_square/causality": [
+      {
+        "id": "master-rule_of_square-13272772d4ac59",
+        "fen": "8/8/8/8/6p1/8/5k1p/7K w - - 0 54",
+        "move": "h1h2",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rule_of_square-3c64e9bb7573da",
+        "fen": "8/8/2k2p2/2P3p1/2K3P1/p7/8/8 w - - 0 50",
+        "move": "c4b3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "master-rule_of_square-d9449ca0806dc0",
+        "fen": "8/3k4/3p4/1p1Pp1pP/1P2P3/6K1/8/8 b - - 0 43",
+        "move": "d7e7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "passed_pawn/decision_contrast": [
+      {
+        "id": "master-passed_pawn-08a3331a335833",
+        "fen": "8/5pk1/Q5b1/1p6/7q/8/5PP1/6K1 b - - 2 40",
+        "move": "b5b4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-7586c1ff1ef486",
+        "fen": "8/b1k5/8/3K4/1P2P3/2P4P/8/8 w - - 1 50",
+        "move": "e4e5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-70e6e619f6febd",
+        "fen": "r6k/5p2/6p1/8/8/7p/3K4/8 b - - 1 49",
+        "move": "h3h2",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "passed_pawn/human_value": [
+      {
+        "id": "master-passed_pawn-08a3331a335833",
+        "fen": "8/5pk1/Q5b1/1p6/7q/8/5PP1/6K1 b - - 2 40",
+        "move": "b5b4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-7586c1ff1ef486",
+        "fen": "8/b1k5/8/3K4/1P2P3/2P4P/8/8 w - - 1 50",
+        "move": "e4e5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-70e6e619f6febd",
+        "fen": "r6k/5p2/6p1/8/8/7p/3K4/8 b - - 1 49",
+        "move": "h3h2",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "passed_pawn/verification": [
+      {
+        "id": "master-passed_pawn-4938c44e7febbf",
+        "fen": "2b2k2/8/1P6/8/5p2/7p/1KP5/5r2 b - - 0 46",
+        "move": "h3h2",
+        "reasons": [
+          "teaching_move_objectively_inferior",
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-299cdfe0481bdf",
+        "fen": "8/8/8/1pk5/5P2/3Q4/4K1P1/8 w - - 0 58",
+        "move": "f4f5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "master-passed_pawn-826264b8c3d689",
+        "fen": "8/2R2pk1/1K4p1/8/p5PP/4r3/8/8 b - - 0 52",
+        "move": "a4a3",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "rook_endgame/outcome": [
+      {
+        "id": "master-rook_endgame-fa5ba2f4714d40",
+        "fen": "8/1p6/p7/P4p2/1r2p1k1/1PR3P1/6K1/8 w - - 2 41",
+        "move": "c3c7",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-rook_endgame-0f5c31a07b7e47",
+        "fen": "8/1p2R3/p4k2/P4p2/4p3/1r4P1/6K1/8 w - - 6 45",
+        "move": "e7c7",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-rook_endgame-bb7aca937b6e55cf31",
+        "fen": "8/8/8/1p2p3/1P3r2/4K1k1/7p/1R6 w - - 2 85",
+        "move": "b1a1",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "rook_activity/outcome": [
+      {
+        "id": "master-rook_activity-77b28ec5314adb",
+        "fen": "8/1k6/p7/1p1p4/1P1r3p/P4P2/4K1PP/R7 b - - 0 37",
+        "move": "d4c4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-rook_activity-bf2ff9b930de1c",
+        "fen": "8/1k6/p7/1p6/rP5p/5P2/1R2K1PP/8 b - - 9 45",
+        "move": "a4a3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-rook_activity-25e50a36e968dd",
+        "fen": "r7/pppk2pp/5p2/3P4/2P2R2/4r3/P1P3PP/R5K1 w - - 0 20",
+        "move": "a1b1",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "rook_activity/sequence": [
+      {
+        "id": "master-rook_activity-fde504ccdead93",
+        "fen": "2k5/p1p2R2/8/5Pp1/1P6/3rp3/7P/7K w - - 0 43",
+        "move": "f7e7",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-rook_activity-4e66f9f0d438aa",
+        "fen": "8/p6r/1pR4p/4k2K/1P2p3/P3P3/7P/8 b - - 0 41",
+        "move": "h7f7",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-rook_activity-aa226e19953834",
+        "fen": "8/1pp5/1k3p1p/1r6/5P2/6P1/6KP/5R2 b - - 1 39",
+        "move": "b5d5",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      }
+    ],
+    "rook_behind_pawn/verification": [
+      {
+        "id": "master-rook_behind_pawn-bdad6a0b076cec",
+        "fen": "6k1/6p1/p5R1/4p2p/KP3p1P/P5r1/8/8 w - - 2 35",
+        "move": "g6e6",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-rook_behind_pawn-05c1c8835ead7d",
+        "fen": "8/p7/4Pk1p/2q3p1/8/2P3QP/PP4PK/3R4 w - - 0 34",
+        "move": "d1e1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-rook_behind_pawn-2c1eb7a0d34461",
+        "fen": "2b2k1B/1p5p/p2Pp3/8/5p2/P1P5/1P3KPP/4R1NR w - - 0 25",
+        "move": "e1d1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "king_activity/outcome": [
+      {
+        "id": "master-king_activity-4a34fb8a99cc12",
+        "fen": "5r2/3k4/1p1p3P/p1p3p1/7b/1P2K3/8/R7 w - - 0 40",
+        "move": "e3e4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-king_activity-a4eb0be8808822",
+        "fen": "8/4k3/ppn2ppp/2p5/2P1NPPP/PP1KP3/8/8 b - - 5 52",
+        "move": "e7e6",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "master-king_activity-e22dade41fb44f",
+        "fen": "8/4k3/ppB5/3P2p1/2P1PP2/2N5/PP1B1K2/8 b - - 0 40",
+        "move": "e7d6",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "king_activity/verification": [
+      {
+        "id": "master-king_activity-20a5da834542bc",
+        "fen": "8/5pk1/p6p/2r1P1p1/2p2P2/2Rb1KP1/P6P/8 b - - 3 41",
+        "move": "g7g6",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-king_activity-76453e1feaf2f2",
+        "fen": "3k3r/2p2ppp/1p6/p7/2P1q2P/1K4P1/8/8 w - - 0 46",
+        "move": "b3a4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-king_activity-a0fd94a19c3bc5",
+        "fen": "1R6/6pk/2pP3p/2P1Pn2/4Qp2/8/6PP/r5K1 w - - 3 40",
+        "move": "g1f2",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "king_activity/sequence": [
+      {
+        "id": "master-king_activity-835d26bc03f69f",
+        "fen": "8/8/4pk2/3p1p2/2r5/2PK4/8/7R b - - 5 54",
+        "move": "f6e5",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-king_activity-5e24eaff8f1de1",
+        "fen": "r2r2k1/5ppp/2R5/8/1P6/P7/3p1PPP/R4K2 w - - 0 27",
+        "move": "f1e2",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-king_activity-0a510904d8c42f",
+        "fen": "8/5pk1/6p1/8/2K3PP/8/pr6/R7 b - - 5 56",
+        "move": "g7f6",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      }
+    ],
+    "convert_small_advantage/verification": [
+      {
+        "id": "master-convert_small_advantage-4883cf88bd214a",
+        "fen": "1r3rk1/bp2n1p1/p3p1qp/8/1PNp4/P2P1N2/2P2PPP/R2QR1K1 w - - 3 19",
+        "move": "f3e5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "master-convert_small_advantage-337fce2478a63c",
+        "fen": "4Q3/1k5r/1q2pb1p/1p1p2p1/pPpP4/P1P1P2P/3N2P1/R5K1 w - - 0 27",
+        "move": "a1f1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-convert_small_advantage-a4e490598df25e",
+        "fen": "r4bnr/3Q1ppp/1kn5/1p2R3/8/8/PP1B1PPP/R5K1 w - - 1 22",
+        "move": "e5e8",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "convert_small_advantage/outcome": [
+      {
+        "id": "master-convert_small_advantage-56caee491bc4dc",
+        "fen": "r2qk1nr/1p3ppp/p1ppb3/4p3/1PPbP3/P2PNP2/6PP/1RBQKB1R b Kkq - 0 12",
+        "move": "g8f6",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "quality-mine-convert_small_advantage-982f022352c1c4",
+        "fen": "r2qkb1r/pp5p/6p1/3p1b1Q/2pnp3/2N5/PPPN1PPP/R1B2RK1 w kq - 0 13",
+        "move": "h5d1",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "quality-mine-convert_small_advantage-9a033d541ad99d",
+        "fen": "4r1k1/pp3ppp/1n1b4/1b5N/3PQP1q/1P5P/P5P1/R1B2RK1 w - - 1 22",
+        "move": "e4f3",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      }
+    ],
+    "simplify_when_ahead/outcome": [
+      {
+        "id": "master-simplify_when_ahead-62342bd72a004a",
+        "fen": "6k1/3B1pp1/p2q1n1p/r7/1N1p4/2P2P2/6PP/R2Q2K1 b - - 0 29",
+        "move": "a5a1",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "contrast-mine-simplify_when_ahead-e71916bb952be3a61f",
+        "fen": "3Q4/5kpp/b1rpq3/5p2/2n1p3/4P1BP/5PP1/3R1BK1 w - - 2 31",
+        "move": "f1c4",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "contrast-mine-simplify_when_ahead-8dff1439b01d72558d",
+        "fen": "r4rk1/1p3pb1/p2pb1pp/3Np3/2PnP2q/3BB3/PP3PPP/R2Q1RK1 w - - 2 16",
+        "move": "e3d4",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      }
+    ],
+    "use_material_advantage/verification": [
+      {
+        "id": "master-use_material_advantage-b6cbd6c64ebf63",
+        "fen": "r3k1nr/4qp1p/p2p1bp1/5p2/3Bb3/2Pn3N/B3Q1PP/RN3RK1 b kq - 3 21",
+        "move": "a8b8",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-use_material_advantage-37c390f7ef1cd3",
+        "fen": "3r1rk1/1pp2pp1/p2bpn1p/8/3N4/2N3P1/PPP1Q2P/3R1RK1 w - - 6 19",
+        "move": "c3e4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-use_material_advantage-1d6e25c8892b73",
+        "fen": "2r1qr1k/1n2b1pp/3pb1p1/p7/3QP3/2P2NB1/PP1N1PPP/R2R2K1 w - - 2 19",
+        "move": "d2c4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "use_material_advantage/decision_contrast": [
+      {
+        "id": "master-use_material_advantage-ac6eb8b12ca9e5",
+        "fen": "1r5r/kpqn4/p2p1b2/2pPp1pp/2P1Pp2/P1B4P/NP1Q2P1/2KR3R b - - 6 22",
+        "move": "b7b5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-use_material_advantage-f2fedcbcf9f3d3",
+        "fen": "rnbk3r/pp3ppp/3pp3/2p5/8/3P1N2/PP3PPP/RN1BK2R w KQ - 0 10",
+        "move": "d1b3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "quality-mine-use_material_advantage-fce31dd7296943",
+        "fen": "3qkbnr/prpp1ppp/4p3/4P3/1pP5/3P2P1/1P3P1P/RNBQK1NR w KQk - 0 13",
+        "move": "d1f3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "use_material_advantage/human_value": [
+      {
+        "id": "master-use_material_advantage-ac6eb8b12ca9e5",
+        "fen": "1r5r/kpqn4/p2p1b2/2pPp1pp/2P1Pp2/P1B4P/NP1Q2P1/2KR3R b - - 6 22",
+        "move": "b7b5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-use_material_advantage-f2fedcbcf9f3d3",
+        "fen": "rnbk3r/pp3ppp/3pp3/2p5/8/3P1N2/PP3PPP/RN1BK2R w KQ - 0 10",
+        "move": "d1b3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "quality-mine-use_material_advantage-fce31dd7296943",
+        "fen": "3qkbnr/prpp1ppp/4p3/4P3/1pP5/3P2P1/1P3P1P/RNBQK1NR w KQk - 0 13",
+        "move": "d1f3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "favorable_endgame_transition/decision_contrast": [
+      {
+        "id": "master-favorable_endgame_transition-ec3f96ac764026",
+        "fen": "3r4/p2r2kp/1pB2pp1/8/2Pp1B2/6P1/Pn5P/R4RK1 w - - 3 25",
+        "move": "c6d7",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-favorable_endgame_transition-96b04e0f25bfa8",
+        "fen": "1r3rk1/R4ppp/8/2P5/1n6/4P3/P2B2PP/R5K1 w - - 0 27",
+        "move": "d2b4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "favorable_endgame_transition/human_value": [
+      {
+        "id": "master-favorable_endgame_transition-ec3f96ac764026",
+        "fen": "3r4/p2r2kp/1pB2pp1/8/2Pp1B2/6P1/Pn5P/R4RK1 w - - 3 25",
+        "move": "c6d7",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-favorable_endgame_transition-96b04e0f25bfa8",
+        "fen": "1r3rk1/R4ppp/8/2P5/1n6/4P3/P2B2PP/R5K1 w - - 0 27",
+        "move": "d2b4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "favorable_endgame_transition/verification": [
+      {
+        "id": "master-favorable_endgame_transition-ca31caf1b1067f",
+        "fen": "5rk1/3b1p1p/2p2p2/1p1p4/rP1P4/1N2P3/5PPP/R4RK1 w - - 4 23",
+        "move": "a1a4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_endgame_transition-2182bb1f0cc4586882",
+        "fen": "3q4/p7/2P1Q2p/3p1p1k/3Pb2P/P1P3P1/4R2K/8 w - - 1 58",
+        "move": "e2e4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "preserve_activity/verification": [
+      {
+        "id": "master-preserve_activity-9369c1c6fe4b9c",
+        "fen": "r6r/pN1k2pp/2p1q3/2Qnp3/8/8/PP3PPP/R3R1K1 w - - 0 21",
+        "move": "a1d1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "master-preserve_activity-efe9f46ac4ca15",
+        "fen": "rnb2rk1/pppp1ppp/6q1/5n2/3P4/2NB4/PP3PPP/R1BQ1RK1 w - - 4 11",
+        "move": "c3d5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-preserve_activity-24367dda738796",
+        "fen": "5R2/kpp5/1b1pB3/pP2p3/P3Pn2/1KP3NP/7r/8 w - - 6 34",
+        "move": "g3f5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "preserve_activity/decision_contrast": [
+      {
+        "id": "master-preserve_activity-1cbd36242256eb",
+        "fen": "r1bq2k1/pp2b1p1/3p1n1p/4p3/3pP3/3P1Q1P/PPP1NPP1/3R1RK1 b - - 0 15",
+        "move": "c8e6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "quality-mine-preserve_activity-96e3ca7a06bf4f",
+        "fen": "6k1/8/R1pp3p/8/2PPrpn1/4B3/P2K1P1P/7R w - - 0 28",
+        "move": "h1g1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-preserve_activity-b569892c2d5343b9ad",
+        "fen": "2r3k1/3q1pbp/p3p1p1/np1pP1BP/3P4/P1R2Q2/1P2NPP1/6K1 w - - 3 22",
+        "move": "e2f4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "preserve_activity/human_value": [
+      {
+        "id": "master-preserve_activity-1cbd36242256eb",
+        "fen": "r1bq2k1/pp2b1p1/3p1n1p/4p3/3pP3/3P1Q1P/PPP1NPP1/3R1RK1 b - - 0 15",
+        "move": "c8e6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "quality-mine-preserve_activity-96e3ca7a06bf4f",
+        "fen": "6k1/8/R1pp3p/8/2PPrpn1/4B3/P2K1P1P/7R w - - 0 28",
+        "move": "h1g1",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-preserve_activity-b569892c2d5343b9ad",
+        "fen": "2r3k1/3q1pbp/p3p1p1/np1pP1BP/3P4/P1R2Q2/1P2NPP1/6K1 w - - 3 22",
+        "move": "e2f4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "preserve_activity/outcome": [
+      {
+        "id": "master-preserve_activity-02a5233b08b38a",
+        "fen": "2kr1bbr/pp2npp1/2p1p2p/4N3/5PP1/1B1P3P/PPPB4/1K1RR3 w - - 1 19",
+        "move": "d2e3",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "quality-mine-preserve_activity-5e7e08cbd109e6",
+        "fen": "1B4k1/6bp/4p1p1/p3P3/1pb2P2/8/P1B3Pn/1K6 w - - 0 28",
+        "move": "b8c7",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "quality-mine-preserve_activity-5188a207d7d19c",
+        "fen": "8/8/K7/p7/k7/b4r2/8/R7 w - - 8 70",
+        "move": "a1b1",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      }
+    ],
+    "weak_pawn/verification": [
+      {
+        "id": "quality-mine-weak_pawn-d58345d14a5bb2",
+        "fen": "3r3r/pR2nkpp/4b3/2p1P3/4PB2/2N2N2/PPP3PP/4K2R w K - 1 16",
+        "move": "b7c7",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-weak_pawn-fb9b3569c16cf4",
+        "fen": "rn3rk1/pb2npbp/4p1p1/2p1P1B1/2B5/2N2N2/PPP3PP/3R1RK1 w - - 0 13",
+        "move": "c3a4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-weak_pawn-f7f515152e9cc6",
+        "fen": "4rb1k/6pp/2qp1p2/8/1p1Q4/4N2P/5PP1/3R2K1 w - - 0 31",
+        "move": "e3f5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "outpost/outcome": [
+      {
+        "id": "quality-mine-outpost-82cc0483c1a0fe",
+        "fen": "1r3rk1/1p3p1p/p7/8/4Pp2/2NPb2b/PPP1B2P/R2K4 w - - 2 22",
+        "move": "c3d5",
+        "reasons": [
+          "strategy_requires_balanced_plan_choice"
+        ]
+      },
+      {
+        "id": "quality-mine-outpost-1ab1e143d87db7",
+        "fen": "rnb2r1k/pp3p1p/3p1q1n/2p3pQ/1PB1P3/2NPB2P/P1P2PP1/R4RK1 w - - 2 16",
+        "move": "c3d5",
+        "reasons": [
+          "strategy_requires_balanced_plan_choice"
+        ]
+      },
+      {
+        "id": "quality-mine-outpost-b48efec0be61f8",
+        "fen": "5rk1/pp2rpbq/n2N3p/2pPp2B/2P1P3/P7/1P4PP/2RQ1RK1 w - - 1 22",
+        "move": "d6f5",
+        "reasons": [
+          "strategy_requires_balanced_plan_choice"
+        ]
+      }
+    ],
+    "restrict_counterplay/verification": [
+      {
+        "id": "quality-mine-restrict_counterplay-fdb1d7c95c20da",
+        "fen": "r1b2R2/1pp1k2p/p7/8/3p2n1/8/P1P3R1/2K5 w - - 4 31",
+        "move": "f8f4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-restrict_counterplay-303020b6da6827",
+        "fen": "8/k1p5/1pQb1p2/p4B1r/P7/8/5P2/2R3K1 w - - 2 34",
+        "move": "f5g4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-restrict_counterplay-e173685f7691e3",
+        "fen": "3rr1k1/1bp2p1p/p1n3p1/1p6/1P2pP2/2b1K3/P7/3R4 w - - 2 31",
+        "move": "d1c1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "restrict_counterplay/outcome": [
+      {
+        "id": "quality-mine-restrict_counterplay-d927602d93907a",
+        "fen": "2k1r3/p5pp/1p1b1p2/2p5/2Pp4/1P1r3P/P3NPP1/R4RK1 w - - 2 22",
+        "move": "e2c1",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "quality-mine-restrict_counterplay-7cc99650f26984",
+        "fen": "6k1/6bp/4p1p1/B2nP3/1pb1BP2/8/P5P1/1K6 w - - 3 31",
+        "move": "g2g3",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "quality-mine-restrict_counterplay-84c4a41700c4f0",
+        "fen": "r1b2rk1/pp2bppp/3p1n1q/4n3/1P2P1P1/P2K1P2/1B1N3P/R2Q1BNR w - - 1 16",
+        "move": "d3e2",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      }
+    ],
+    "open_file/verification": [
+      {
+        "id": "quality-mine-open_file-dc07ac45169a35",
+        "fen": "2kr3r/ppp1qp1p/2n2p2/3p4/5P2/1P2P3/PBPP3P/RN2K2R w KQ - 1 13",
+        "move": "h1g1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-open_file-78258ae1a104fd",
+        "fen": "2kr2r1/1ppq1p1p/p1n4b/4p3/2b1P1P1/P1N2P1P/1PP3B1/R3K1NR w KQ - 1 16",
+        "move": "a1d1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-open_file-7149708f364fd8",
+        "fen": "r5r1/p1p2k2/2p5/3np3/5b2/2NK1b2/PPP5/R7 w - - 0 28",
+        "move": "a1f1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "restrict_counterplay/decision_contrast": [
+      {
+        "id": "quality-mine-restrict_counterplay-f945e5c306aa12",
+        "fen": "1R1b3r/8/3R4/1Pp5/4P3/3Pk2K/8/8 w - - 3 49",
+        "move": "h3g4",
+        "reasons": [
+          "insufficient_compared_human_plans",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-restrict_counterplay-a13630de42c0fa27df",
+        "fen": "5rk1/p4p2/3p2pb/2pN3p/4P2P/3p2P1/P1K2nB1/2R4R w - - 0 28",
+        "move": "c2c3",
+        "reasons": [
+          "insufficient_compared_human_plans",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-restrict_counterplay-fd6682d7a3d5a39f40",
+        "fen": "5rk1/p4pb1/3p2p1/2pN3p/4P2P/2Kp2P1/P4nB1/2R4R w - - 6 31",
+        "move": "c3d2",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "restrict_counterplay/human_value": [
+      {
+        "id": "quality-mine-restrict_counterplay-f945e5c306aa12",
+        "fen": "1R1b3r/8/3R4/1Pp5/4P3/3Pk2K/8/8 w - - 3 49",
+        "move": "h3g4",
+        "reasons": [
+          "insufficient_compared_human_plans",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-restrict_counterplay-a13630de42c0fa27df",
+        "fen": "5rk1/p4p2/3p2pb/2pN3p/4P2P/3p2P1/P1K2nB1/2R4R w - - 0 28",
+        "move": "c2c3",
+        "reasons": [
+          "insufficient_compared_human_plans",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-restrict_counterplay-fd6682d7a3d5a39f40",
+        "fen": "5rk1/p4pb1/3p2p1/2pN3p/4P2P/2Kp2P1/P4nB1/2R4R w - - 6 31",
+        "move": "c3d2",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "use_material_advantage/outcome": [
+      {
+        "id": "quality-mine-use_material_advantage-17357581b42596",
+        "fen": "1r6/7p/p4R2/6P1/6kB/n1p5/P1P4P/3K4 w - - 2 37",
+        "move": "h4g3",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "quality-mine-use_material_advantage-f17d458e534c90",
+        "fen": "1R6/p1p2p1k/1p4pp/8/4qP2/P7/5QPP/5RK1 w - - 0 25",
+        "move": "f1e1",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      },
+      {
+        "id": "quality-mine-use_material_advantage-b550ab69dc004a",
+        "fen": "2k5/1pp3r1/p3p3/2b1P2p/4B2B/2P1N3/q4PP1/3R1RK1 w - - 3 25",
+        "move": "d1d8",
+        "reasons": [
+          "conversion_requires_nontrivial_existing_advantage"
+        ]
+      }
+    ],
+    "weak_square/verification": [
+      {
+        "id": "quality-mine-weak_square-6558ca14fd8bf4",
+        "fen": "1r5r/ppN5/5p1p/2b1p2k/2B1P2P/5P2/PPP5/2KR3R w - - 0 19",
+        "move": "c7e6",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-weak_square-7c3406e994d9ac",
+        "fen": "r2q1rk1/p2nn3/1pb3pp/1Np2p2/2P5/5NP1/PQ1RPPBP/5RK1 w - - 3 19",
+        "move": "b5d6",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-weak_square-33d9680b53e7d1",
+        "fen": "4k2r/r2n1p1p/b1Bbpnp1/p1PpN3/3P1P2/1QN1P3/P2B2PP/4K2R w Kk - 1 16",
+        "move": "c6b5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "rook_activity/verification": [
+      {
+        "id": "quality-mine-rook_activity-05663cf7cd6ce8",
+        "fen": "2r5/p5p1/p1PN2kp/4P3/8/2P1K2P/PP5P/R7 w - - 3 28",
+        "move": "a1f1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-rook_activity-97edb603dd2bdf",
+        "fen": "5rk1/1p3pp1/2p4p/8/P2q3P/1P3P2/6PK/3b3R w - - 0 31",
+        "move": "h1e1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-rook_activity-8317880cc0ec0f",
+        "fen": "7R/k6P/1p1p4/1r6/4P3/P2P4/1P6/1K1R4 w - - 1 37",
+        "move": "h8d8",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "improve_worst_piece/verification": [
+      {
+        "id": "quality-mine-improve_worst_piece-b00a2501e56158",
+        "fen": "r3k2r/1bqpbp2/p3p2p/1p5Q/1P1PP2p/2PB3P/5PP1/RN3RK1 w kq - 0 19",
+        "move": "b1a3",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-improve_worst_piece-d61ee53582c18b",
+        "fen": "r7/p2k3p/1p1p2pB/4b3/1Pbn4/P7/6PP/3RR1K1 w - - 2 28",
+        "move": "e1e4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "quality-mine-improve_worst_piece-94e336083173d7",
+        "fen": "rn1q1rk1/1b3pbp/2pppnp1/1p6/p2PPB2/P2B1N1P/NPP1QPP1/2KR3R w - - 0 13",
+        "move": "a2b4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "outpost/verification": [
+      {
+        "id": "quality-mine-outpost-f99c37303a917d",
+        "fen": "4r1k1/2p1r1qp/4n1p1/1b1p1p2/pPpP4/P4N1P/2BQ1PP1/R3R1K1 w - - 0 31",
+        "move": "f3e5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-outpost-646750ed69bb62a706",
+        "fen": "r4rk1/1pqnbpp1/p2pbn1p/4p3/4P3/1BN1BN2/PPP1QPPP/R2R2K1 w - - 6 13",
+        "move": "c3d5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-outpost-24ea8a3929b9e8feb5",
+        "fen": "1r4k1/p3pq2/2Q1N3/1pP1b2p/7P/4B3/1PP2P2/2K5 w - - 2 37",
+        "move": "e6g5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "passed_pawn/domain": [
+      {
+        "id": "lichess-07t3E",
+        "fen": "r1b1k2r/ppppqpp1/5n2/2b3B1/2Pn3p/2NP1NP1/PP2PPBP/R2QK2R b KQkq - 1 9",
+        "move": "h4h3",
+        "reasons": [
+          "material_phase_does_not_match_domain",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "active_defense/triviality": [
+      {
+        "id": "lichess-dNitq",
+        "fen": "8/4r3/3k1K2/6P1/8/8/8/8 w - - 9 54",
+        "move": "g5g6",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-3W6d3",
+        "fen": "r5k1/pp1b2P1/4p1Q1/4Pp2/5q2/P1P2P2/2n1n1PK/3R3R w - - 5 28",
+        "move": "g2g3",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-ZMuQv",
+        "fen": "8/8/5p2/2K1k2p/7P/5PP1/8/8 b - - 2 58",
+        "move": "f6f5",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "active_defense/causality": [
+      {
+        "id": "lichess-dNitq",
+        "fen": "8/4r3/3k1K2/6P1/8/8/8/8 w - - 9 54",
+        "move": "g5g6",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-Mcia3",
+        "fen": "8/p7/1p1k4/1P1Pp2p/P1K2p2/5p2/6PP/8 w - - 0 35",
+        "move": "g2f3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-lS33M",
+        "fen": "7k/6p1/p2B1p1p/2p2P1P/2Pq4/1P3Q2/5PK1/8 b - - 0 39",
+        "move": "d4d6",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "active_defense/outcome": [
+      {
+        "id": "lichess-ecnCl",
+        "fen": "2k5/8/1p2R1p1/3pP3/p2P2P1/n1P5/5P1P/6K1 b - - 0 35",
+        "move": "a3c4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-active_defense-865e25caea8a6a5df6",
+        "fen": "8/8/8/8/8/5k1p/6pK/R4r2 w - - 2 91",
+        "move": "a1a3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-active_defense-613521f3ae32405c10",
+        "fen": "8/5k2/5p2/7K/8/6Q1/8/2q3q1 w - - 2 73",
+        "move": "g3b3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "defensive_counterplay/outcome": [
+      {
+        "id": "lichess-koVGi",
+        "fen": "8/5pp1/7p/pk6/N7/1P4P1/r4PKP/8 w - - 3 37",
+        "move": "a4c3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "lichess-MG1g5",
+        "fen": "8/1p6/2p3p1/p2p4/P4k2/5P2/PKP5/2N1r3 w - - 0 44",
+        "move": "c1d3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_counterplay-1a7c9e9cbc15a33631",
+        "fen": "8/1p6/1Pk5/4R3/3P4/2K5/8/6q1 w - - 3 46",
+        "move": "e5c5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "defensive_counterplay/causality": [
+      {
+        "id": "lichess-Emlc2",
+        "fen": "8/8/1P6/4nk2/3R4/3P4/2P5/6K1 b - - 0 45",
+        "move": "e5f3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-rR1AL",
+        "fen": "8/8/8/p7/1kp5/8/1KP5/8 w - - 0 44",
+        "move": "c2c3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "defensive_counterplay/human_value": [
+      {
+        "id": "lichess-NaIfz",
+        "fen": "7r/pp4p1/3bp1k1/3p1pP1/3P4/2rBP3/1q5P/R2Q1RK1 w - f6 0 24",
+        "move": "g5f6",
+        "reasons": [
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_counterplay-d3c558d437767d3996",
+        "fen": "8/8/2P5/5k2/2r5/5NK1/8/8 w - - 2 70",
+        "move": "f3h4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_counterplay-a38ce93c94e0fe5a4d",
+        "fen": "8/4k3/8/5PP1/4B3/6r1/4K3/8 w - - 1 79",
+        "move": "f5f6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "defensive_endgame_activity/triviality": [
+      {
+        "id": "lichess-7Pilh",
+        "fen": "8/8/p7/6k1/6P1/4r1K1/1R2b3/8 w - - 4 67",
+        "move": "g3f2",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-qbE4i",
+        "fen": "8/p2pk1pp/b7/2p1q3/5R2/4K3/P4PPP/7R w - - 4 33",
+        "move": "f4e4",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-Xi8XI",
+        "fen": "8/8/8/5kp1/8/5P2/4qK2/8 w - - 0 72",
+        "move": "f2e2",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "defensive_endgame_activity/causality": [
+      {
+        "id": "lichess-7Pilh",
+        "fen": "8/8/p7/6k1/6P1/4r1K1/1R2b3/8 w - - 4 67",
+        "move": "g3f2",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-qbE4i",
+        "fen": "8/p2pk1pp/b7/2p1q3/5R2/4K3/P4PPP/7R w - - 4 33",
+        "move": "f4e4",
+        "reasons": [
+          "forced_or_nearly_forced_choice",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-zGCVt",
+        "fen": "8/3k1p2/1r6/3Q4/8/2P1p3/8/3K4 b - - 0 46",
+        "move": "b6d6",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "exchange_attacker/causality": [
+      {
+        "id": "lichess-JyD6E",
+        "fen": "8/1k6/p7/KPP5/8/8/8/8 b - - 0 57",
+        "move": "a6b5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-coFBQ",
+        "fen": "8/8/8/5ppk/7P/6K1/8/8 w - - 0 59",
+        "move": "h4g5",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-n6Mam",
+        "fen": "r1b4r/2k3pp/p2N4/2qpQ3/8/8/PPP2PPP/R3R1K1 b - - 0 19",
+        "move": "c5d6",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "exchange_attacker/triviality": [
+      {
+        "id": "lichess-hgnv0",
+        "fen": "2r2rk1/1p4q1/p1b1pp1R/4P2Q/1P6/P5P1/1B3b1P/4R1K1 w - - 0 32",
+        "move": "g1f2",
+        "reasons": [
+          "forced_or_nearly_forced_choice"
+        ]
+      },
+      {
+        "id": "lichess-gMb6c",
+        "fen": "r4rk1/p2b2qB/2p1p3/1p1pR3/3P4/2P3P1/PPQ2P1P/4R1K1 b - - 0 21",
+        "move": "g7h7",
+        "reasons": [
+          "forced_or_nearly_forced_choice"
+        ]
+      },
+      {
+        "id": "lichess-Qxcuy",
+        "fen": "5rk1/1bp2Bp1/p1q5/1p5p/8/2NQ4/PPP3PP/5R1K b - - 0 21",
+        "move": "f8f7",
+        "reasons": [
+          "forced_or_nearly_forced_choice"
+        ]
+      }
+    ],
+    "exchange_attacker/outcome": [
+      {
+        "id": "lichess-CJjvf",
+        "fen": "5rk1/4np2/b2p3p/5Np1/2r1P3/7P/PPB2PP1/2R1R1K1 b - - 4 25",
+        "move": "e7f5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "lichess-vtujs",
+        "fen": "1r5k/p4rpp/1pnPB3/3R4/8/6P1/P4K1P/8 w - - 0 41",
+        "move": "e6f7",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "lichess-X0jmn",
+        "fen": "8/8/8/6k1/5p1p/5pq1/5P2/5B1K w - - 2 61",
+        "move": "f2g3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "return_material/outcome": [
+      {
+        "id": "lichess-EfwcA",
+        "fen": "k7/5b2/5P2/6P1/5K2/8/p7/Rr6 w - - 1 54",
+        "move": "g5g6",
+        "reasons": [
+          "defense_requires_saved_outcome_not_centipawns"
+        ]
+      }
+    ],
+    "simplification_to_hold/causality": [
+      {
+        "id": "lichess-y9vCP",
+        "fen": "r6b/1p1b1k1Q/4p3/p1q5/P4PP1/2p5/1P1B3K/R4R2 b - - 1 30",
+        "move": "h8g7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-wLifc",
+        "fen": "r4k1r/2pR2p1/1p2pqB1/p3b3/2P5/P7/1PQ2PbP/2K1R3 w - - 1 21",
+        "move": "d7f7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "lichess-y7Wyk",
+        "fen": "4rbk1/8/p4p1p/2pbqPp1/P3P1n1/1P4NR/2P1K3/Q6R w - - 0 41",
+        "move": "a1e5",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      }
+    ],
+    "simplification_to_hold/triviality": [
+      {
+        "id": "lichess-y7Wyk",
+        "fen": "4rbk1/8/p4p1p/2pbqPp1/P3P1n1/1P4NR/2P1K3/Q6R w - - 0 41",
+        "move": "a1e5",
+        "reasons": [
+          "routine_queen_exchange",
+          "feature_present_but_mechanism_not_demonstrated"
+        ]
+      },
+      {
+        "id": "contrast-mine-simplification_to_hold-9cb401f3fd270f6966",
+        "fen": "2r3Q1/8/3k1N2/1p6/p2K4/8/8/8 b - - 0 65",
+        "move": "c8g8",
+        "reasons": [
+          "automatic_recapture"
+        ]
+      },
+      {
+        "id": "contrast-mine-simplification_to_hold-05cf7115bbefc7f95e",
+        "fen": "8/8/p7/P7/1Pq5/1k6/4Q3/3K4 w - - 31 79",
+        "move": "e2c4",
+        "reasons": [
+          "routine_queen_exchange"
+        ]
+      }
+    ],
+    "defensive_resource/decision_contrast": [
+      {
+        "id": "contrast-mine-defensive_resource-cde9474e4e1448c962",
+        "fen": "1R6/8/1P1k4/p7/r7/6p1/6K1/8 b - - 0 62",
+        "move": "a4a3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_resource-8026f981a71c8df4f2",
+        "fen": "8/8/1r1k4/R7/8/6p1/6K1/8 b - - 0 65",
+        "move": "b6b3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_resource-97e404ac30b425cd5b",
+        "fen": "8/5k2/5r2/3B4/2K5/6R1/8/8 b - - 8 59",
+        "move": "f7e7",
+        "reasons": [
+          "insufficient_compared_human_plans",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "defensive_resource/human_value": [
+      {
+        "id": "contrast-mine-defensive_resource-cde9474e4e1448c962",
+        "fen": "1R6/8/1P1k4/p7/r7/6p1/6K1/8 b - - 0 62",
+        "move": "a4a3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_resource-8026f981a71c8df4f2",
+        "fen": "8/8/1r1k4/R7/8/6p1/6K1/8 b - - 0 65",
+        "move": "b6b3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_resource-97e404ac30b425cd5b",
+        "fen": "8/5k2/5r2/3B4/2K5/6R1/8/8 b - - 8 59",
+        "move": "f7e7",
+        "reasons": [
+          "insufficient_compared_human_plans",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "defensive_resource/verification": [
+      {
+        "id": "contrast-mine-defensive_resource-1301d5e6ad681eeff4",
+        "fen": "8/4P3/p7/1k6/1B6/PK2r3/8/8 w - - 49 67",
+        "move": "b3b2",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_resource-a1950108015390922b",
+        "fen": "8/8/B7/8/4n1p1/4kp2/6K1/8 w - - 0 73",
+        "move": "g2f1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_resource-4a2a7e259b861cc7e9",
+        "fen": "8/8/8/7k/2n2Kp1/8/2R5/8 b - - 5 86",
+        "move": "c4a3",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "favorable_exchange/sequence": [
+      {
+        "id": "contrast-mine-favorable_exchange-cf68b5241807ab4091",
+        "fen": "r6r/pp4pp/4bk2/4p3/1BPn1p2/P2B4/1P3PPP/2KR3R w - - 4 22",
+        "move": "b4c3",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_exchange-7882823e74071620ad",
+        "fen": "8/7k/6pp/8/3b3q/8/2p2NP1/2B2QK1 w - - 4 49",
+        "move": "f1e2",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_exchange-8f1e24481b78a83778",
+        "fen": "2k5/pp3p2/2p2p1Q/3p4/3P4/6P1/PPP1q2P/2KRr3 w - - 5 31",
+        "move": "h6d2",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      }
+    ],
+    "favorable_exchange/verification": [
+      {
+        "id": "contrast-mine-favorable_exchange-167d5ffc16ffb55423",
+        "fen": "r2r2k1/p4p1p/3bp3/2p5/BP4pP/3R1bP1/P7/2R1B1K1 w - - 0 28",
+        "move": "a4d1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_exchange-48f335f62f3f85ba55",
+        "fen": "3r2k1/1b1r1pp1/1q2p2p/1p2P3/1Pp4P/2PnRNQ1/2B2PP1/R5K1 w - - 3 31",
+        "move": "c2d3",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_exchange-cab471002c1c9ccd0e",
+        "fen": "1r4k1/p4p2/3p2pb/2pN3p/4P2P/2K3P1/P2p1nB1/3R3R w - - 2 34",
+        "move": "h1f1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "weak_pawn/sequence": [
+      {
+        "id": "contrast-mine-weak_pawn-adaec3a3bbe5438d08",
+        "fen": "1r1r2k1/2q1ppb1/2p3pp/2p1Pb2/p1P5/1P3N1P/P1QN1PP1/3RR1K1 w - - 1 22",
+        "move": "c2c1",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      },
+      {
+        "id": "contrast-mine-weak_pawn-39ea1bbbb434898445",
+        "fen": "r6k/bpp2p2/5qrp/p4N2/P2P3R/3Q3P/1P3PP1/R5K1 w - - 5 28",
+        "move": "d3e4",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      }
+    ],
+    "favorable_exchange/human_value": [
+      {
+        "id": "contrast-mine-favorable_exchange-2ad6ef1a6f46befe30",
+        "fen": "1brrq1k1/pb3ppp/1p2pn2/4N3/2PP1P2/6Q1/PB2B1PP/2RR2K1 w - - 1 22",
+        "move": "e2f3",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_exchange-f84661faec273fa2a5",
+        "fen": "1r2k2r/4bp2/2p3p1/Q2Bpq2/3p4/B5Pp/PP3P1P/2R3K1 w - - 0 34",
+        "move": "a5c7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_exchange-18333a7cc746364cc3",
+        "fen": "1r3n1k/1q2b1p1/p3Q1pp/2p1P3/p1P2B2/2N3P1/1P3P2/3R2K1 w - - 1 31",
+        "move": "e6f7",
+        "reasons": [
+          "feature_present_but_mechanism_not_demonstrated",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "knight_endgame/decision_contrast": [
+      {
+        "id": "contrast-mine-knight_endgame-32364efdb181b51f00",
+        "fen": "5N2/8/3n4/k5p1/P7/5KPP/8/8 w - - 0 40",
+        "move": "f8e6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-knight_endgame-8563748b12dafd3519",
+        "fen": "8/8/1p4kp/pPn2p2/P4P2/K3P2P/4N3/8 w - - 3 52",
+        "move": "e2d4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-knight_endgame-7f016026b7d729c7b7",
+        "fen": "8/7p/3p2p1/2k1pp2/2n1P1N1/5P1P/4K1P1/8 w - - 0 49",
+        "move": "g4f6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "knight_endgame/human_value": [
+      {
+        "id": "contrast-mine-knight_endgame-32364efdb181b51f00",
+        "fen": "5N2/8/3n4/k5p1/P7/5KPP/8/8 w - - 0 40",
+        "move": "f8e6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-knight_endgame-8563748b12dafd3519",
+        "fen": "8/8/1p4kp/pPn2p2/P4P2/K3P2P/4N3/8 w - - 3 52",
+        "move": "e2d4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-knight_endgame-7f016026b7d729c7b7",
+        "fen": "8/7p/3p2p1/2k1pp2/2n1P1N1/5P1P/4K1P1/8 w - - 0 49",
+        "move": "g4f6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "defensive_resource/outcome": [
+      {
+        "id": "contrast-mine-defensive_resource-4371a7fdb38b8880c7",
+        "fen": "8/8/3k1p2/5PpB/4Kn2/8/8/8 w - - 8 55",
+        "move": "h5f3",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_resource-66125bbc131b61d73c",
+        "fen": "8/1p6/3k4/1R6/1K1Pq3/8/8/8 w - - 10 52",
+        "move": "b4c4",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_resource-3da3bc22434e62e1b3",
+        "fen": "8/5p2/8/3b4/4k3/5p2/4K3/8 w - - 0 64",
+        "move": "e2f2",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "defensive_counterplay/verification": [
+      {
+        "id": "contrast-mine-defensive_counterplay-7a0a385e91d8956d1d",
+        "fen": "8/2PK4/2R5/5kp1/8/8/2r5/8 b - - 7 59",
+        "move": "c2d2",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_counterplay-e68bc4d77c5b793d4c",
+        "fen": "4Q3/k7/P4Kp1/6P1/8/8/6p1/8 w - - 1 61",
+        "move": "e8e3",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_counterplay-2fecc397016f7d697c",
+        "fen": "5Q2/1K6/1P6/3B2qk/8/8/8/8 w - - 3 88",
+        "move": "f8h8",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "rook_behind_pawn/triviality": [
+      {
+        "id": "contrast-mine-rook_behind_pawn-91c156ecd26adc3f93",
+        "fen": "3r2k1/pp1P2pp/2p2p2/4bB2/2P5/6P1/P4P2/R2n2K1 w - - 0 31",
+        "move": "a1d1",
+        "reasons": [
+          "free_material_capture"
+        ]
+      },
+      {
+        "id": "contrast-mine-rook_behind_pawn-eabc62f0ac11b71d26",
+        "fen": "1r4k1/1b4p1/pP5p/4Np2/n7/1pR2N1P/1P3PP1/6K1 w - - 6 37",
+        "move": "c3b3",
+        "reasons": [
+          "free_material_capture"
+        ]
+      },
+      {
+        "id": "contrast-mine-rook_behind_pawn-74129638dc2fd414a2",
+        "fen": "8/1pRbkp2/1p4p1/4K1P1/1r1N4/5P2/8/8 w - - 2 43",
+        "move": "c7b7",
+        "reasons": [
+          "free_material_capture"
+        ]
+      }
+    ],
+    "simplify_when_ahead/verification": [
+      {
+        "id": "contrast-mine-simplify_when_ahead-d3da9d8a816491a9fa",
+        "fen": "r1b2rk1/ppp3bp/n2p2q1/3Ppp2/2P2nP1/P1N1B2P/1PQN1P2/R3KB1R w KQ - 2 16",
+        "move": "e3f4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-simplify_when_ahead-18a156973899b20169",
+        "fen": "r2qkb1r/4npp1/pn2p3/1p4BN/B1pN2PP/3b1Q2/PP3P2/R3R1K1 w kq - 2 19",
+        "move": "d4b5",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-simplify_when_ahead-bf84b7057dc50b9205",
+        "fen": "r1bqr1k1/pp1nbpp1/2p4p/8/3Pp2B/2N1PN2/PPQ2PPP/R4RK1 w - - 0 13",
+        "move": "h4e7",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "favorable_exchange/decision_contrast": [
+      {
+        "id": "contrast-mine-favorable_exchange-28b66589fbde9d984c",
+        "fen": "r5k1/2q2p2/1pbr2p1/p6p/7P/4P1P1/PQ3PB1/2R2RK1 w - - 0 25",
+        "move": "g2c6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_exchange-f131500baae05dc323",
+        "fen": "2r1k2r/p4pp1/qpn1p3/2bpPnBp/7P/1NP2N2/PP3PP1/R2QR1K1 w k - 3 16",
+        "move": "b3c5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-favorable_exchange-88d91d83cf9b07169a",
+        "fen": "1b1qrnk1/ppr2pp1/2p1bp1p/2N5/3P4/2PB4/PPQB1PPP/4RRK1 w - - 8 16",
+        "move": "d2f4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "active_defense/decision_contrast": [
+      {
+        "id": "contrast-mine-active_defense-52e722120f6688f372",
+        "fen": "6n1/5k2/7R/7p/4K3/8/8/8 w - - 25 88",
+        "move": "h6a6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-active_defense-72fb78bbe5068867d2",
+        "fen": "8/8/p7/P7/2K5/3Q4/1P6/k5q1 w - - 5 61",
+        "move": "d3a3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-active_defense-1603bf52450a166cb7",
+        "fen": "8/8/p7/P7/1PK5/3Q4/8/k1q5 w - - 1 64",
+        "move": "d3c3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "active_defense/human_value": [
+      {
+        "id": "contrast-mine-active_defense-52e722120f6688f372",
+        "fen": "6n1/5k2/7R/7p/4K3/8/8/8 w - - 25 88",
+        "move": "h6a6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-active_defense-72fb78bbe5068867d2",
+        "fen": "8/8/p7/P7/2K5/3Q4/1P6/k5q1 w - - 5 61",
+        "move": "d3a3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-active_defense-1603bf52450a166cb7",
+        "fen": "8/8/p7/P7/1PK5/3Q4/8/k1q5 w - - 1 64",
+        "move": "d3c3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "defensive_counterplay/triviality": [
+      {
+        "id": "contrast-mine-defensive_counterplay-ede261963e02adab5a",
+        "fen": "8/6Q1/8/8/2K5/8/8/5kq1 w - - 4 85",
+        "move": "g7g1",
+        "reasons": [
+          "routine_queen_exchange"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_counterplay-82d0f33f839607a646",
+        "fen": "6k1/8/R5p1/1r2P1Kp/8/6P1/8/8 b - - 0 56",
+        "move": "b5e5",
+        "reasons": [
+          "automatic_recapture"
+        ]
+      }
+    ],
+    "bishop_endgame/decision_contrast": [
+      {
+        "id": "contrast-mine-bishop_endgame-8e6b75a1b6f115e244",
+        "fen": "8/8/4kp2/p2p4/3P4/1P1b3p/P4K1B/8 w - - 1 49",
+        "move": "h2c7",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-bishop_endgame-9a81db8187a7c7c3a1",
+        "fen": "8/1p3kp1/5p2/B4P1p/b4K2/4P3/5P2/8 w - - 0 55",
+        "move": "a5c3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-bishop_endgame-959e3d356e3798b61b",
+        "fen": "8/3k1p2/3p2p1/2pP3p/2Pb1P1P/6P1/3B2K1/3b1B2 w - - 9 46",
+        "move": "f1d3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "bishop_endgame/human_value": [
+      {
+        "id": "contrast-mine-bishop_endgame-8e6b75a1b6f115e244",
+        "fen": "8/8/4kp2/p2p4/3P4/1P1b3p/P4K1B/8 w - - 1 49",
+        "move": "h2c7",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-bishop_endgame-9a81db8187a7c7c3a1",
+        "fen": "8/1p3kp1/5p2/B4P1p/b4K2/4P3/5P2/8 w - - 0 55",
+        "move": "a5c3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-bishop_endgame-959e3d356e3798b61b",
+        "fen": "8/3k1p2/3p2p1/2pP3p/2Pb1P1P/6P1/3B2K1/3b1B2 w - - 9 46",
+        "move": "f1d3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "defensive_counterplay/decision_contrast": [
+      {
+        "id": "contrast-mine-defensive_counterplay-d3c558d437767d3996",
+        "fen": "8/8/2P5/5k2/2r5/5NK1/8/8 w - - 2 70",
+        "move": "f3h4",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_counterplay-a38ce93c94e0fe5a4d",
+        "fen": "8/4k3/8/5PP1/4B3/6r1/4K3/8 w - - 1 79",
+        "move": "f5f6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_counterplay-c454df03a4fb83dde2",
+        "fen": "8/5R2/8/6p1/1r4P1/4k3/6PK/8 w - - 2 55",
+        "move": "f7f3",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "rook_endgame/verification": [
+      {
+        "id": "contrast-mine-rook_endgame-6585eabc37206c2f79",
+        "fen": "8/8/8/PR6/8/1p1K4/1k6/r7 b - - 3 59",
+        "move": "a1c1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-rook_endgame-dad149bef7aefeddd9",
+        "fen": "8/8/1k3r2/5P2/3p3P/3K4/R7/8 w - - 0 67",
+        "move": "a2f2",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-rook_endgame-aa8f106e3bc1dfd49b",
+        "fen": "7r/8/6p1/4k3/1P2p2P/8/2PK4/7R w - - 2 34",
+        "move": "h1g1",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "open_file/sequence": [
+      {
+        "id": "contrast-mine-open_file-76dd845237ed30a5be",
+        "fen": "2r3k1/5ppp/8/1pBbpP2/1P2pR2/r3P3/P1P3PP/R5K1 w - - 0 25",
+        "move": "f4f2",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      }
+    ],
+    "piece_activity/sequence": [
+      {
+        "id": "contrast-mine-piece_activity-1b890589d84e83fb03",
+        "fen": "2rq1rk1/1p2bppp/p1b1p3/2Nn4/P2P4/8/1P1BQPPP/RB1R2K1 w - - 0 19",
+        "move": "a1a3",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      },
+      {
+        "id": "contrast-mine-piece_activity-9caa4cb56ea1736d2b",
+        "fen": "4rbk1/1nqb1pp1/3p1n1p/r1pPp3/1pP1P3/1P2BNNP/2BQ1PP1/R3R1K1 w - - 3 22",
+        "move": "f3h4",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      },
+      {
+        "id": "contrast-mine-piece_activity-8196c7c7dedf0a3863",
+        "fen": "r2r1b2/p4k2/1p4pp/2p3p1/2PpP3/1P3P2/P3N1PP/R2R1K2 w - - 0 25",
+        "move": "e2c1",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      }
+    ],
+    "simplify_when_ahead/decision_contrast": [
+      {
+        "id": "contrast-mine-simplify_when_ahead-a1e0c7b826f2753dd1",
+        "fen": "r4rk1/5ppp/2pN1q2/p1Pb4/1n4R1/6PP/1P1Q1PBK/5R2 w - - 4 28",
+        "move": "g2d5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-simplify_when_ahead-e05f356cc36540",
+        "fen": "r2q4/5pk1/3p2p1/p1nPP3/1pP1P3/1P2Q1pP/6K1/RR6 w - - 0 40",
+        "move": "e5d6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "simplify_when_ahead/human_value": [
+      {
+        "id": "contrast-mine-simplify_when_ahead-a1e0c7b826f2753dd1",
+        "fen": "r4rk1/5ppp/2pN1q2/p1Pb4/1n4R1/6PP/1P1Q1PBK/5R2 w - - 4 28",
+        "move": "g2d5",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "master-simplify_when_ahead-e05f356cc36540",
+        "fen": "r2q4/5pk1/3p2p1/p1nPP3/1pP1P3/1P2Q1pP/6K1/RR6 w - - 0 40",
+        "move": "e5d6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "defensive_endgame_activity/decision_contrast": [
+      {
+        "id": "contrast-mine-defensive_endgame_activity-12be0765f20086db64",
+        "fen": "8/P1n5/8/8/8/2r2k1K/7p/R7 b - - 1 71",
+        "move": "c3c2",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_endgame_activity-2c4a738032406a185e",
+        "fen": "8/8/6k1/5p2/4qP2/8/6PK/3Q4 w - - 27 55",
+        "move": "d1d6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_endgame_activity-6f804cfcc5d916c763",
+        "fen": "8/5p2/r6k/5R1p/5p1P/8/5KP1/8 b - - 5 47",
+        "move": "h6g6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "defensive_endgame_activity/human_value": [
+      {
+        "id": "contrast-mine-defensive_endgame_activity-12be0765f20086db64",
+        "fen": "8/P1n5/8/8/8/2r2k1K/7p/R7 b - - 1 71",
+        "move": "c3c2",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_endgame_activity-2c4a738032406a185e",
+        "fen": "8/8/6k1/5p2/4qP2/8/6PK/3Q4 w - - 27 55",
+        "move": "d1d6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_endgame_activity-6f804cfcc5d916c763",
+        "fen": "8/5p2/r6k/5R1p/5p1P/8/5KP1/8 b - - 5 47",
+        "move": "h6g6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "philidor/decision_contrast": [
+      {
+        "id": "tablebase-philidor-third-rank",
+        "fen": "4k3/8/7r/4K3/4P3/8/8/R7 b - - 0 1",
+        "move": "h6b6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "philidor/human_value": [
+      {
+        "id": "tablebase-philidor-third-rank",
+        "fen": "4k3/8/7r/4K3/4P3/8/8/R7 b - - 0 1",
+        "move": "h6b6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "rook_behind_pawn/sequence": [
+      {
+        "id": "master-rook_behind_pawn-44e5801b12482a",
+        "fen": "8/7k/7p/1p2pPp1/4r3/PK6/8/5R2 b - - 1 45",
+        "move": "e4f4",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      }
+    ],
+    "bishop_endgame/sequence": [
+      {
+        "id": "master-bishop_endgame-88c505083b21d4",
+        "fen": "8/pB5p/1k3p2/4b1p1/6P1/2PK4/PP6/8 w - - 1 36",
+        "move": "b7e4",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "master-bishop_endgame-899e49c27a1883",
+        "fen": "6k1/1b6/4p2P/pp2Bp2/5P2/1P2K1P1/8/8 b - - 2 41",
+        "move": "b7d5",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      },
+      {
+        "id": "contrast-mine-bishop_endgame-3e08eb8b458696f3fe",
+        "fen": "8/8/2bP1p2/3k4/5B1p/P4K1P/8/8 b - - 6 50",
+        "move": "c6d7",
+        "reasons": [
+          "reference_does_not_demonstrate_a_milestone"
+        ]
+      }
+    ],
+    "knight_endgame/verification": [
+      {
+        "id": "master-knight_endgame-dde058424cdd96",
+        "fen": "8/1pp3n1/p2pk2p/4p2p/1P2P2K/2P1PN2/P2N4/8 w - - 3 31",
+        "move": "d2c4",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "exchange_attacker/human_value": [
+      {
+        "id": "lichess-y0w1S",
+        "fen": "r1bqk2r/np2bp1p/p3p1N1/2pp3Q/3P4/2PBP1P1/PP1N1PP1/R3K2R b KQkq - 0 12",
+        "move": "f7g6",
+        "reasons": [
+          "insufficient_independent_human_decision_evidence"
+        ]
+      },
+      {
+        "id": "contrast-mine-exchange_attacker-66b6bb33453fc148ac",
+        "fen": "8/p4p2/1p3p2/P3k3/7R/7P/1r4P1/6K1 w - - 1 40",
+        "move": "a5b6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "pawn_break/sequence": [
+      {
+        "id": "contrast-mine-pawn_break-cdbc8d2e06a52ced11",
+        "fen": "8/1p1n2kp/2p1p1p1/2qp4/2P3P1/1P1Q3P/r3PPB1/5R1K w - - 0 31",
+        "move": "f2f4",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      },
+      {
+        "id": "contrast-mine-pawn_break-a510693cb06d64d7da",
+        "fen": "r3k2r/1pqbbp2/p1npp1p1/2n3P1/3NP3/1BN1B3/PPPQ1P2/2KR2R1 w kq - 7 16",
+        "move": "f2f4",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      }
+    ],
+    "defensive_resource/triviality": [
+      {
+        "id": "contrast-mine-defensive_resource-643e9139d11606af4c",
+        "fen": "8/2k5/1p2nr2/6P1/K7/8/8/8 w - - 0 64",
+        "move": "g5f6",
+        "reasons": [
+          "automatic_recapture"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_resource-7fcce60a77359adb97",
+        "fen": "rn1q1rk1/p3pp1p/2p2npb/5b2/2PPp3/2N3P1/PB1N1PBP/R2Q1RK1 w - - 0 13",
+        "move": "c3e4",
+        "reasons": [
+          "automatic_recapture"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_resource-efd98975a6b2a769c2",
+        "fen": "r1b1k2r/p2pbppp/4p3/qpp1P3/1nP5/NPQ2NP1/Pn1P1PBP/R4RK1 w kq - 0 13",
+        "move": "c3b2",
+        "reasons": [
+          "automatic_recapture"
+        ]
+      }
+    ],
+    "defensive_endgame_activity/outcome": [
+      {
+        "id": "contrast-mine-defensive_endgame_activity-9834aebc4d0dc72d16",
+        "fen": "8/8/4p3/5b1N/6k1/6pp/8/6K1 w - - 2 58",
+        "move": "h5f6",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_endgame_activity-697695b8f91a0bc5f9",
+        "fen": "2k5/ppprR1pp/8/5b2/5P2/PP5P/1P1B2P1/2K5 w - - 1 28",
+        "move": "e7e5",
+        "reasons": [
+          "defense_requires_saved_outcome_not_centipawns"
+        ]
+      },
+      {
+        "id": "contrast-mine-defensive_endgame_activity-7a66cffa6090fb8832",
+        "fen": "Q4q2/8/1p2nk2/5pp1/3p4/6P1/4PP2/5BK1 w - - 2 49",
+        "move": "a8d5",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      }
+    ],
+    "improve_worst_piece/sequence": [
+      {
+        "id": "contrast-mine-improve_worst_piece-bc76e45e85dd664a98",
+        "fen": "8/1kpb1r2/1p1pr1p1/p6p/2P1P2P/PP2BP2/3R2P1/6KR w - - 5 31",
+        "move": "h1h3",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      }
+    ],
+    "bishop_endgame/verification": [
+      {
+        "id": "contrast-mine-bishop_endgame-fa6a93e4031a880acd",
+        "fen": "8/1p1k4/6p1/1PPKpp1p/1B6/5PbP/6P1/8 w - - 3 46",
+        "move": "b4c3",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-bishop_endgame-d3e1dc9bc074e14ee7",
+        "fen": "6k1/p4p2/B7/6Pp/5P2/4K3/8/1b6 w - - 0 37",
+        "move": "a6e2",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-bishop_endgame-e205c468c37dd96281",
+        "fen": "8/7p/3b4/5p2/4pk2/7P/2P1K3/5B2 w - - 4 46",
+        "move": "f1g2",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "active_defense/verification": [
+      {
+        "id": "contrast-mine-active_defense-22fa63b05bd0c88f1e",
+        "fen": "8/1r5k/3p4/6PP/P3NK2/8/3Q4/2q5 b - - 2 59",
+        "move": "c1f1",
+        "reasons": [
+          "lost_without_saving_resource",
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-active_defense-7a0a385e91d8956d1d",
+        "fen": "8/2PK4/2R5/5kp1/8/8/2r5/8 b - - 7 59",
+        "move": "c2d2",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      },
+      {
+        "id": "contrast-mine-active_defense-fe068381dcf466d977",
+        "fen": "5b2/Q7/1p2p2p/7k/8/2B2q2/PPP2P1P/1K4R1 w - - 3 31",
+        "move": "a7b6",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "defensive_endgame_activity/verification": [
+      {
+        "id": "contrast-mine-defensive_endgame_activity-7c5b772357344da8aa",
+        "fen": "6k1/p4p2/3p2pb/r1p4p/4PN1P/2K3P1/P2p2B1/3R4 w - - 3 37",
+        "move": "d1d2",
+        "reasons": [
+          "teaching_move_objectively_inferior"
+        ]
+      }
+    ],
+    "exchange_attacker/decision_contrast": [
+      {
+        "id": "contrast-mine-exchange_attacker-66b6bb33453fc148ac",
+        "fen": "8/p4p2/1p3p2/P3k3/7R/7P/1r4P1/6K1 w - - 1 40",
+        "move": "a5b6",
+        "reasons": [
+          "reasonable_plans_have_no_necessary_contrast",
+          "insufficient_independent_human_decision_evidence"
+        ]
+      }
+    ],
+    "simplification_to_hold/outcome": [
+      {
+        "id": "contrast-mine-simplification_to_hold-b925b1587572be07be",
+        "fen": "3k1n1r/2rp1p1p/pp2qP2/6PP/2PpQ3/5BB1/PP6/1K5R w - - 0 31",
+        "move": "g3c7",
+        "reasons": [
+          "defense_requires_saved_outcome_not_centipawns"
+        ]
+      },
+      {
+        "id": "contrast-mine-simplification_to_hold-4a604f9f5f2fa161b7",
+        "fen": "6k1/p4pp1/4bb2/1N1B3p/r7/6P1/5P1P/2R3K1 w - - 0 25",
+        "move": "d5e6",
+        "reasons": [
+          "lost_without_saving_resource"
+        ]
+      },
+      {
+        "id": "contrast-mine-simplification_to_hold-14799fc6590629f275",
+        "fen": "r2r2k1/pq2ppbp/np4p1/1N6/4n3/1P3NP1/PB2PPKP/R3QR2 w - - 8 16",
+        "move": "b2g7",
+        "reasons": [
+          "defense_requires_saved_outcome_not_centipawns"
+        ]
+      }
+    ],
+    "outpost/sequence": [
+      {
+        "id": "contrast-mine-outpost-6e490bcd04b2da08a4",
+        "fen": "1rr3k1/5ppp/p1pbqp2/8/PPnP4/7P/2Q2PP1/1RBRN1K1 w - - 9 25",
+        "move": "e1d3",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      },
+      {
+        "id": "contrast-mine-outpost-10f7f7df31150ef350",
+        "fen": "8/1bp2pkp/1b2r3/1p1rP1B1/pP4P1/6NP/P6K/4RR2 w - - 6 28",
+        "move": "g3h5",
+        "reasons": [
+          "preparation_requires_verified_continuation"
+        ]
+      }
+    ]
+  }
+}

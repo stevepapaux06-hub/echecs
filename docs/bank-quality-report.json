@@ -1,89 +1,96 @@
 {
   "baseline": {
-    "commit": "ad44e5d",
-    "reference": 5791,
-    "training": 5610,
+    "commit": "c10ff16",
+    "reference": 6991,
+    "training": 2553,
     "byDomain": {
       "tactic": 2197,
-      "strategy": 1117,
-      "endgame": 1358,
-      "conversion": 708,
-      "defense": 228,
+      "strategy": 127,
+      "endgame": 38,
+      "conversion": 161,
+      "defense": 28,
       "opening": 2
     }
   },
   "reference": {
-    "count": 6991,
+    "count": 9312,
     "roles": {
-      "not_human_audited": 2380,
-      "feature_positive": 2244,
-      "boundary": 2367
+      "not_human_audited": 2199,
+      "feature_positive": 4665,
+      "boundary": 2448
     },
     "independentHoldout": 6,
     "hardNegativeHoldout": 3
   },
   "training": {
-    "count": 2553,
+    "count": 5068,
     "byDomain": {
       "tactic": 2197,
       "opening": 2,
-      "strategy": 127,
-      "endgame": 38,
-      "conversion": 161,
-      "defense": 28
+      "strategy": 735,
+      "endgame": 534,
+      "conversion": 1316,
+      "defense": 284
     },
     "byConcept": {
       "tactic/fork": 429,
       "tactic/pin": 357,
       "opening/development": 1,
       "opening/center_control": 1,
-      "strategy/improve_worst_piece": 17,
-      "strategy/open_file": 17,
-      "strategy/weak_pawn": 16,
-      "strategy/pawn_break": 40,
-      "endgame/king_and_pawn": 7,
-      "endgame/rook_endgame": 1,
-      "endgame/rook_behind_pawn": 19,
-      "endgame/king_activity": 5,
-      "conversion/convert_small_advantage": 26,
-      "conversion/restrict_counterplay": 9,
-      "conversion/use_material_advantage": 49,
-      "conversion/favorable_endgame_transition": 41,
-      "conversion/preserve_activity": 36,
-      "strategy/outpost": 10,
-      "strategy/weak_square": 5,
-      "strategy/piece_activity": 22,
-      "endgame/opposition": 5,
-      "endgame/rook_activity": 1,
+      "strategy/improve_worst_piece": 91,
+      "strategy/outpost": 92,
+      "strategy/open_file": 92,
+      "strategy/weak_square": 92,
+      "strategy/weak_pawn": 92,
+      "strategy/pawn_break": 92,
+      "strategy/piece_activity": 92,
+      "endgame/king_and_pawn": 54,
+      "endgame/rook_behind_pawn": 84,
+      "endgame/king_activity": 305,
+      "conversion/convert_small_advantage": 287,
+      "conversion/simplify_when_ahead": 94,
+      "conversion/restrict_counterplay": 293,
+      "conversion/use_material_advantage": 285,
+      "conversion/favorable_endgame_transition": 72,
+      "conversion/preserve_activity": 285,
+      "strategy/favorable_exchange": 92,
+      "endgame/opposition": 13,
+      "endgame/rook_activity": 38,
+      "endgame/passed_pawn": 17,
+      "defense/defensive_resource": 190,
+      "defense/defensive_counterplay": 30,
+      "defense/active_defense": 28,
+      "endgame/rook_endgame": 21,
+      "defense/defensive_endgame_activity": 11,
+      "defense/simplification_to_hold": 11,
+      "defense/exchange_attacker": 13,
+      "endgame/knight_endgame": 2,
       "tactic/remove_defender": 461,
       "tactic/loose_piece": 316,
       "tactic/opponent_threat": 315,
       "tactic/skewer": 319,
-      "defense/active_defense": 4,
-      "defense/defensive_counterplay": 3,
-      "defense/defensive_endgame_activity": 3,
-      "defense/exchange_attacker": 10,
-      "defense/return_material": 1,
-      "defense/simplification_to_hold": 7
+      "defense/return_material": 1
     }
   },
   "exclusions": {
     "overlappingHumanGates": {
-      "outcome": 1147,
-      "human_value": 975,
-      "sequence": 763,
-      "causality": 2367,
-      "verification": 331,
-      "triviality": 701
+      "outcome": 3723,
+      "causality": 2461,
+      "triviality": 2003,
+      "verification": 1124,
+      "decision_contrast": 3123,
+      "human_value": 3144,
+      "sequence": 1413,
+      "domain": 1
     },
     "technical": {
-      "total": 6991,
-      "active": 2553,
-      "reference": 6991,
-      "referenceOnly": 4438,
-      "postQualityRejected": 2,
-      "needsVerification": 1314,
-      "rejected": 145
+      "total": 9312,
+      "active": 5068,
+      "reference": 9312,
+      "referenceOnly": 4244,
+      "postQualityRejected": 0,
+      "needsVerification": 1351,
+      "rejected": 151
     }
   },
   "remining": {
@@ -137,63 +144,91 @@
           "defense/defensive_endgame_activity": 3,
           "defense/exchange_attacker": 10,
           "defense/simplification_to_hold": 1
-        }
+        },
+        "repopulationSources": [
+          {
+            "source": "lichess_db_broadcast_2026-05.pgn.zst",
+            "games": 37447,
+            "eligible": 10331,
+            "uniqueGames": 10331,
+            "uniquePlayers": 4562,
+            "license": "CC-BY-SA-4.0"
+          },
+          {
+            "source": "lichess_db_broadcast_2026-06.pgn.zst",
+            "games": 36996,
+            "eligible": 10123,
+            "uniqueGames": 10123,
+            "uniquePlayers": 4530,
+            "license": "CC-BY-SA-4.0"
+          },
+          {
+            "source": "lichess_db_broadcast_2026-07.pgn.zst",
+            "games": 40038,
+            "eligible": 12354,
+            "uniqueGames": 12354,
+            "uniquePlayers": 5024,
+            "license": "CC-BY-SA-4.0"
+          }
+        ]
       }
     },
-    "accepted": 65
+    "accepted": 2343,
+    "decisionContrastReport": "docs/repopulation-report.json"
   },
   "strategy": {
     "units": {
-      "single_move": 116,
-      "decision_then_continuation": 11
+      "single_move": 367,
+      "decision_then_continuation": 368
     },
-    "sequences": 11,
+    "sequences": 368,
     "meanPlayerDecisions": 2
   },
   "endings": {
     "milestoneTypes": {
-      "concept_state": 14,
-      "rook_behind_passer": 19,
-      "opposition": 5
+      "concept_state": 420,
+      "rook_behind_passer": 84,
+      "opposition": 13,
+      "pawn_race_resolved": 17
     },
     "proof": {
-      "structural": 38
+      "structural": 534
     },
     "outcomeEvidence": {
-      "stockfish_wdl": 34,
-      "syzygy": 4
+      "stockfish_wdl": 466,
+      "syzygy": 68
     }
   },
   "diversity": {
-    "sourceGamesKnown": 2509,
-    "playersKnown": 279,
-    "positionsWithPlayerMetadata": 282,
+    "sourceGamesKnown": 4213,
+    "playersKnown": 2003,
+    "positionsWithPlayerMetadata": 2759,
     "topSources": [
       [
-        "Capablanca-104",
-        3
+        "147b3767a8c47c919bbe",
+        9
       ],
       [
-        "vb3w3rmn",
-        3
+        "eabad0d75e5190c22f35",
+        7
       ],
       [
-        "8xhe8sx6",
-        3
+        "s3nr0v8a",
+        6
       ]
     ],
     "topPlayers": [
       [
         "Marzinkus",
-        9
+        20
       ],
       [
-        "peter2",
-        9
+        "Sargsyan, Anna M.",
+        18
       ],
       [
-        "Maklaud695",
-        9
+        "Pozitiv",
+        16
       ]
     ]
   }

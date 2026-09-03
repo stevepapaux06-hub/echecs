@@ -39,11 +39,12 @@ it.skipIf(process.env.CHESSPATH_REFERENCE_COMPILE !== "1")("compiles the Referen
   const referenceRoles = count(references.map((e) => e.trainingAssessment?.failedGates.includes("causality") ? "boundary"
     : e.trainingAssessment ? "feature_positive" : "not_human_audited"));
   writeFileSync("docs/bank-quality-report.json", JSON.stringify({
-    baseline: { commit: "ad44e5d", reference: 5791, training: 5610, byDomain: { tactic: 2197, strategy: 1117, endgame: 1358, conversion: 708, defense: 228, opening: 2 } },
+    baseline: { commit: "c10ff16", reference: 6991, training: 2553, byDomain: { tactic: 2197, strategy: 127, endgame: 38, conversion: 161, defense: 28, opening: 2 } },
     reference: { count: references.length, roles: referenceRoles, independentHoldout: CONCEPT_HOLDOUT.length, hardNegativeHoldout: CONCEPT_HOLDOUT.filter((e) => !e.positive).length },
     training: { count: training.length, byDomain: count(training.map((e) => e.category)), byConcept: count(training.map((e) => `${e.category}/${e.conceptSlug}`)) },
     exclusions: { overlappingHumanGates: QUALITY.report.rejectedByGate, technical: TRAINING_BANK_GATE_REPORT },
-    remining: { provenance: MINED, accepted: training.filter((e) => e.id.startsWith("quality-mine-")).length },
+    remining: { provenance: MINED, accepted: training.filter((e) => e.id.startsWith("quality-mine-") || e.id.startsWith("contrast-mine-")).length,
+      decisionContrastReport: "docs/repopulation-report.json" },
     strategy: { units: count(strategy.map((e) => e.pedagogicalUnit!)), sequences: sequences.length,
       meanPlayerDecisions: sequences.length ? sequences.reduce((sum, e) => sum + Math.ceil((e.solutionLine?.length ?? 0) / 2), 0) / sequences.length : 0 },
     endings: { milestoneTypes: count(endings.map((e) => e.pedagogicalMilestone!.kind)), proof: count(endings.map((e) => e.pedagogicalMilestone!.proof)),

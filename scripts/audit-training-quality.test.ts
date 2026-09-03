@@ -11,9 +11,10 @@ import { causalFeatures, CONCEPT_SPECIFICATIONS, matchesConceptSpecification } f
 import { referenceMilestoneIndex } from "../src/domain/training/milestones";
 
 const require = createRequire(import.meta.url);
-type Search = { lines: TrainingCandidateLine[]; loss: number };
-const cacheFile = ".tmp-corpus/human-quality-engine-cache.json";
-const tbFile = ".tmp-corpus/human-quality-tablebase-cache.json";
+export type Search = { lines: TrainingCandidateLine[]; loss: number };
+const suffix = process.env.CHESSPATH_MINE_SHARD ? `-${process.env.CHESSPATH_MINE_SHARD}` : "";
+const cacheFile = `.tmp-corpus/human-quality-engine-cache${suffix}.json`;
+const tbFile = `.tmp-corpus/human-quality-tablebase-cache${suffix}.json`;
 const searchCache: Record<string, Search> = existsSync(cacheFile) ? JSON.parse(readFileSync(cacheFile, "utf8")) : {};
 type TB = { category: string; dtz: number | null; moves: { uci: string; category: string; dtz: number | null }[] };
 const tbCache: Record<string, TB> = existsSync(tbFile) ? JSON.parse(readFileSync(tbFile, "utf8")) : {};
@@ -24,8 +25,8 @@ function commandWait(command: string, token: string) { return new Promise<void>(
   receive = (line) => { if (line.startsWith(token)) { clearTimeout(timer); resolve(); } };
   engine.sendCommand(command);
 }); }
-async function search(fen: string, forced = "", multi = 4): Promise<Search> {
-  const key = `${fen}|${forced}|${multi}|10`;
+export async function search(fen: string, forced = "", multi = 4, depth = 10): Promise<Search> {
+  const key = `${fen}|${forced}|${multi}|${depth}`;
   if (searchCache[key]) return searchCache[key];
   engine.sendCommand("setoption name Clear Hash");
   engine.sendCommand(`setoption name MultiPV value ${multi}`);
@@ -46,13 +47,13 @@ async function search(fen: string, forced = "", multi = 4): Promise<Search> {
       if (line.startsWith("bestmove")) { clearTimeout(timer); resolve({ lines: [...lines.entries()].sort((a,b) => a[0]-b[0]).map(([,l]) => l), loss }); }
     };
     engine.sendCommand(`position fen ${fen}`);
-    engine.sendCommand(`go depth 10${forced ? ` searchmoves ${forced}` : ""}`);
+    engine.sendCommand(`go depth ${depth}${forced ? ` searchmoves ${forced}` : ""}`);
   });
   searchCache[key] = result; return result;
 }
 let tablebaseUnavailable = false;
 let tablebaseFailures = 0;
-async function tablebase(fen: string): Promise<TB | undefined> {
+export async function tablebase(fen: string): Promise<TB | undefined> {
   if (tbCache[fen]) return tbCache[fen];
   if (tablebaseUnavailable || process.env.CHESSPATH_TABLEBASE !== "1") return undefined;
   try {
@@ -74,15 +75,24 @@ async function tablebase(fen: string): Promise<TB | undefined> {
     return data;
   } catch (error) { tablebaseFailures += 1; console.log(`Tablebase query failed: ${String(error)}`); tablebaseUnavailable = tablebaseFailures >= 3; return undefined; }
 }
-function state(category: string, reverse = false): OutcomeEvidence["root"] {
+export function state(category: string, reverse = false): OutcomeEvidence["root"] {
   if (category === "draw" || category === "cursed-win" || category === "blessed-loss") return "draw";
   if (category === "win") return reverse ? "loss" : "win";
   if (category === "loss") return reverse ? "win" : "loss";
   return "unknown";
 }
-function saveCaches() { writeFileSync(cacheFile, JSON.stringify(searchCache)); writeFileSync(tbFile, JSON.stringify(tbCache)); }
+export function saveCaches() { writeFileSync(cacheFile, JSON.stringify(searchCache)); writeFileSync(tbFile, JSON.stringify(tbCache)); }
+export async function startEngine() {
+  engine = await require("stockfish")("lite-single");
+  engine.listener = (line) => receive(String(line));
+  await commandWait("uci", "uciok");
+  engine.sendCommand("setoption name UCI_ShowWDL value true");
+}
+export function stopEngine() { engine.sendCommand("quit"); }
 
 it.skipIf(process.env.CHESSPATH_BANK_AUDIT !== "1")("compiles reference/training quality from the existing bank", async () => {
+  const currentQuality = JSON.parse(readFileSync("src/domain/training/quality-bank.generated.json","utf8"));
+  if(currentQuality.version >= 2) throw new Error("Use repopulate-training.test.ts then compile-repopulation.test.ts: the legacy compiler cannot overwrite Decision Contrast v2 data.");
   engine = await require("stockfish")("lite-single");
   engine.listener = (line) => receive(String(line));
   await commandWait("uci", "uciok");

@@ -3,9 +3,9 @@
   "provenance": "Existing Reference Bank; automatic feature evidence, not ground-truth accuracy",
   "concepts": {
     "open_file": {
-      "positive": 162,
+      "positive": 210,
       "boundary": 98,
-      "sourceGames": 161,
+      "sourceGames": 209,
       "exampleIds": [
         "concept-rook-open-file",
         "master-open_file-10142d650c4c6e",
@@ -20,9 +20,9 @@
       ]
     },
     "outpost": {
-      "positive": 39,
+      "positive": 113,
       "boundary": 102,
-      "sourceGames": 39,
+      "sourceGames": 111,
       "exampleIds": [
         "master-outpost-86b38c448900b1",
         "master-outpost-401e5a58696e3e",
@@ -37,9 +37,9 @@
       ]
     },
     "weak_square": {
-      "positive": 47,
-      "boundary": 87,
-      "sourceGames": 46,
+      "positive": 123,
+      "boundary": 88,
+      "sourceGames": 122,
       "exampleIds": [
         "master-weak_square-e661a24b7c5f9b",
         "master-weak_square-2a5d68588dcbd1",
@@ -54,9 +54,9 @@
       ]
     },
     "improve_worst_piece": {
-      "positive": 93,
+      "positive": 141,
       "boundary": 57,
-      "sourceGames": 91,
+      "sourceGames": 139,
       "exampleIds": [
         "master-improve_worst_piece-dffeccb6e4abbc",
         "master-improve_worst_piece-55d2832ec380d1",
@@ -71,9 +71,9 @@
       ]
     },
     "piece_activity": {
-      "positive": 188,
+      "positive": 250,
       "boundary": 72,
-      "sourceGames": 183,
+      "sourceGames": 245,
       "exampleIds": [
         "master-piece_activity-667ddd8521bbc6",
         "master-piece_activity-5b70a3ffffc948",
@@ -88,9 +88,9 @@
       ]
     },
     "weak_pawn": {
-      "positive": 116,
-      "boundary": 82,
-      "sourceGames": 115,
+      "positive": 174,
+      "boundary": 85,
+      "sourceGames": 172,
       "exampleIds": [
         "master-weak_pawn-388b2be999217e",
         "master-weak_pawn-80485790175f1a",
@@ -105,9 +105,9 @@
       ]
     },
     "pawn_break": {
-      "positive": 259,
-      "boundary": 1,
-      "sourceGames": 253,
+      "positive": 305,
+      "boundary": 3,
+      "sourceGames": 299,
       "exampleIds": [
         "master-pawn_break-65d8173355bfbe",
         "master-pawn_break-fa344df9e37492",
@@ -115,7 +115,9 @@
         "master-pawn_break-d7327691df42bf"
       ],
       "boundaryIds": [
-        "bank-strategy-minority-break-b4"
+        "bank-strategy-minority-break-b4",
+        "contrast-mine-pawn_break-1174471b90563a5176",
+        "contrast-mine-pawn_break-2eade1a65b647e5c23"
       ]
     },
     "pawn_structure": {
@@ -131,21 +133,26 @@
       ]
     },
     "favorable_exchange": {
-      "positive": 0,
-      "boundary": 119,
-      "sourceGames": 0,
-      "exampleIds": [],
-      "boundaryIds": [
+      "positive": 138,
+      "boundary": 82,
+      "sourceGames": 136,
+      "exampleIds": [
         "master-favorable_exchange-654366d71dc68e",
+        "master-favorable_exchange-f93acfdc100751",
+        "master-favorable_exchange-568649c82c968a",
+        "master-favorable_exchange-b1b6a64493bda6"
+      ],
+      "boundaryIds": [
         "master-favorable_exchange-bf51bc9d3ae429",
         "master-favorable_exchange-54a091a5d23c9b",
-        "master-favorable_exchange-3a2ad8df5b2d3a"
+        "master-favorable_exchange-3a2ad8df5b2d3a",
+        "master-favorable_exchange-e7af3b5c8f9698"
       ]
     },
     "rook_activity": {
-      "positive": 95,
-      "boundary": 99,
-      "sourceGames": 90,
+      "positive": 131,
+      "boundary": 105,
+      "sourceGames": 126,
       "exampleIds": [
         "concept-technical-rook-conversion",
         "master-rook_activity-505fff12433f82",
@@ -160,9 +167,9 @@
       ]
     },
     "rook_behind_pawn": {
-      "positive": 72,
-      "boundary": 50,
-      "sourceGames": 65,
+      "positive": 148,
+      "boundary": 54,
+      "sourceGames": 140,
       "exampleIds": [
         "master-rook_behind_pawn-5c15d43ce4c1af",
         "master-rook_behind_pawn-d382faebbe1bd0",
@@ -177,9 +184,9 @@
       ]
     },
     "rook_endgame": {
-      "positive": 17,
-      "boundary": 142,
-      "sourceGames": 15,
+      "positive": 42,
+      "boundary": 146,
+      "sourceGames": 40,
       "exampleIds": [
         "master-rook_endgame-b484a454ec3b3a",
         "master-rook_endgame-9a880016a6f08c",
@@ -194,9 +201,9 @@
       ]
     },
     "opposition": {
-      "positive": 27,
-      "boundary": 52,
-      "sourceGames": 23,
+      "positive": 35,
+      "boundary": 55,
+      "sourceGames": 30,
       "exampleIds": [
         "master-opposition-820fb423826aa2",
         "master-opposition-f14914e6f420e7",
@@ -212,20 +219,20 @@
     },
     "rule_of_square": {
       "positive": 0,
-      "boundary": 42,
+      "boundary": 45,
       "sourceGames": 0,
       "exampleIds": [],
       "boundaryIds": [
         "bank-endgame-rule-square",
         "master-rule_of_square-29d289a7db5ac4",
         "master-rule_of_square-13272772d4ac59",
-        "master-rule_of_square-d9449ca0806dc0"
+        "master-rule_of_square-3c64e9bb7573da"
       ]
     },
     "passed_pawn": {
-      "positive": 166,
-      "boundary": 278,
-      "sourceGames": 158,
+      "positive": 179,
+      "boundary": 361,
+      "sourceGames": 171,
       "exampleIds": [
         "master-passed_pawn-9bf6f7598f56f4",
         "master-passed_pawn-431bfc703887b5",
@@ -240,9 +247,9 @@
       ]
     },
     "king_activity": {
-      "positive": 149,
-      "boundary": 80,
-      "sourceGames": 141,
+      "positive": 450,
+      "boundary": 90,
+      "sourceGames": 426,
       "exampleIds": [
         "master-king_activity-d29a8557fe290c",
         "master-king_activity-d4a51b024ab50a",
@@ -257,9 +264,9 @@
       ]
     },
     "king_and_pawn": {
-      "positive": 51,
-      "boundary": 84,
-      "sourceGames": 38,
+      "positive": 96,
+      "boundary": 89,
+      "sourceGames": 81,
       "exampleIds": [
         "master-king_and_pawn-e9171728ad253f",
         "master-king_and_pawn-53a5c5ffd02bdb",
@@ -274,9 +281,9 @@
       ]
     },
     "bishop_endgame": {
-      "positive": 5,
-      "boundary": 92,
-      "sourceGames": 5,
+      "positive": 14,
+      "boundary": 94,
+      "sourceGames": 14,
       "exampleIds": [
         "master-bishop_endgame-ec6e5f7825ad22",
         "master-bishop_endgame-681adb037d711e",
@@ -291,9 +298,9 @@
       ]
     },
     "knight_endgame": {
-      "positive": 13,
-      "boundary": 84,
-      "sourceGames": 12,
+      "positive": 19,
+      "boundary": 87,
+      "sourceGames": 17,
       "exampleIds": [
         "master-knight_endgame-49cc51fde2f274",
         "master-knight_endgame-4a75afbdba0296",
@@ -308,9 +315,9 @@
       ]
     },
     "convert_small_advantage": {
-      "positive": 170,
-      "boundary": 82,
-      "sourceGames": 167,
+      "positive": 403,
+      "boundary": 79,
+      "sourceGames": 384,
       "exampleIds": [
         "master-convert_small_advantage-b8961580d394c2",
         "master-convert_small_advantage-b29e3506ad7c01",
@@ -325,12 +332,14 @@
       ]
     },
     "simplify_when_ahead": {
-      "positive": 2,
-      "boundary": 117,
-      "sourceGames": 2,
+      "positive": 105,
+      "boundary": 89,
+      "sourceGames": 102,
       "exampleIds": [
-        "master-simplify_when_ahead-9f0cf710a4d90c",
-        "master-simplify_when_ahead-af25220a546cf0"
+        "master-simplify_when_ahead-cda4ec4146879f",
+        "master-simplify_when_ahead-9c3fe0a7582511",
+        "master-simplify_when_ahead-16d483e344c410",
+        "master-simplify_when_ahead-e05f356cc36540"
       ],
       "boundaryIds": [
         "bank-conversion-simplify-queens",
@@ -340,9 +349,9 @@
       ]
     },
     "restrict_counterplay": {
-      "positive": 137,
-      "boundary": 95,
-      "sourceGames": 137,
+      "positive": 404,
+      "boundary": 103,
+      "sourceGames": 380,
       "exampleIds": [
         "master-restrict_counterplay-35dddb1900da25",
         "master-restrict_counterplay-ef9c5e2bec1ba9",
@@ -350,16 +359,16 @@
         "master-restrict_counterplay-fa95193fa8c208"
       ],
       "boundaryIds": [
+        "concept-conversion-rook-pawn",
         "master-restrict_counterplay-a32ef277936656",
         "master-restrict_counterplay-2489da7bdb88d6",
-        "master-restrict_counterplay-de370a63d95614",
-        "master-restrict_counterplay-ae043730f0ba27"
+        "master-restrict_counterplay-de370a63d95614"
       ]
     },
     "use_material_advantage": {
-      "positive": 181,
-      "boundary": 72,
-      "sourceGames": 175,
+      "positive": 377,
+      "boundary": 79,
+      "sourceGames": 347,
       "exampleIds": [
         "master-use_material_advantage-5f89852af2eb40",
         "master-use_material_advantage-767b22fc7c3d18",
@@ -374,9 +383,9 @@
       ]
     },
     "favorable_endgame_transition": {
-      "positive": 83,
-      "boundary": 16,
-      "sourceGames": 83,
+      "positive": 94,
+      "boundary": 17,
+      "sourceGames": 94,
       "exampleIds": [
         "master-favorable_endgame_transition-80c486e35de627",
         "master-favorable_endgame_transition-c901fd4358b804",
@@ -391,9 +400,9 @@
       ]
     },
     "preserve_activity": {
-      "positive": 127,
-      "boundary": 59,
-      "sourceGames": 125,
+      "positive": 362,
+      "boundary": 63,
+      "sourceGames": 344,
       "exampleIds": [
         "master-preserve_activity-cf60eff947cede",
         "master-preserve_activity-5a67c1a9204133",
@@ -408,14 +417,14 @@
       ]
     },
     "active_defense": {
-      "positive": 5,
+      "positive": 39,
       "boundary": 48,
-      "sourceGames": 5,
+      "sourceGames": 34,
       "exampleIds": [
-        "lichess-hEsJh",
-        "lichess-oY0eL",
-        "lichess-akX3i",
-        "lichess-g372k"
+        "contrast-mine-active_defense-44fa6357abd13ae8d9",
+        "contrast-mine-active_defense-4b08e5400d5867406c",
+        "contrast-mine-active_defense-a421127ab2767f3ead",
+        "contrast-mine-active_defense-cddfeb685d2b108299"
       ],
       "boundaryIds": [
         "lichess-dNitq",
@@ -425,23 +434,28 @@
       ]
     },
     "defensive_resource": {
-      "positive": 0,
+      "positive": 204,
       "boundary": 1,
-      "sourceGames": 0,
-      "exampleIds": [],
+      "sourceGames": 152,
+      "exampleIds": [
+        "contrast-mine-defensive_resource-9ec8901a6f22779f9b",
+        "contrast-mine-defensive_resource-b1c479abd08b72f13a",
+        "contrast-mine-defensive_resource-319f65003cac113405",
+        "contrast-mine-defensive_resource-efbcd2b6a999f2087b"
+      ],
       "boundaryIds": [
         "concept-active-defense"
       ]
     },
     "exchange_attacker": {
-      "positive": 19,
+      "positive": 25,
       "boundary": 27,
-      "sourceGames": 19,
+      "sourceGames": 25,
       "exampleIds": [
-        "lichess-M0c6P",
-        "lichess-2afWP",
-        "lichess-piChE",
-        "lichess-hgnv0"
+        "contrast-mine-exchange_attacker-f996fd9f8d345bf6e0",
+        "contrast-mine-exchange_attacker-468bc203e2110e96d4",
+        "contrast-mine-exchange_attacker-df84f3823c615028a8",
+        "contrast-mine-exchange_attacker-2837258e65ddaa0c09"
       ],
       "boundaryIds": [
         "lichess-mLm3h",
@@ -451,14 +465,14 @@
       ]
     },
     "defensive_counterplay": {
-      "positive": 5,
+      "positive": 43,
       "boundary": 2,
-      "sourceGames": 5,
+      "sourceGames": 43,
       "exampleIds": [
-        "lichess-koVGi",
-        "lichess-MG1g5",
-        "lichess-zEOgk",
-        "lichess-9dF7c"
+        "contrast-mine-defensive_counterplay-6c77931fb8cc559f1a",
+        "contrast-mine-defensive_counterplay-3a4db637f046d9aaf5",
+        "contrast-mine-defensive_counterplay-e235085514800e36ab",
+        "contrast-mine-defensive_counterplay-3bf9941b8ea976e2be"
       ],
       "boundaryIds": [
         "lichess-rR1AL",
@@ -466,14 +480,14 @@
       ]
     },
     "simplification_to_hold": {
-      "positive": 7,
+      "positive": 16,
       "boundary": 7,
-      "sourceGames": 7,
+      "sourceGames": 16,
       "exampleIds": [
-        "lichess-kPR8z",
-        "lichess-IZRFR",
-        "lichess-lB4Lw",
-        "lichess-jcdLa"
+        "contrast-mine-simplification_to_hold-56ed1c5b7295dada6d",
+        "contrast-mine-simplification_to_hold-9bcc851927265d9e80",
+        "contrast-mine-simplification_to_hold-b5a3a0e8d1f2babbfd",
+        "contrast-mine-simplification_to_hold-fa81b51812b2c5ba7e"
       ],
       "boundaryIds": [
         "lichess-y9vCP",
@@ -483,14 +497,14 @@
       ]
     },
     "defensive_endgame_activity": {
-      "positive": 5,
+      "positive": 21,
       "boundary": 100,
-      "sourceGames": 5,
+      "sourceGames": 20,
       "exampleIds": [
-        "lichess-cuU0l",
-        "lichess-5Tbjb",
-        "lichess-5CAp9",
-        "lichess-WxTum"
+        "contrast-mine-defensive_endgame_activity-0d982b9db6f0100839",
+        "contrast-mine-defensive_endgame_activity-c10e929e4acfce2a7b",
+        "contrast-mine-defensive_endgame_activity-33f4190f92709242f7",
+        "contrast-mine-defensive_endgame_activity-072f26d4cd6c0700a6"
       ],
       "boundaryIds": [
         "lichess-vDhPK",

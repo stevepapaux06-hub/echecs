@@ -104,18 +104,20 @@ describe("curated training library", () => {
       && exercise.trainingAssessment.score >= 9)).toBe(true);
   });
 
-  it("keeps strategy quiet, conversion modest and ending families honest", () => {
+  it("keeps strategy causal, conversion nontrivial and ending families honest", () => {
     const master = allConceptExercises().filter((exercise) => !["tactic", "opening"].includes(exercise.category));
     const strategy = master.filter((exercise) => exercise.domain === "strategy");
     expect(strategy.every((exercise) => (
       exercise.phase === "middlegame"
-      && exercise.baselinePlayerCp >= -150
-      && exercise.baselinePlayerCp <= 150
+      && exercise.trainingAssessment?.contrast?.passed
+      && exercise.trainingAssessment.outcome?.after !== "loss"
+      && exercise.trainingAssessment.signals.length > 0
     ))).toBe(true);
 
     const conversion = master.filter((exercise) => exercise.domain === "conversion");
     expect(conversion.every((exercise) => (
-      exercise.baselinePlayerCp >= 80 && exercise.baselinePlayerCp <= 320
+      exercise.baselinePlayerCp > 35 && exercise.baselinePlayerCp < 500
+      && exercise.trainingAssessment?.contrast?.passed
     ))).toBe(true);
 
     const nonPawnFamily = (exercise: (typeof master)[number]) => {
