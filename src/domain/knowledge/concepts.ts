@@ -34,6 +34,12 @@ export type ConceptSlug =
   | "create_second_weakness"
   | "avoid_forcing_too_soon"
   | "defensive_resource"
+  | "active_defense"
+  | "defensive_counterplay"
+  | "exchange_attacker"
+  | "simplification_to_hold"
+  | "return_material"
+  | "defensive_endgame_activity"
   | "king_activity"
   | "opposition"
   | "rule_of_square"
@@ -89,6 +95,12 @@ export const CHESSPATH_CONCEPTS: readonly ConceptDefinition[] = [
   { conceptSlug: "create_second_weakness", category: "conversion", labelFr: "Créer une deuxième faiblesse", shortDescription: "Fixer une cible puis ouvrir un second front.", detectionStatus: "planned", detectionMethod: "Différé jusqu’à une détection fiable de deux fronts distincts ; aucun chiffre n’est inventé entre-temps." },
   { conceptSlug: "avoid_forcing_too_soon", category: "conversion", labelFr: "Ne pas forcer trop tôt", shortDescription: "Améliorer la position avant de déclencher les opérations concrètes.", detectionStatus: "planned", detectionMethod: "Nécessite une comparaison MultiPV plus fine avant d’alimenter le diagnostic ou la banque." },
   { conceptSlug: "defensive_resource", category: "defense", labelFr: "Ressource défensive", shortDescription: "Trouver une suite qui sauve réellement une position difficile.", detectionStatus: "planned", detectionMethod: "Point d’extension Stockfish/Syzygy ; aucune détection spéculative en V1." },
+  { conceptSlug: "active_defense", category: "defense", labelFr: "Défense active", shortDescription: "Neutraliser le danger en créant une menace ou une activité immédiate.", detectionStatus: "detected", detectionMethod: "Ressource Lichess equality + defensiveMove, ou coup forcing sain validé par Stockfish qui maintient une position tenable." },
+  { conceptSlug: "defensive_counterplay", category: "defense", labelFr: "Créer du contre-jeu", shortDescription: "Forcer l’adversaire à répondre au lieu de subir passivement.", detectionStatus: "detected", detectionMethod: "Échec ou menace forcing dans une position inférieure mais tenable, validé par une ressource de nulle." },
+  { conceptSlug: "exchange_attacker", category: "defense", labelFr: "Échanger l’attaquant", shortDescription: "Retirer la pièce adverse qui porte la menace principale.", detectionStatus: "detected", detectionMethod: "Capture ou échange de l’attaquant identifié, avec disparition mesurable de la menace." },
+  { conceptSlug: "simplification_to_hold", category: "defense", labelFr: "Simplifier pour tenir", shortDescription: "Liquider vers une position objectivement tenable.", detectionStatus: "detected", detectionMethod: "Réduction nette du matériel dans une ressource equality/defensiveMove vérifiée." },
+  { conceptSlug: "return_material", category: "defense", labelFr: "Rendre du matériel", shortDescription: "Restituer du matériel pour supprimer l’attaque ou atteindre une position tenable.", detectionStatus: "detected", detectionMethod: "Sacrifice défensif vérifié qui transforme une position perdante en égalité ou nulle." },
+  { conceptSlug: "defensive_endgame_activity", category: "defense", labelFr: "Activité défensive en finale", shortDescription: "Activer roi ou tour pour conserver les chances de nulle.", detectionStatus: "detected", detectionMethod: "Ressource equality/defensiveMove dans une vraie finale, avec activité ou contre-jeu concret." },
   { conceptSlug: "king_activity", category: "endgame", labelFr: "Activité du roi", shortDescription: "Rapprocher le roi des cases et pions importants en finale.", detectionStatus: "detected", detectionMethod: "Coup de roi vers le centre dans une finale à matériel réduit." },
   { conceptSlug: "opposition", category: "endgame", labelFr: "Opposition", shortDescription: "Placer les rois face à face avec une case entre eux.", detectionStatus: "detected", detectionMethod: "Géométrie exacte des rois en finale de pions." },
   { conceptSlug: "rule_of_square", category: "endgame", labelFr: "Règle du carré", shortDescription: "Savoir si un roi peut rattraper un pion passé.", detectionStatus: "detected", detectionMethod: "Distance de Chebyshev exacte entre le roi et la case de promotion du pion passé." },

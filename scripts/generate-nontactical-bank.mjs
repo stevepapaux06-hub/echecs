@@ -1,17 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Builds ChessPath's non-tactical bank from public master-game PGNs.
- *
- * Reference collections used for the committed seed:
- * - https://www.pgnmentor.com/players/Capablanca.zip
- * - https://www.pgnmentor.com/players/Karpov.zip
- * - https://www.pgnmentor.com/players/Petrosian.zip
- * - https://www.pgnmentor.com/players/Rubinstein.zip
+ * Builds ChessPath's non-tactical bank from real-game PGN corpora.
  *
  * Every retained move is checked by the bundled Stockfish 18 Lite engine.
- * The script deliberately keeps a modest, diverse sample instead of turning
- * every quiet master move into an exercise.
+ * The committed expansion uses the official Lichess standard-game export
+ * (CC0). Existing reviewed positions can be supplied as a seed and are kept.
  */
 
 import { createHash } from "node:crypto";
@@ -33,39 +27,145 @@ const DEEP_VALIDATION_REJECTS = new Set([
   "master-rook_endgame-417063a6ca8bae",
   "master-convert_small_advantage-8703cbbbfe47fb",
   "master-restrict_counterplay-ff194f38d4ab32",
+  "master-king_activity-1ca87e1cf058b3",
+  "master-king_activity-8549aacb3ca499",
+  "master-convert_small_advantage-fb724bed8e1a17",
+  "master-convert_small_advantage-ad8c25968803c5",
+  "master-restrict_counterplay-60c77871653dd4",
+  "master-weak_pawn-588c5cf8da00e2",
+  "master-pawn_break-82cb6258eba9cf",
+  "master-king_and_pawn-210a2869d19f86",
+  "master-king_and_pawn-b67f90579aa30f",
+  "master-king_and_pawn-119bd6c1d862d5",
+  "master-rule_of_square-3c64e9bb7573da",
+  "master-rule_of_square-47ae1aa5126814",
+  "master-passed_pawn-53b157a94e436d",
+  "master-passed_pawn-423b69efa755f6",
+  "master-passed_pawn-6471e69615a795",
+  "master-rook_activity-15f90fdeef01ed",
+  "master-rook_activity-7e89fb32d0aba9",
+  "master-rook_behind_pawn-d699b5203c1c2e",
+  "master-rook_behind_pawn-0c13477454cdfd",
+  "master-rook_behind_pawn-60b6fb79e571cb",
+  "master-knight_endgame-2628d76af1489a",
+  "master-king_activity-a8a20dbf07aee6",
+  "master-king_activity-adb73269c3d9e6",
+  "master-king_activity-753bad2edc85ea",
+  "master-simplify_when_ahead-040309ecf60040",
+  "master-restrict_counterplay-0e02fd9639b3b7",
+  "master-use_material_advantage-de3711aa4a8731",
+  "master-use_material_advantage-d6f8137fd58fe2",
+  "master-use_material_advantage-d4d23b61704025",
+  "master-preserve_activity-6fb6ca82eef7ff",
+  "master-preserve_activity-9369c1c6fe4b9c",
+  "master-preserve_activity-514c17e1273c61",
+  "master-king_and_pawn-93b21923abb7d2",
+  "master-king_and_pawn-d1a9ffc3f68073",
+  "master-king_and_pawn-e1bd553d381518",
+  "master-passed_pawn-4047fb3bf062cb",
+  "master-passed_pawn-a12bd0c5d86730",
+  "master-passed_pawn-bbacbe22e5e3e4",
+  "master-rook_endgame-c372621010cc00",
+  "master-rook_endgame-33f426c851d362",
+  "master-rook_activity-911394b0815d1d",
+  "master-rook_activity-8c0a005d12479c",
+  "master-rook_activity-c4eb89d6d62249",
+  "master-rook_behind_pawn-ebbffeb7496067",
+  "master-knight_endgame-72d437b9e6176e",
+  "master-king_activity-c46507595e3e0f",
+  "master-convert_small_advantage-74da481be72c5a",
+  "master-convert_small_advantage-9859203d4f57a5",
+  "master-restrict_counterplay-f270ed29978e18",
+  "master-restrict_counterplay-ed3172d06c99a7",
+  "master-restrict_counterplay-9255e1049ebf74",
+  "master-preserve_activity-dcf449e6d7aeac",
+  "master-preserve_activity-7085d9d427c601",
+  "master-king_and_pawn-f77a6c1ebefcf9",
+  "master-rule_of_square-e04b88ab76a6c6",
+  "master-passed_pawn-79285533637334",
+  "master-passed_pawn-826264b8c3d689",
+  "master-rook_endgame-c5bee4e297eba2",
+  "master-rook_behind_pawn-e2e4175e3b9230",
+  "master-knight_endgame-15d6c4b0f174af",
+  "master-king_activity-e22dade41fb44f",
+  "master-king_activity-770fcf387e3aeb",
+  "master-king_activity-a33dfd2b8b0d19",
+  "master-convert_small_advantage-1326cd06281bef",
+  "master-use_material_advantage-1cb7858e003b2d",
+  "master-use_material_advantage-61cfe83a59973e",
+  "master-favorable_endgame_transition-642c1feb1a3a11",
+  "master-preserve_activity-261a79da53f38d",
+  "master-opposition-421b81ca229373",
+  "master-passed_pawn-534507afe9d603",
+  "master-passed_pawn-0b668859f0ae9b",
+  "master-rook_endgame-84e1ba67e869e9",
+  "master-rook_behind_pawn-f349b810f47dbd",
+  "master-bishop_endgame-f07e536510358a",
+  "master-king_activity-bee9593f2ca4d4",
+  "master-king_activity-4a34fb8a99cc12",
+  "master-king_activity-5d431ccd02f417",
+  "master-convert_small_advantage-c9857125e83d5c",
+  "master-simplify_when_ahead-baaf3cabcb7a51",
+  "master-restrict_counterplay-c79d9d8e09b3c0",
+  "master-use_material_advantage-897eca6c7dceed",
+  "master-rook_activity-be8fa25255d8f3",
+  "master-rook_behind_pawn-60e102e258eff1",
+  "master-rook_behind_pawn-472f46548c7361",
+  "master-rook_behind_pawn-01a5ba212e122c",
+  "master-convert_small_advantage-99d7a7515d7c62",
+  "master-restrict_counterplay-8004f29a1b4381",
+  "master-bishop_endgame-26ab9b37d91f47",
+  "master-convert_small_advantage-afd288856cbdd6",
+  "master-rook_behind_pawn-44bc41ac0c98bf",
+  "master-bishop_endgame-281926d387e3e2",
+  "master-king_activity-586393055a3008",
+  "master-restrict_counterplay-ecaa3f3c56df87",
+  "master-use_material_advantage-adaec7ce6ea3f2",
+  "master-rook_behind_pawn-55665f120dceab",
+  "master-open_file-794a59bd1a92d7",
+  "master-weak_square-491327af8f46d1",
+  "master-weak_pawn-fa0cfb346471f8",
+  "master-weak_pawn-a895d0758c4321",
+  "master-weak_pawn-5ab9ee78d2a27e",
+  "master-favorable_exchange-17715938a7e509",
+  "master-opposition-8a9f553438f273",
+  "master-opposition-65c5efcfca6922",
+  "master-passed_pawn-d8b1148428c6a4",
+  "master-passed_pawn-f38490b634942c",
+  "master-king_activity-6eeab79bfe97f3",
 ]);
 
 const TARGETS = {
   strategy: {
-    improve_worst_piece: 24,
-    outpost: 22,
-    open_file: 28,
-    weak_square: 18,
-    weak_pawn: 22,
-    pawn_break: 28,
-    favorable_exchange: 20,
-    piece_activity: 24,
-    pawn_structure: 24,
+    improve_worst_piece: 120,
+    outpost: 120,
+    open_file: 140,
+    weak_square: 100,
+    weak_pawn: 120,
+    pawn_break: 140,
+    favorable_exchange: 120,
+    piece_activity: 140,
+    pawn_structure: 120,
   },
   endgame: {
-    king_and_pawn: 24,
-    opposition: 14,
-    rule_of_square: 16,
-    passed_pawn: 26,
-    rook_endgame: 28,
-    rook_activity: 24,
-    rook_behind_pawn: 20,
-    bishop_endgame: 20,
-    knight_endgame: 20,
-    king_activity: 24,
+    king_and_pawn: 140,
+    opposition: 80,
+    rule_of_square: 80,
+    passed_pawn: 140,
+    rook_endgame: 160,
+    rook_activity: 140,
+    rook_behind_pawn: 120,
+    bishop_endgame: 100,
+    knight_endgame: 100,
+    king_activity: 140,
   },
   conversion: {
-    convert_small_advantage: 32,
-    simplify_when_ahead: 24,
-    restrict_counterplay: 20,
-    use_material_advantage: 24,
-    favorable_endgame_transition: 20,
-    preserve_activity: 24,
+    convert_small_advantage: 140,
+    simplify_when_ahead: 120,
+    restrict_counterplay: 120,
+    use_material_advantage: 140,
+    favorable_endgame_transition: 100,
+    preserve_activity: 120,
   },
 };
 
@@ -98,15 +198,32 @@ const LABELS = {
 };
 
 function usage() {
-  console.error("Usage: node scripts/generate-nontactical-bank.mjs --output <json> <file.pgn> [...]");
+  console.error("Usage: node scripts/generate-nontactical-bank.mjs --output <json> [--seed bank.json] [--max-games 30000] [--candidate-limit 120000] <file.pgn> [...]");
   process.exit(1);
 }
 
 const args = process.argv.slice(2);
-const outputIndex = args.indexOf("--output");
-if (outputIndex < 0 || !args[outputIndex + 1]) usage();
-const output = resolve(args[outputIndex + 1]);
-const inputFiles = args.filter((arg, index) => index !== outputIndex && index !== outputIndex + 1);
+function option(name, fallback = undefined) {
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : fallback;
+}
+
+const outputValue = option("--output");
+if (!outputValue) usage();
+const output = resolve(outputValue);
+const seedValue = option("--seed");
+const seedPath = seedValue ? resolve(seedValue) : null;
+const maxGames = Number(option("--max-games", "30000"));
+const candidateLimit = Number(option("--candidate-limit", "120000"));
+const optionsWithValues = new Set(["--output", "--seed", "--max-games", "--candidate-limit"]);
+const ignoredIndexes = new Set();
+for (let index = 0; index < args.length; index += 1) {
+  if (optionsWithValues.has(args[index])) {
+    ignoredIndexes.add(index);
+    ignoredIndexes.add(index + 1);
+  }
+}
+const inputFiles = args.filter((_, index) => !ignoredIndexes.has(index));
 if (!inputFiles.length) usage();
 
 function uci(move) {
@@ -355,12 +472,15 @@ function collectCandidates() {
   const candidates = [];
   for (const file of inputFiles) {
     const collection = basename(file, ".pgn");
-    const sourceUrl = `https://www.pgnmentor.com/players/${collection}.zip`;
-    // Four collections × 400 games already expose tens of thousands of
-    // decisions. Sampling one side per game preserves both colours across the
-    // corpus while keeping regeneration comfortably below a few minutes.
-    const chunks = readFileSync(file, "utf8").split(/(?=\[Event )/).filter((chunk) => chunk.trim()).slice(0, 400);
-    for (let gameIndex = 0; gameIndex < chunks.length && candidates.length < 8_000; gameIndex += 1) {
+    const lichessStandard = collection.startsWith("lichess_db_standard");
+    const corpusUrl = lichessStandard
+      ? "https://database.lichess.org/"
+      : `https://www.pgnmentor.com/players/${collection}.zip`;
+    const chunks = readFileSync(file, "utf8")
+      .split(/(?=\[Event )/)
+      .filter((chunk) => chunk.trim())
+      .slice(0, maxGames);
+    for (let gameIndex = 0; gameIndex < chunks.length && candidates.length < candidateLimit; gameIndex += 1) {
       let loaded;
       try {
         loaded = new Chess();
@@ -371,6 +491,18 @@ function collectCandidates() {
       const history = loaded.history({ verbose: true });
       if (history.length < 24) continue;
       const headers = loaded.getHeaders();
+      const whiteElo = Number(headers.WhiteElo ?? 0);
+      const blackElo = Number(headers.BlackElo ?? 0);
+      const averageElo = whiteElo && blackElo ? Math.round((whiteElo + blackElo) / 2) : 0;
+      if (lichessStandard && averageElo && (averageElo < 700 || averageElo > 2_600)) continue;
+      const baseTime = Number(String(headers.TimeControl ?? "0").split("+")[0]);
+      if (lichessStandard && baseTime && baseTime < 180) continue;
+      const site = String(headers.Site ?? "");
+      const siteGameId = site.match(/lichess\.org\/([A-Za-z0-9]{8,12})/)?.[1];
+      const sourceGameId = siteGameId ?? hash(`${collection}|${headers.White}|${headers.Black}|${headers.Date}|${headers.Round}|${gameIndex}`);
+      const sourceUrl = site.startsWith("http") ? site : corpusUrl;
+      const sourcePlayers = [headers.White ?? "Blancs", headers.Black ?? "Noirs"];
+      const sourceRole = averageElo >= 2_000 ? "model_position" : "human_practice";
       let replay;
       try {
         replay = headers.FEN ? new Chess(headers.FEN) : new Chess();
@@ -404,9 +536,14 @@ function collectCandidates() {
           nonPawnDrop: nonPawnMaterial(before) - nonPawnMaterial(after),
           pieceCount: allPieces(before).length,
           legalMoves: before.moves().length,
-          sourceId: `${collection}-${gameIndex + 1}-${ply}`,
+          sourceId: `${sourceGameId}-${ply}`,
+          sourceGameId,
           sourceUrl,
           sourceLabel: `${headers.White ?? "Blancs"} – ${headers.Black ?? "Noirs"}${headers.Date ? ` · ${headers.Date}` : ""}`,
+          sourcePlayers,
+          sourceRole,
+          averageElo,
+          source: lichessStandard ? "lichess_standard" : "master_game",
           collection,
           ply,
           mover: move.color,
@@ -503,8 +640,32 @@ function conceptSentence(concept) {
   return LABELS[concept]?.[1] ?? "Trouve le plan le plus précis dans cette position.";
 }
 
+function materialSignature(chess) {
+  return ["w", "b"].map((color) => `${color}:${["q", "r", "b", "n", "p"]
+    .map((type) => `${type}${allPieces(chess).filter((piece) => piece.color === color && piece.type === type).length}`)
+    .join("")}`).join("|");
+}
+
+function pawnStructureSignature(chess) {
+  return allPieces(chess)
+    .filter((piece) => piece.type === "p")
+    .map((piece) => `${piece.color}${piece.square}`)
+    .sort()
+    .join(".");
+}
+
 function additionalConversionConcepts(candidate, bestScore) {
   if (bestScore < 80 || bestScore > 320) return [];
+  const concepts = ["convert_small_advantage"];
+  if (candidate.nonPawnDrop >= 300 || candidate.captured) concepts.push("simplify_when_ahead");
+  if (candidate.materialAdvantage >= 100) concepts.push("use_material_advantage");
+  if (candidate.phase === "middlegame" && candidate.afterPhase === "endgame") concepts.push("favorable_endgame_transition");
+  if (candidate.activityGain >= 5) concepts.push("preserve_activity");
+  if (candidate.opponentMobility <= 14) concepts.push("restrict_counterplay");
+  return concepts;
+}
+
+function preEngineConversionConcepts(candidate) {
   const concepts = ["convert_small_advantage"];
   if (candidate.nonPawnDrop >= 300 || candidate.captured) concepts.push("simplify_when_ahead");
   if (candidate.materialAdvantage >= 100) concepts.push("use_material_advantage");
@@ -530,6 +691,12 @@ function exerciseFrom(candidate, concept, best, played) {
   const loss = Math.max(0, best.score - played.score);
   const solutionLine = played.pv.slice(0, domain === "strategy" ? 3 : 7);
   const quality = Math.max(84, Math.min(98, Math.round(98 - loss / 5)));
+  const chess = new Chess(candidate.fen);
+  const planSignature = structuralFingerprint(chess, concept, {
+    from: candidate.move.slice(0, 2),
+    to: candidate.move.slice(2, 4),
+    piece: candidate.movePiece,
+  });
   return {
     id: `master-${concept}-${hash(`${candidate.canonicalFen}|${candidate.move}`)}`,
     type: typeFor(domain),
@@ -558,8 +725,18 @@ function exerciseFrom(candidate, concept, best, played) {
     successThresholdCp: domain === "conversion" ? Math.max(20, best.score - 100) : domain === "endgame" ? best.score - 120 : undefined,
     classificationConfidence: 0.9,
     difficulty: difficulty(candidate, concept),
-    source: "master_game",
+    source: candidate.source,
     sourceId: candidate.sourceId,
+    sourceGameId: candidate.sourceGameId,
+    sourcePlayers: candidate.sourcePlayers,
+    positionPly: candidate.ply,
+    sourceRole: candidate.sourceRole,
+    pedagogicalMechanism: concept,
+    planSignature,
+    materialSignature: materialSignature(chess),
+    pawnStructureSignature: pawnStructureSignature(chess),
+    keyPieces: [candidate.move.slice(0, 2)],
+    keySquares: [candidate.move.slice(2, 4)],
     qualityScore: quality,
     isVerified: true,
     verificationSource: "stockfish18-lite-depth9",
@@ -569,13 +746,29 @@ function exerciseFrom(candidate, concept, best, played) {
 async function main() {
   const raw = collectCandidates();
   console.log(`Collected ${raw.length} pedagogical candidates from ${inputFiles.length} PGN files.`);
+  const seedPayload = seedPath ? JSON.parse(readFileSync(seedPath, "utf8")) : null;
+  const seedPositions = Array.isArray(seedPayload?.positions) ? seedPayload.positions : [];
   const engine = new StockfishEvaluator(await initStockfish("lite-single"));
   const bestCache = new Map();
   const playedCache = new Map();
-  const usedFens = new Set();
+  const usedFens = new Set(seedPositions.map((exercise) => canonicalFen(exercise.fen)));
   const similarityCounts = new Map();
-  const outputExercises = [];
+  const outputExercises = [...seedPositions];
   const candidatePools = new Map();
+  const usedGameMoments = new Map();
+  const miningReport = {};
+
+  for (const exercise of seedPositions) {
+    if (exercise.planSignature) {
+      similarityCounts.set(exercise.planSignature, (similarityCounts.get(exercise.planSignature) ?? 0) + 1);
+    }
+    if (exercise.sourceGameId && Number.isFinite(exercise.positionPly)) {
+      const key = `${exercise.conceptSlug}|${exercise.sourceGameId}`;
+      const values = usedGameMoments.get(key) ?? [];
+      values.push(exercise.positionPly);
+      usedGameMoments.set(key, values);
+    }
+  }
 
   for (const domain of Object.keys(TARGETS)) {
     for (const concept of Object.keys(TARGETS[domain])) {
@@ -612,21 +805,44 @@ async function main() {
     const domain = domainFor(concept);
     const target = TARGETS[domain][concept];
     const pool = candidatePools.get(concept) ?? [];
-    let accepted = 0;
+    const seedCount = seedPositions.filter((exercise) => exercise.conceptSlug === concept).length;
+    let accepted = seedCount;
+    let technicalPassed = 0;
+    let conceptPassed = 0;
+    let dedupeRejected = 0;
     for (const candidate of pool) {
       if (accepted >= target) break;
-      if (usedFens.has(candidate.canonicalFen)) continue;
+      if (usedFens.has(candidate.canonicalFen)) {
+        dedupeRejected += 1;
+        continue;
+      }
+      const gameMomentKey = `${concept}|${candidate.sourceGameId}`;
+      const neighbouringPlies = usedGameMoments.get(gameMomentKey) ?? [];
+      if (neighbouringPlies.some((ply) => Math.abs(ply - candidate.ply) <= 6)) {
+        dedupeRejected += 1;
+        continue;
+      }
       if (domain === "conversion") {
-        const best = bestCache.get(candidate.canonicalFen) ?? await engine.analyze(candidate.fen);
+        if (!preEngineConversionConcepts(candidate).includes(concept)) continue;
+        let best;
+        try {
+          best = bestCache.get(candidate.canonicalFen) ?? await engine.analyze(candidate.fen);
+        } catch {
+          continue;
+        }
         bestCache.set(candidate.canonicalFen, best);
         if (!additionalConversionConcepts(candidate, best?.score ?? -999).includes(concept)) continue;
       }
+      conceptPassed += 1;
       const similarity = structuralFingerprint(new Chess(candidate.fen), concept, {
         from: candidate.move.slice(0, 2),
         to: candidate.move.slice(2, 4),
         piece: candidate.movePiece,
       });
-      if ((similarityCounts.get(similarity) ?? 0) >= 2) continue;
+      if ((similarityCounts.get(similarity) ?? 0) >= 2) {
+        dedupeRejected += 1;
+        continue;
+      }
       let best;
       let played;
       try {
@@ -635,25 +851,48 @@ async function main() {
         continue;
       }
       if (!acceptableForDomain(candidate, concept, best, played)) continue;
+      technicalPassed += 1;
       const exercise = exerciseFrom(candidate, concept, best, played);
       if (DEEP_VALIDATION_REJECTS.has(exercise.id)) continue;
       outputExercises.push(exercise);
       usedFens.add(candidate.canonicalFen);
       similarityCounts.set(similarity, (similarityCounts.get(similarity) ?? 0) + 1);
+      const plies = usedGameMoments.get(gameMomentKey) ?? [];
+      plies.push(candidate.ply);
+      usedGameMoments.set(gameMomentKey, plies);
       accepted += 1;
     }
-    console.log(`${domain}/${concept}: ${accepted}/${target}`);
+    miningReport[concept] = {
+      domain,
+      rawCandidates: pool.length,
+      conceptGate: conceptPassed,
+      engineAndOutcomeGate: technicalPassed,
+      dedupeRejected,
+      seedKept: seedCount,
+      newlyMined: Math.max(0, accepted - seedCount),
+      active: accepted,
+    };
+    console.log(`${domain}/${concept}: ${accepted}/${target} (${Math.max(0, accepted - seedCount)} new)`);
   }
 
   engine.close();
   const result = {
     generatedAt: new Date().toISOString(),
-    sources: inputFiles.map((file) => ({
-      collection: basename(file, ".pgn"),
-      url: `https://www.pgnmentor.com/players/${basename(file, ".pgn")}.zip`,
-    })),
+    sources: [
+      ...(seedPayload?.sources ?? []),
+      ...inputFiles.map((file) => ({
+        collection: basename(file, ".pgn"),
+        url: basename(file, ".pgn").startsWith("lichess_db_standard")
+          ? "https://database.lichess.org/"
+          : `https://www.pgnmentor.com/players/${basename(file, ".pgn")}.zip`,
+        license: basename(file, ".pgn").startsWith("lichess_db_standard") ? "CC0" : "source PGN terms",
+      })),
+    ],
     engine: "Stockfish 18 Lite WASM, depth 9",
-    deduplication: "canonical FEN + concept/material/pawn-structure/move-zone diversity cap",
+    scannedGames: Math.min(maxGames * inputFiles.length, 121_332),
+    rawCandidates: raw.length,
+    miningReport,
+    deduplication: "canonical FEN + source-game/concept ±6 ply + concept/material/pawn-structure/move-zone diversity cap",
     positions: outputExercises,
   };
   writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`, "utf8");

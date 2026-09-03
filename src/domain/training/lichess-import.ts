@@ -49,11 +49,17 @@ export function classifyLichessPosition(
   if (!concepts.length) return null;
   const fullmove = Number(fen.split(/\s+/)[5] ?? 1);
   const phase = classifyPhase(fen, Math.max(1, fullmove * 2 - 1));
+  const verifiedDefensiveRecovery = sourceThemes.includes("defensiveMove")
+    && sourceThemes.includes("equality");
   const concreteTactic = concepts.find((slug) => ![
     "passed_pawn",
     "defensive_resource",
+    "opponent_threat",
   ].includes(slug));
-  const primary = concreteTactic
+  const primary = verifiedDefensiveRecovery
+    ? "defensive_resource"
+    : concreteTactic
+    ?? (concepts.includes("opponent_threat") ? "opponent_threat" : undefined)
     ?? (concepts.includes("defensive_resource") ? "defensive_resource" : undefined)
     ?? (concepts.includes("passed_pawn") ? "passed_pawn" : undefined);
 

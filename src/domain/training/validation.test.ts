@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TrainingExercise } from "@/domain/chess/types";
 import { allConceptExercises } from "./library";
-import { validateTrainingExercise } from "./validation";
+import { gateTrainingExercises, validateTrainingExercise } from "./validation";
 
 describe("training bank gate", () => {
   const base = allConceptExercises()[0];
@@ -32,5 +32,41 @@ describe("training bank gate", () => {
       baselinePlayerCp: 900,
     };
     expect(validateTrainingExercise(overwhelming)).toMatchObject({ status: "rejected" });
+  });
+
+  it("rejects a Lichess defense without a verified equality outcome", () => {
+    const unsupported: TrainingExercise = {
+      ...base,
+      id: "unsupported-defense",
+      category: "defense",
+      domain: "defense",
+      type: "defense",
+      source: "lichess",
+      sourceThemes: ["defensiveMove"],
+    };
+    expect(validateTrainingExercise(unsupported)).toMatchObject({ status: "rejected" });
+  });
+
+  it("keeps only one neighbouring moment from the same game and mechanism", () => {
+    const other = allConceptExercises().find((exercise) => (
+      exercise.conceptSlug === base.conceptSlug && exercise.fen !== base.fen
+    ))!;
+    const first: TrainingExercise = {
+      ...base,
+      id: "same-game-ply-30",
+      sourceGameId: "game-42",
+      positionPly: 30,
+      pedagogicalMechanism: "fork",
+    };
+    const second: TrainingExercise = {
+      ...other,
+      id: "same-game-ply-34",
+      sourceGameId: "game-42",
+      positionPly: 34,
+      pedagogicalMechanism: "fork",
+    };
+    const gated = gateTrainingExercises([first, second]);
+    expect(gated.active).toHaveLength(1);
+    expect(gated.rejected).toHaveLength(1);
   });
 });

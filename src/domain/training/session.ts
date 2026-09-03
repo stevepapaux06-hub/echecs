@@ -116,6 +116,33 @@ function uniquePositions(exercises: TrainingExercise[]): TrainingExercise[] {
   });
 }
 
+function seededRandom(seed: string | number): () => number {
+  let state = 2_166_136_261;
+  for (const character of String(seed)) {
+    state ^= character.charCodeAt(0);
+    state = Math.imul(state, 16_777_619);
+  }
+  return () => {
+    state += 0x6d2b79f5;
+    let mixed = state;
+    mixed = Math.imul(mixed ^ (mixed >>> 15), mixed | 1);
+    mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61);
+    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4_294_967_296;
+  };
+}
+
+function sourceGame(exercise: TrainingExercise): string {
+  return exercise.sourceGameId
+    ?? exercise.gameUrl?.match(/lichess\.org\/([A-Za-z0-9]{8,12})/)?.[1]
+    ?? exercise.sourceId
+    ?? exercise.id;
+}
+
+function hasSharedPlayer(first: TrainingExercise | undefined, second: TrainingExercise): boolean {
+  if (!first?.sourcePlayers?.length || !second.sourcePlayers?.length) return false;
+  return first.sourcePlayers.some((player) => second.sourcePlayers?.includes(player));
+}
+
 /**
  * Builds a deterministic spaced-practice batch for a continuous training flow:
  * personal position → different position on the same precise concept → fresh material →
@@ -134,6 +161,7 @@ export function buildTrainingSession(
     priorityDomain?: DiagnosticCategory;
     excludeExerciseIds?: ReadonlySet<string>;
     sourceFilter?: TrainingSourceFilter;
+    seed?: string | number;
   } = {},
 ): TrainingExercise[] {
   const history = attemptHistory(attempts);
@@ -183,28 +211,56 @@ export function buildTrainingSession(
     const concept = normalizeConceptSlug(attempt.theme);
     successesByConcept.set(concept, (successesByConcept.get(concept) ?? 0) + 1);
   }
-  const adapted = (values: TrainingExercise[]): TrainingExercise[] => values.toSorted((first, second) => {
-    const score = (exercise: TrainingExercise): number => {
-      const concept = preciseConcept(exercise);
-      const progression = Math.min(250, (successesByConcept.get(concept) ?? 0) * 35);
-      const target = (options.userRating ?? exercise.difficulty ?? 1_200) + progression;
-      const difficultyDistance = exercise.difficulty === undefined ? 500 : Math.abs(exercise.difficulty - target);
-      return (exercise.qualityScore ?? 0) * 3 - difficultyDistance + Number(exercise.origin === "personal") * 40;
-    };
-    return score(second) - score(first) || first.id.localeCompare(second.id);
-  });
+  const random = seededRandom(options.seed ?? `${now}:${filter}:${attempts.length}:${unique.length}`);
+  const score = (exercise: TrainingExercise): number => {
+    const concept = preciseConcept(exercise);
+    const progression = Math.min(250, (successesByConcept.get(concept) ?? 0) * 35);
+    const target = (options.userRating ?? exercise.difficulty ?? 1_200) + progression;
+    const difficultyDistance = exercise.difficulty === undefined ? 500 : Math.abs(exercise.difficulty - target);
+    return (exercise.qualityScore ?? 0) * 3 - difficultyDistance + Number(exercise.origin === "personal") * 40;
+  };
+  const adapted = (values: TrainingExercise[]): TrainingExercise[] => {
+    const remaining = values
+      .map((exercise) => ({ exercise, noise: random() * 160 }))
+      .toSorted((first, second) => (
+        score(second.exercise) + second.noise - score(first.exercise) - first.noise
+      ))
+      .slice(0, Math.max(240, batchSize * 20));
+    const ordered: TrainingExercise[] = [];
+    while (remaining.length) {
+      const previous = ordered.at(-1);
+      const diversityPenalty = (candidate: TrainingExercise): number => (
+        Number(Boolean(previous) && sourceGame(previous!) === sourceGame(candidate)) * 4_000
+        + Number(hasSharedPlayer(previous, candidate)) * 800
+        + Number(Boolean(previous?.pawnStructureSignature)
+          && previous?.pawnStructureSignature === candidate.pawnStructureSignature) * 320
+        + Number(Boolean(previous?.materialSignature)
+          && previous?.materialSignature === candidate.materialSignature) * 180
+        + Number(Boolean(previous?.planSignature)
+          && previous?.planSignature === candidate.planSignature) * 1_200
+      );
+      remaining.sort((first, second) => {
+        const firstScore = score(first.exercise) + first.noise - diversityPenalty(first.exercise);
+        const secondScore = score(second.exercise) + second.noise - diversityPenalty(second.exercise);
+        return secondScore - firstScore || first.exercise.id.localeCompare(second.exercise.id);
+      });
+      ordered.push(remaining.shift()!.exercise);
+    }
+    return ordered;
+  };
   const failed = adapted(unique.filter((exercise) => (
     history.get(exercise.id)?.latest.result === "failed" && ageDays(exercise) >= 1
   )));
   const reviewSuccess = adapted(unique.filter((exercise) => (
     history.get(exercise.id)?.latest.result === "success" && ageDays(exercise) >= 21
   )));
-  const fresh = adapted(unique.filter((exercise) => !history.has(exercise.id)));
+  const allFresh = unique.filter((exercise) => !history.has(exercise.id));
+  const fresh = adapted(allFresh);
   const partial = adapted(unique.filter((exercise) => (
     history.get(exercise.id)?.latest.result === "partial" && ageDays(exercise) >= 3
   )));
 
-  const personal = fresh.filter((exercise) => exercise.origin === "personal");
+  const personal = adapted(allFresh.filter((exercise) => exercise.origin === "personal"));
   const primary = personal[0] ?? fresh[0] ?? partial[0] ?? failed[0];
   const sameConcept = primary
     ? fresh.filter((exercise) => (
@@ -224,7 +280,11 @@ export function buildTrainingSession(
     && !sameCategory.some((candidate) => candidate.id === exercise.id)
   ));
 
-  const conceptBridge = sameConcept.slice(0, 2);
+  const conceptBridge = sameConcept
+    .toSorted((first, second) => (
+      Number(sourceGame(first) === sourceGame(primary!)) - Number(sourceGame(second) === sourceGame(primary!))
+    ))
+    .slice(0, 2);
   const remainingFresh = [...sameConcept, ...sameCategory, ...diverse].filter((exercise) => (
     !conceptBridge.some((candidate) => candidate.id === exercise.id)
   ));
@@ -239,5 +299,39 @@ export function buildTrainingSession(
     ...failed.slice(1),
     ...reviewSuccess,
   ]);
-  return ordered.slice(0, batchSize);
+  const prefixLength = primary?.origin === "personal"
+    ? conceptBridge.length ? 2 : 1
+    : failed.length ? 1 : 0;
+  const diverseOrder: TrainingExercise[] = ordered.slice(0, prefixLength);
+  // A failed position is an explicit review promise. Pin one after the fresh
+  // opening context before the source-diversity scheduler distributes the
+  // remaining bank; otherwise a very large source group could push it outside
+  // a short recommended batch.
+  const pinnedFailure = failed.find((exercise) => (
+    !diverseOrder.some((candidate) => candidate.id === exercise.id)
+  ));
+  if (pinnedFailure) diverseOrder.push(pinnedFailure);
+  const sourceGroups = new Map<string, TrainingExercise[]>();
+  for (const exercise of ordered.slice(prefixLength)) {
+    if (exercise.id === pinnedFailure?.id) continue;
+    const key = sourceGame(exercise);
+    sourceGroups.set(key, [...(sourceGroups.get(key) ?? []), exercise]);
+  }
+  while (sourceGroups.size) {
+    const previousSource = diverseOrder.length ? sourceGame(diverseOrder.at(-1)!) : null;
+    const forcedPersonalSource = diverseOrder.length === 0 && ordered[0]?.origin === "personal"
+      ? sourceGame(ordered[0])
+      : null;
+    const candidates = [...sourceGroups.entries()]
+      .filter(([source]) => source !== previousSource || sourceGroups.size === 1)
+      .toSorted((first, second) => (
+        Number(second[0] === forcedPersonalSource) - Number(first[0] === forcedPersonalSource)
+        || second[1].length - first[1].length
+        || ordered.indexOf(first[1][0]) - ordered.indexOf(second[1][0])
+      ));
+    const [source, values] = candidates[0];
+    diverseOrder.push(values.shift()!);
+    if (!values.length) sourceGroups.delete(source);
+  }
+  return diverseOrder.slice(0, batchSize);
 }

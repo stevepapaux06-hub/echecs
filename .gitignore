@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local corpora used by reproducible bank-mining scripts
+.tmp-corpus/

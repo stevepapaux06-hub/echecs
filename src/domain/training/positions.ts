@@ -15,6 +15,9 @@ export type TrainingPosition = {
   difficulty?: number;
   source: TrainingPositionSource;
   sourceGameId?: string;
+  sourcePlayers?: string[];
+  positionPly?: number;
+  sourceRole?: "human_practice" | "model_position" | "canonical";
   sourceUrl?: string;
   solutionMoves: string[];
   qualityScore?: number;
@@ -22,6 +25,12 @@ export type TrainingPosition = {
   popularity?: number;
   plays?: number;
   sourceThemes?: string[];
+  pedagogicalMechanism?: string;
+  planSignature?: string;
+  materialSignature?: string;
+  pawnStructureSignature?: string;
+  keyPieces?: string[];
+  keySquares?: string[];
   isVerified: boolean;
   playerColor: PlayerColor;
 };

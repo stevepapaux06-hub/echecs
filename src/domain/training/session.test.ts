@@ -151,4 +151,26 @@ describe("personalized training session", () => {
     expect(session[0].origin).toBe("personal");
     expect(session.every((exercise) => exercise.conceptSlug === "fork")).toBe(true);
   });
+
+  it("uses the seed to vary the first position instead of storage order", () => {
+    const pool = concepts.filter((exercise) => exercise.conceptSlug === "fork").slice(0, 80);
+    const firstIds = new Set(["alpha", "beta", "gamma", "delta"].map((seed) => (
+      buildTrainingSession(pool, [], conceptTrainingFilter("fork"), 6, { seed, userRating: 1_400 })[0]?.id
+    )));
+    expect(firstIds.size).toBeGreaterThan(1);
+  });
+
+  it("does not serve neighbouring moments from the same source game consecutively", () => {
+    const base = concepts.filter((exercise) => exercise.conceptSlug === "fork").slice(0, 6);
+    const pool = base.map((exercise, index) => ({
+      ...exercise,
+      id: `diversity-${index}`,
+      sourceGameId: index < 3 ? "same-game" : `other-game-${index}`,
+      positionPly: 20 + index * 2,
+    }));
+    const session = buildTrainingSession(pool, [], conceptTrainingFilter("fork"), 6, { seed: "source-diversity" });
+    expect(session.every((exercise, index) => (
+      index === 0 || exercise.sourceGameId !== session[index - 1].sourceGameId
+    ))).toBe(true);
+  });
 });

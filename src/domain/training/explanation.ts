@@ -341,6 +341,24 @@ export function buildExerciseTeaching(
       explanation.plan = `Jouer ${from}–${to}, supprimer la meilleure ressource adverse puis seulement ouvrir la position.`;
       explanation.objective = "Améliorer les conditions de la conversion avant de déclencher les opérations concrètes.";
       explanation.rule = "Ne force pas parce que tu es mieux : améliore d’abord ta position si l’adversaire n’a pas de contre-jeu urgent.";
+    } else if (["active_defense", "defensive_counterplay", "exchange_attacker", "simplification_to_hold", "return_material", "defensive_endgame_activity"].includes(concept)) {
+      const defensivePlan = concept === "exchange_attacker"
+        ? "échanger la pièce qui porte l’attaque"
+        : concept === "simplification_to_hold"
+          ? "liquider vers une position objectivement tenable"
+          : concept === "return_material"
+            ? "rendre du matériel pour supprimer le caractère forcing de l’attaque"
+            : concept === "defensive_counterplay"
+              ? "créer une menace qui oblige l’adversaire à répondre"
+              : concept === "defensive_endgame_activity"
+                ? "activer roi ou tour au lieu de défendre passivement"
+                : "neutraliser la menace tout en conservant de l’activité";
+      explanation.notice = `La position demande de ${defensivePlan}.`;
+      explanation.focus = `Ressource défensive ${from}–${to}.`;
+      explanation.plan = `Jouer ${from}–${to}, puis vérifier que la meilleure réponse adverse ne rétablit pas la menace initiale.`;
+      explanation.objective = "Transformer une position difficile en position tenable ou équilibrée, pas simplement perdre plus lentement.";
+      explanation.rule = `En défense, cherche d’abord à ${defensivePlan}, puis vérifie le résultat obtenu.`;
+      if (capturedPiece) squares.push({ square: to, color: "warning" });
     } else if (concept === "defensive_resource") {
       explanation.notice = "La position est difficile, mais ce coup crée une ressource concrète qui change réellement les chances de défense.";
       explanation.focus = `La ressource active ${from}–${to}.`;

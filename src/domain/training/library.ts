@@ -5,6 +5,7 @@ import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
 import { buildExerciseTeaching } from "./explanation";
 import { classifyLichessPosition } from "./lichess-import";
 import LICHESS_BANK from "./lichess-bank.generated.json";
+import DEFENSE_BANK from "./defense-bank.generated.json";
 import type { TrainingPosition } from "./positions";
 import { withTrainingTaxonomy } from "./taxonomy";
 import { STRUCTURED_TRAINING_BANK } from "./structured-bank";
@@ -318,7 +319,15 @@ for (const exercise of CONCEPT_LIBRARY) {
 }
 
 function exerciseFromLichess(position: TrainingPosition): TrainingExercise | null {
-  const classification = classifyLichessPosition(position.fen, position.sourceThemes ?? []);
+  const storedDefinition = conceptDefinition(position.conceptSlug);
+  const classification = position.category === "defense" && storedDefinition?.category === "defense"
+    ? {
+        category: position.category,
+        conceptSlug: position.conceptSlug,
+        secondaryConceptSlugs: position.secondaryConceptSlugs,
+        classificationConfidence: position.classificationConfidence ?? 0.9,
+      }
+    : classifyLichessPosition(position.fen, position.sourceThemes ?? []);
   if (!classification) return null;
   const concept = conceptDefinition(classification.conceptSlug);
   const playerMoves = Math.max(1, Math.min(3, Math.ceil(position.solutionMoves.length / 2)));
@@ -361,7 +370,18 @@ function exerciseFromLichess(position: TrainingPosition): TrainingExercise | nul
     solutionLine: position.solutionMoves,
     difficulty: position.difficulty,
     source: "lichess",
-    sourceId: position.sourceGameId,
+    sourceId: position.id.replace(/^lichess-/, ""),
+    sourceGameId: position.sourceGameId,
+    positionPly: position.positionPly,
+    sourcePlayers: position.sourcePlayers,
+    sourceRole: position.sourceRole,
+    pedagogicalMechanism: position.pedagogicalMechanism,
+    planSignature: position.planSignature,
+    materialSignature: position.materialSignature,
+    pawnStructureSignature: position.pawnStructureSignature,
+    keyPieces: position.keyPieces,
+    keySquares: position.keySquares,
+    sourceThemes: position.sourceThemes,
     verificationSource: "Official Lichess puzzle solution",
     verification: {
       engine: "Lichess puzzle pipeline",
@@ -376,6 +396,7 @@ function exerciseFromLichess(position: TrainingPosition): TrainingExercise | nul
 }
 
 const LICHESS_LIBRARY = (LICHESS_BANK.positions as TrainingPosition[])
+  .concat(DEFENSE_BANK.positions as TrainingPosition[])
   .map(exerciseFromLichess)
   .filter((exercise): exercise is TrainingExercise => Boolean(exercise));
 
@@ -384,6 +405,7 @@ export const LICHESS_LIBRARY_METADATA = {
   license: LICHESS_BANK.license,
   generatedAt: LICHESS_BANK.generatedAt,
   scannedRows: LICHESS_BANK.scannedRows,
+  defenseScannedRows: DEFENSE_BANK.scannedRows,
   positions: LICHESS_LIBRARY.length,
 } as const;
 

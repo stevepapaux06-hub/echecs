@@ -25,7 +25,7 @@ const DOMAINS: Array<{ id: LibraryFilter; label: string }> = [
   { id: "tactic", label: "Tactique" },
   { id: "strategy", label: "Stratégie" },
   { id: "endgame", label: "Finales" },
-  { id: "opening", label: "Ouvertures" },
+  { id: "defense", label: "Défense" },
   { id: "conversion", label: "Conversion" },
 ];
 

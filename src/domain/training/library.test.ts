@@ -45,7 +45,7 @@ describe("curated training library", () => {
 
   it("ships a varied verified offline Lichess bank", () => {
     const lichess = allConceptExercises().filter((exercise) => exercise.source === "lichess");
-    expect(LICHESS_LIBRARY_METADATA.positions).toBe(2_520);
+    expect(LICHESS_LIBRARY_METADATA.positions).toBe(2_747);
     expect(lichess.length).toBeGreaterThan(2_400);
     const concepts = new Set(lichess.map((exercise) => exercise.conceptSlug));
     for (const concept of ["fork", "pin", "skewer", "loose_piece", "remove_defender", "opponent_threat", "passed_pawn"]) {

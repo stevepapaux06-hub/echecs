@@ -146,12 +146,19 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
   if (resolvedThreat) add("opponent_threat", wasInCheck ? 0.98 : 0.9);
   if (resolvedThreat && (move.captured || after.inCheck() || endangeredAfter.length === 0)) {
     add("defensive_resource", wasInCheck ? 0.94 : 0.86);
+    if (move.captured) add("exchange_attacker", wasInCheck ? 0.94 : 0.87);
+    if (after.inCheck()) add("defensive_counterplay", 0.9);
+    if (nonPawnMaterial(after.fen()) <= nonPawnBefore - 300) add("simplification_to_hold", 0.88);
+    if (!move.captured && !after.inCheck() && endangeredAfter.length === 0) add("active_defense", 0.86);
+    if (isLowMaterialEndgame(fen)) add("defensive_endgame_activity", 0.86);
   }
   if (move.captured && capturedPiece && materialBefore <= 0
     && PIECE_VALUE[capturedPiece.type] >= 3
     && PIECE_VALUE[capturedPiece.type] >= PIECE_VALUE[move.piece]) {
     add("defensive_resource", 0.88);
+    add("exchange_attacker", 0.86);
   }
+  if (materialBefore <= 0 && after.inCheck() && !wasInCheck) add("defensive_counterplay", 0.86);
 
   const attackedTargets = attackedSquaresByPiece(after, move.to as Square)
     .map((square) => after.get(square))

@@ -326,8 +326,20 @@ export type TrainingExercise = {
   /** Kept for persisted V2 exercises; new exercises use secondaryConceptSlugs. */
   secondaryConceptSlug?: import("@/domain/knowledge/concepts").ConceptSlug;
   difficulty?: number;
-  source?: "personal_game" | "chesspath_curated" | "lichess" | "master_game" | "lichess_tablebase";
+  source?: "personal_game" | "chesspath_curated" | "lichess" | "lichess_standard" | "lichess_broadcast" | "master_game" | "lichess_tablebase";
   sourceId?: string;
+  /** Stable source metadata used to avoid serving neighbouring moments from one game. */
+  sourceGameId?: string;
+  sourcePlayers?: string[];
+  positionPly?: number;
+  sourceRole?: "human_practice" | "model_position" | "canonical";
+  pedagogicalMechanism?: string;
+  planSignature?: string;
+  materialSignature?: string;
+  pawnStructureSignature?: string;
+  keyPieces?: string[];
+  keySquares?: string[];
+  sourceThemes?: string[];
   /** Deterministic verifier used before an exercise entered the bank. */
   verificationSource?: string;
   verificationStatus?: ExerciseVerificationStatus;

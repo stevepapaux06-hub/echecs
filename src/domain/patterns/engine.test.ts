@@ -94,5 +94,9 @@ describe("deterministic Pattern Engine", () => {
       conceptSlug: "defensive_resource",
       confidence: expect.any(Number),
     }));
+    expect(patterns).toContainEqual(expect.objectContaining({
+      conceptSlug: "exchange_attacker",
+      confidence: expect.any(Number),
+    }));
   });
 });
