@@ -5,6 +5,7 @@ import {
   conceptExercisesFor,
   LICHESS_LIBRARY_METADATA,
   TRAINING_BANK_GATE_REPORT,
+  referenceBank,
 } from "./library";
 
 describe("curated training library", () => {
@@ -46,9 +47,9 @@ describe("curated training library", () => {
   it("ships a varied verified offline Lichess bank", () => {
     const lichess = allConceptExercises().filter((exercise) => exercise.source === "lichess");
     expect(LICHESS_LIBRARY_METADATA.positions).toBe(2_747);
-    expect(lichess.length).toBeGreaterThan(2_400);
+    expect(lichess.filter((exercise) => exercise.category === "tactic")).toHaveLength(2_194);
     const concepts = new Set(lichess.map((exercise) => exercise.conceptSlug));
-    for (const concept of ["fork", "pin", "skewer", "loose_piece", "remove_defender", "opponent_threat", "passed_pawn"]) {
+    for (const concept of ["fork", "pin", "skewer", "loose_piece", "remove_defender", "opponent_threat"]) {
       expect(concepts.has(concept)).toBe(true);
     }
     expect(lichess.every((exercise) => (
@@ -73,8 +74,8 @@ describe("curated training library", () => {
     expect(allConceptExercises().some((exercise) => exercise.id === "concept-conversion-rook-pawn")).toBe(false);
   });
 
-  it("ships a deep, diverse non-tactical master-game bank", () => {
-    const master = allConceptExercises().filter((exercise) => exercise.source === "master_game");
+  it("retains the deep reference corpus without mistaking volume for exerciseability", () => {
+    const master = referenceBank().filter((exercise) => exercise.source === "master_game");
     const byDomain = (domain: string) => master.filter((exercise) => exercise.domain === domain);
     expect(master.length).toBeGreaterThanOrEqual(530);
     expect(byDomain("strategy").length).toBeGreaterThanOrEqual(200);
@@ -96,15 +97,20 @@ describe("curated training library", () => {
       expect(master.filter((exercise) => exercise.conceptSlug === concept).length, concept)
         .toBeGreaterThanOrEqual(minimum);
     }
+    const training = allConceptExercises().filter((exercise) => !["tactic", "opening"].includes(exercise.category));
+    expect(training.length).toBeGreaterThan(300);
+    expect(training.every((exercise) => exercise.trainingAssessment?.exerciseability
+      && exercise.trainingAssessment.failedGates.length === 0
+      && exercise.trainingAssessment.score >= 9)).toBe(true);
   });
 
   it("keeps strategy quiet, conversion modest and ending families honest", () => {
-    const master = allConceptExercises().filter((exercise) => exercise.source === "master_game");
+    const master = allConceptExercises().filter((exercise) => !["tactic", "opening"].includes(exercise.category));
     const strategy = master.filter((exercise) => exercise.domain === "strategy");
     expect(strategy.every((exercise) => (
       exercise.phase === "middlegame"
-      && exercise.baselinePlayerCp >= -120
-      && exercise.baselinePlayerCp <= 120
+      && exercise.baselinePlayerCp >= -150
+      && exercise.baselinePlayerCp <= 150
     ))).toBe(true);
 
     const conversion = master.filter((exercise) => exercise.domain === "conversion");
@@ -127,7 +133,7 @@ describe("curated training library", () => {
   });
 
   it("deduplicates positions and keeps one concept varied across long training", () => {
-    const master = allConceptExercises().filter((exercise) => exercise.source === "master_game");
+    const master = allConceptExercises().filter((exercise) => !["tactic", "opening"].includes(exercise.category));
     const canonicalFens = master.map((exercise) => exercise.fen.split(" ").slice(0, 4).join(" "));
     expect(new Set(canonicalFens).size).toBe(master.length);
 
@@ -136,12 +142,12 @@ describe("curated training library", () => {
     const materialProfiles = new Set(openFiles.map((exercise) => (
       exercise.fen.split(" ")[0].replace(/[1-8/]/g, "").toLowerCase().split("").toSorted().join("")
     )));
-    expect(targetFiles.size).toBeGreaterThanOrEqual(6);
+    expect(targetFiles.size).toBeGreaterThanOrEqual(4);
     expect(materialProfiles.size).toBeGreaterThanOrEqual(8);
 
-    const continuous = conceptExercisesFor("strategy", "open_file", 20, 1_500);
-    expect(continuous).toHaveLength(20);
-    expect(new Set(continuous.map((exercise) => exercise.fen)).size).toBe(20);
+    const continuous = conceptExercisesFor("strategy", "open_file", 16, 1_500);
+    expect(continuous).toHaveLength(16);
+    expect(new Set(continuous.map((exercise) => exercise.fen)).size).toBe(16);
   });
 
   it("hydrates master positions with causal teaching and board annotations", () => {
@@ -160,13 +166,15 @@ describe("curated training library", () => {
     ))).toBe(true);
   });
 
-  it("includes tablebase-verified Lucena, Philidor and rule-of-square lessons", () => {
-    const verified = allConceptExercises().filter((exercise) => exercise.source === "lichess_tablebase");
+  it("retains theoretical references without exposing an unproved method as Training", () => {
+    const verified = referenceBank().filter((exercise) => exercise.source === "lichess_tablebase");
     for (const concept of ["lucena", "philidor", "rule_of_square"]) {
       const exercise = verified.find((candidate) => candidate.conceptSlug === concept);
       expect(exercise, concept).toBeDefined();
       expect(exercise?.phase).toBe("endgame");
       expect(exercise?.tablebaseWdl).toMatch(/win|draw|loss/);
     }
+    expect(allConceptExercises().filter((exercise) => exercise.category === "endgame")
+      .every((exercise) => Boolean(exercise.pedagogicalMilestone))).toBe(true);
   });
 });

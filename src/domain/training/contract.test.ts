@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { TrainingExercise } from "@/domain/chess/types";
-import { allConceptExercises } from "./library";
+import { allConceptExercises, referenceBank } from "./library";
 import { pedagogicalUnitFor, withPedagogicalContract } from "./contract";
 import { decideSequence } from "./sequence";
 
 describe("pedagogical exercise contracts", () => {
   const exercises = allConceptExercises();
 
-  it("supports the four real pedagogical units in the active bank", () => {
-    const units = new Set(exercises.map(pedagogicalUnitFor));
+  it("supports four contract types without forcing all references into Training", () => {
+    const units = new Set(referenceBank().map(pedagogicalUnitFor));
     expect(units).toEqual(new Set([
       "single_move",
       "decision_then_continuation",
@@ -34,7 +34,7 @@ describe("pedagogical exercise contracts", () => {
   });
 
   it("accepts alternative paths for an explicitly structured plan", () => {
-    const base = exercises.find((exercise) => pedagogicalUnitFor(exercise) === "short_plan_sequence")!;
+    const base = referenceBank().find((exercise) => exercise.category === "strategy")!;
     const exercise: TrainingExercise = withPedagogicalContract({
       ...base,
       pedagogicalUnit: "short_plan_sequence",

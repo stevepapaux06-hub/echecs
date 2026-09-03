@@ -1,0 +1,513 @@
+{
+  "version": 1,
+  "provenance": "Existing Reference Bank; automatic feature evidence, not ground-truth accuracy",
+  "concepts": {
+    "open_file": {
+      "positive": 162,
+      "boundary": 98,
+      "sourceGames": 161,
+      "exampleIds": [
+        "concept-rook-open-file",
+        "master-open_file-10142d650c4c6e",
+        "master-open_file-5594f9849b1cfa",
+        "master-open_file-9883610f4b9c1f"
+      ],
+      "boundaryIds": [
+        "master-open_file-ab9894c07abe14",
+        "master-open_file-d55490943adec8",
+        "master-open_file-b43d09d8193126",
+        "master-open_file-cf512b0aaa81db"
+      ]
+    },
+    "outpost": {
+      "positive": 39,
+      "boundary": 102,
+      "sourceGames": 39,
+      "exampleIds": [
+        "master-outpost-86b38c448900b1",
+        "master-outpost-401e5a58696e3e",
+        "master-outpost-fbf044f39f6c02",
+        "master-outpost-9114a1b57fc8f5"
+      ],
+      "boundaryIds": [
+        "concept-knight-outpost-e5",
+        "master-outpost-71f1ec713a995c",
+        "master-outpost-ed059d8383ae61",
+        "master-outpost-e3898c1b197cae"
+      ]
+    },
+    "weak_square": {
+      "positive": 47,
+      "boundary": 87,
+      "sourceGames": 46,
+      "exampleIds": [
+        "master-weak_square-e661a24b7c5f9b",
+        "master-weak_square-2a5d68588dcbd1",
+        "master-weak_square-3d05246d1e7b27",
+        "master-weak_square-27c7d6c97b3ae8"
+      ],
+      "boundaryIds": [
+        "master-weak_square-b3a52ff384b774",
+        "master-weak_square-edd05da01be773",
+        "master-weak_square-df91973ba86c91",
+        "master-weak_square-08c89e33a2dbb7"
+      ]
+    },
+    "improve_worst_piece": {
+      "positive": 93,
+      "boundary": 57,
+      "sourceGames": 91,
+      "exampleIds": [
+        "master-improve_worst_piece-dffeccb6e4abbc",
+        "master-improve_worst_piece-55d2832ec380d1",
+        "master-improve_worst_piece-78bc6dea932b47",
+        "master-improve_worst_piece-ac9670e1bf985a"
+      ],
+      "boundaryIds": [
+        "bank-strategy-worst-bishop-d3",
+        "master-improve_worst_piece-d996ef3cea7fd2",
+        "master-improve_worst_piece-74413202cfb3c1",
+        "master-improve_worst_piece-ee56ecad249fa4"
+      ]
+    },
+    "piece_activity": {
+      "positive": 188,
+      "boundary": 72,
+      "sourceGames": 183,
+      "exampleIds": [
+        "master-piece_activity-667ddd8521bbc6",
+        "master-piece_activity-5b70a3ffffc948",
+        "master-piece_activity-187630270db45e",
+        "master-piece_activity-370484a5ccd108"
+      ],
+      "boundaryIds": [
+        "master-piece_activity-47e6e11e2106c8",
+        "master-piece_activity-a47c48a606690e",
+        "master-piece_activity-1b8d7e6f0ea860",
+        "master-piece_activity-a39edc3114092b"
+      ]
+    },
+    "weak_pawn": {
+      "positive": 116,
+      "boundary": 82,
+      "sourceGames": 115,
+      "exampleIds": [
+        "master-weak_pawn-388b2be999217e",
+        "master-weak_pawn-80485790175f1a",
+        "master-weak_pawn-5185858b386e86",
+        "master-weak_pawn-e9b061866273e6"
+      ],
+      "boundaryIds": [
+        "bank-strategy-weak-pawn-d5",
+        "master-weak_pawn-d8e172235dddf2",
+        "master-weak_pawn-8a51ec70b594b1",
+        "master-weak_pawn-397a7eb4a94e15"
+      ]
+    },
+    "pawn_break": {
+      "positive": 259,
+      "boundary": 1,
+      "sourceGames": 253,
+      "exampleIds": [
+        "master-pawn_break-65d8173355bfbe",
+        "master-pawn_break-fa344df9e37492",
+        "master-pawn_break-77a95274499d26",
+        "master-pawn_break-d7327691df42bf"
+      ],
+      "boundaryIds": [
+        "bank-strategy-minority-break-b4"
+      ]
+    },
+    "pawn_structure": {
+      "positive": 0,
+      "boundary": 120,
+      "sourceGames": 0,
+      "exampleIds": [],
+      "boundaryIds": [
+        "master-pawn_structure-60b082dd7999f3",
+        "master-pawn_structure-9581390b27ce6c",
+        "master-pawn_structure-e77b639b67b201",
+        "master-pawn_structure-31d65e65ec2350"
+      ]
+    },
+    "favorable_exchange": {
+      "positive": 0,
+      "boundary": 119,
+      "sourceGames": 0,
+      "exampleIds": [],
+      "boundaryIds": [
+        "master-favorable_exchange-654366d71dc68e",
+        "master-favorable_exchange-bf51bc9d3ae429",
+        "master-favorable_exchange-54a091a5d23c9b",
+        "master-favorable_exchange-3a2ad8df5b2d3a"
+      ]
+    },
+    "rook_activity": {
+      "positive": 95,
+      "boundary": 99,
+      "sourceGames": 90,
+      "exampleIds": [
+        "concept-technical-rook-conversion",
+        "master-rook_activity-505fff12433f82",
+        "master-rook_activity-cf34d7005947a6",
+        "master-rook_activity-6b39703a0b0600"
+      ],
+      "boundaryIds": [
+        "master-rook_activity-a7e071ce6af34a",
+        "master-rook_activity-9876446d3a7d83",
+        "master-rook_activity-6615c12cdb84d6",
+        "master-rook_activity-43e6f37cf2c6fc"
+      ]
+    },
+    "rook_behind_pawn": {
+      "positive": 72,
+      "boundary": 50,
+      "sourceGames": 65,
+      "exampleIds": [
+        "master-rook_behind_pawn-5c15d43ce4c1af",
+        "master-rook_behind_pawn-d382faebbe1bd0",
+        "master-rook_behind_pawn-3313494d77850f",
+        "master-rook_behind_pawn-124a197b8b0b0b"
+      ],
+      "boundaryIds": [
+        "master-rook_behind_pawn-269719ef0a45e3",
+        "master-rook_behind_pawn-9516e311347ab1",
+        "master-rook_behind_pawn-8857986fc3c49d",
+        "master-rook_behind_pawn-b105d43d6239d4"
+      ]
+    },
+    "rook_endgame": {
+      "positive": 17,
+      "boundary": 142,
+      "sourceGames": 15,
+      "exampleIds": [
+        "master-rook_endgame-b484a454ec3b3a",
+        "master-rook_endgame-9a880016a6f08c",
+        "master-rook_endgame-3ef9aa6cc5ca00",
+        "master-rook_endgame-d7ceef61f26c81"
+      ],
+      "boundaryIds": [
+        "master-rook_endgame-51575f1d4e3cb3",
+        "master-rook_endgame-10639f9eb8bfa3",
+        "master-rook_endgame-588e2887dd723e",
+        "master-rook_endgame-80dbce72102403"
+      ]
+    },
+    "opposition": {
+      "positive": 27,
+      "boundary": 52,
+      "sourceGames": 23,
+      "exampleIds": [
+        "master-opposition-820fb423826aa2",
+        "master-opposition-f14914e6f420e7",
+        "master-opposition-3cb9f26ecc4b15",
+        "master-opposition-96dab742e58ac7"
+      ],
+      "boundaryIds": [
+        "concept-king-and-pawn-technique",
+        "concept-endgame-opposition",
+        "master-opposition-1b9bdd4b88c01b",
+        "master-opposition-989446f4e49b2c"
+      ]
+    },
+    "rule_of_square": {
+      "positive": 0,
+      "boundary": 42,
+      "sourceGames": 0,
+      "exampleIds": [],
+      "boundaryIds": [
+        "bank-endgame-rule-square",
+        "master-rule_of_square-29d289a7db5ac4",
+        "master-rule_of_square-13272772d4ac59",
+        "master-rule_of_square-d9449ca0806dc0"
+      ]
+    },
+    "passed_pawn": {
+      "positive": 166,
+      "boundary": 278,
+      "sourceGames": 158,
+      "exampleIds": [
+        "master-passed_pawn-9bf6f7598f56f4",
+        "master-passed_pawn-431bfc703887b5",
+        "master-passed_pawn-a04a91746d0f4d",
+        "master-passed_pawn-2e0d0b05646847"
+      ],
+      "boundaryIds": [
+        "master-passed_pawn-3617d0d08fbd1e",
+        "master-passed_pawn-df417e3b4dde6d",
+        "master-passed_pawn-3c85db9eea6010",
+        "master-passed_pawn-e68488bd502820"
+      ]
+    },
+    "king_activity": {
+      "positive": 149,
+      "boundary": 80,
+      "sourceGames": 141,
+      "exampleIds": [
+        "master-king_activity-d29a8557fe290c",
+        "master-king_activity-d4a51b024ab50a",
+        "master-king_activity-c710572f14687d",
+        "master-king_activity-26b41697a2cea8"
+      ],
+      "boundaryIds": [
+        "bank-endgame-king-activity",
+        "master-king_activity-8ff3ba95371824",
+        "master-king_activity-bb5110d01fba2d",
+        "master-king_activity-30428f90e8fe90"
+      ]
+    },
+    "king_and_pawn": {
+      "positive": 51,
+      "boundary": 84,
+      "sourceGames": 38,
+      "exampleIds": [
+        "master-king_and_pawn-e9171728ad253f",
+        "master-king_and_pawn-53a5c5ffd02bdb",
+        "master-king_and_pawn-72cdca4ad49aac",
+        "master-king_and_pawn-810d1522741212"
+      ],
+      "boundaryIds": [
+        "master-king_and_pawn-59a721ec4fb045",
+        "master-king_and_pawn-5b468a936e740d",
+        "master-king_and_pawn-d02fff595ca000",
+        "master-king_and_pawn-43c72a51a0243c"
+      ]
+    },
+    "bishop_endgame": {
+      "positive": 5,
+      "boundary": 92,
+      "sourceGames": 5,
+      "exampleIds": [
+        "master-bishop_endgame-ec6e5f7825ad22",
+        "master-bishop_endgame-681adb037d711e",
+        "master-bishop_endgame-88c505083b21d4",
+        "master-bishop_endgame-5aa410403edaf7"
+      ],
+      "boundaryIds": [
+        "master-bishop_endgame-349369f4d9d947",
+        "master-bishop_endgame-00ee271f93456c",
+        "master-bishop_endgame-b47dd6f4eada03",
+        "master-bishop_endgame-d17bb4a0dfb1ee"
+      ]
+    },
+    "knight_endgame": {
+      "positive": 13,
+      "boundary": 84,
+      "sourceGames": 12,
+      "exampleIds": [
+        "master-knight_endgame-49cc51fde2f274",
+        "master-knight_endgame-4a75afbdba0296",
+        "master-knight_endgame-e835083b397f3c",
+        "master-knight_endgame-4eb1997e062c18"
+      ],
+      "boundaryIds": [
+        "master-knight_endgame-4754610f24f0f2",
+        "master-knight_endgame-1bd6100eb9c3ee",
+        "master-knight_endgame-f7de5e5a96ea00",
+        "master-knight_endgame-f1e224a4a276e9"
+      ]
+    },
+    "convert_small_advantage": {
+      "positive": 170,
+      "boundary": 82,
+      "sourceGames": 167,
+      "exampleIds": [
+        "master-convert_small_advantage-b8961580d394c2",
+        "master-convert_small_advantage-b29e3506ad7c01",
+        "master-convert_small_advantage-ae9df73aa68621",
+        "master-convert_small_advantage-93d83ab371ae60"
+      ],
+      "boundaryIds": [
+        "master-convert_small_advantage-c9fa2a5d450188",
+        "master-convert_small_advantage-73a02235195c84",
+        "master-convert_small_advantage-40b0df1788f313",
+        "master-convert_small_advantage-497c83f52b7dc4"
+      ]
+    },
+    "simplify_when_ahead": {
+      "positive": 2,
+      "boundary": 117,
+      "sourceGames": 2,
+      "exampleIds": [
+        "master-simplify_when_ahead-9f0cf710a4d90c",
+        "master-simplify_when_ahead-af25220a546cf0"
+      ],
+      "boundaryIds": [
+        "bank-conversion-simplify-queens",
+        "master-simplify_when_ahead-8703cbbbfe47fb",
+        "master-simplify_when_ahead-0ad7d5479e6e37",
+        "master-simplify_when_ahead-855fbfa5ee3105"
+      ]
+    },
+    "restrict_counterplay": {
+      "positive": 137,
+      "boundary": 95,
+      "sourceGames": 137,
+      "exampleIds": [
+        "master-restrict_counterplay-35dddb1900da25",
+        "master-restrict_counterplay-ef9c5e2bec1ba9",
+        "master-restrict_counterplay-d50475728d081f",
+        "master-restrict_counterplay-fa95193fa8c208"
+      ],
+      "boundaryIds": [
+        "master-restrict_counterplay-a32ef277936656",
+        "master-restrict_counterplay-2489da7bdb88d6",
+        "master-restrict_counterplay-de370a63d95614",
+        "master-restrict_counterplay-ae043730f0ba27"
+      ]
+    },
+    "use_material_advantage": {
+      "positive": 181,
+      "boundary": 72,
+      "sourceGames": 175,
+      "exampleIds": [
+        "master-use_material_advantage-5f89852af2eb40",
+        "master-use_material_advantage-767b22fc7c3d18",
+        "master-use_material_advantage-6911bf124e69b9",
+        "master-use_material_advantage-93c47d09a6db77"
+      ],
+      "boundaryIds": [
+        "master-use_material_advantage-2254d7f93762e1",
+        "master-use_material_advantage-93ff045d58632b",
+        "master-use_material_advantage-2cce279231b15c",
+        "master-use_material_advantage-2bde1d74a33951"
+      ]
+    },
+    "favorable_endgame_transition": {
+      "positive": 83,
+      "boundary": 16,
+      "sourceGames": 83,
+      "exampleIds": [
+        "master-favorable_endgame_transition-80c486e35de627",
+        "master-favorable_endgame_transition-c901fd4358b804",
+        "master-favorable_endgame_transition-dea4b549ca8f54",
+        "master-favorable_endgame_transition-38f9dd4196668e"
+      ],
+      "boundaryIds": [
+        "master-favorable_endgame_transition-db23931c0f6992",
+        "master-favorable_endgame_transition-5ae64f5608670d",
+        "master-favorable_endgame_transition-84388b4e34bbd0",
+        "master-favorable_endgame_transition-43f16cf982cc5d"
+      ]
+    },
+    "preserve_activity": {
+      "positive": 127,
+      "boundary": 59,
+      "sourceGames": 125,
+      "exampleIds": [
+        "master-preserve_activity-cf60eff947cede",
+        "master-preserve_activity-5a67c1a9204133",
+        "master-preserve_activity-e0a9df2b542d0d",
+        "master-preserve_activity-d349e1289d4250"
+      ],
+      "boundaryIds": [
+        "master-preserve_activity-00da2f9807b104",
+        "master-preserve_activity-df539e5c9c18bd",
+        "master-preserve_activity-d14450a60507f6",
+        "master-preserve_activity-1f55641e09c4d0"
+      ]
+    },
+    "active_defense": {
+      "positive": 5,
+      "boundary": 48,
+      "sourceGames": 5,
+      "exampleIds": [
+        "lichess-hEsJh",
+        "lichess-oY0eL",
+        "lichess-akX3i",
+        "lichess-g372k"
+      ],
+      "boundaryIds": [
+        "lichess-dNitq",
+        "lichess-Mcia3",
+        "lichess-UTgq1",
+        "lichess-lS33M"
+      ]
+    },
+    "defensive_resource": {
+      "positive": 0,
+      "boundary": 1,
+      "sourceGames": 0,
+      "exampleIds": [],
+      "boundaryIds": [
+        "concept-active-defense"
+      ]
+    },
+    "exchange_attacker": {
+      "positive": 19,
+      "boundary": 27,
+      "sourceGames": 19,
+      "exampleIds": [
+        "lichess-M0c6P",
+        "lichess-2afWP",
+        "lichess-piChE",
+        "lichess-hgnv0"
+      ],
+      "boundaryIds": [
+        "lichess-mLm3h",
+        "lichess-rOgVu",
+        "lichess-JyD6E",
+        "lichess-Dv47d"
+      ]
+    },
+    "defensive_counterplay": {
+      "positive": 5,
+      "boundary": 2,
+      "sourceGames": 5,
+      "exampleIds": [
+        "lichess-koVGi",
+        "lichess-MG1g5",
+        "lichess-zEOgk",
+        "lichess-9dF7c"
+      ],
+      "boundaryIds": [
+        "lichess-rR1AL",
+        "lichess-Emlc2"
+      ]
+    },
+    "simplification_to_hold": {
+      "positive": 7,
+      "boundary": 7,
+      "sourceGames": 7,
+      "exampleIds": [
+        "lichess-kPR8z",
+        "lichess-IZRFR",
+        "lichess-lB4Lw",
+        "lichess-jcdLa"
+      ],
+      "boundaryIds": [
+        "lichess-y9vCP",
+        "lichess-wLifc",
+        "lichess-QOXjI",
+        "lichess-4UCpo"
+      ]
+    },
+    "defensive_endgame_activity": {
+      "positive": 5,
+      "boundary": 100,
+      "sourceGames": 5,
+      "exampleIds": [
+        "lichess-cuU0l",
+        "lichess-5Tbjb",
+        "lichess-5CAp9",
+        "lichess-WxTum"
+      ],
+      "boundaryIds": [
+        "lichess-vDhPK",
+        "lichess-hs4UU",
+        "lichess-7Pilh",
+        "lichess-jUcsp"
+      ]
+    },
+    "return_material": {
+      "positive": 2,
+      "boundary": 0,
+      "sourceGames": 2,
+      "exampleIds": [
+        "lichess-J6NVc",
+        "lichess-EfwcA"
+      ],
+      "boundaryIds": []
+    }
+  }
+}

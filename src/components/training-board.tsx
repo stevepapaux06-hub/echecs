@@ -280,6 +280,8 @@ export function TrainingBoard({
 
       const decision = decideSequence({
         exercise,
+        afterFen: fenAfter,
+        decisionFen,
         playerMoves: nextPlayerMoves,
         playedMoveUcis: movesAfterPlayer.filter((_, moveIndex) => moveIndex % 2 === 0),
         decisionLossCp: decisionFeedback.lossCp,
@@ -328,6 +330,18 @@ export function TrainingBoard({
       const movesAfterReply = [...movesAfterPlayer, replyUci];
       setPosition(replyPosition.fen());
       setAttemptMoves(movesAfterReply);
+      // A terminal opponent reply has no next legal move. Close the attempt
+      // rather than leaving a technically finished ending looking frozen.
+      if (replyPosition.isGameOver()) {
+        finishSequence({
+          status: replyPosition.isCheckmate() ? "failed"
+            : exercise.type === "defense" || exercise.trainingAssessment?.outcome?.root === "draw" ? "success" : "partial",
+          lossCp: largestLossCp.current,
+          moves: movesAfterReply,
+          afterPlayerCp: decisionFeedback.afterPlayerCp,
+        });
+        return true;
+      }
       moveInFlight.current = false;
       setThinkingStage(null);
     } catch {

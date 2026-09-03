@@ -1,0 +1,200 @@
+{
+  "baseline": {
+    "commit": "ad44e5d",
+    "reference": 5791,
+    "training": 5610,
+    "byDomain": {
+      "tactic": 2197,
+      "strategy": 1117,
+      "endgame": 1358,
+      "conversion": 708,
+      "defense": 228,
+      "opening": 2
+    }
+  },
+  "reference": {
+    "count": 6991,
+    "roles": {
+      "not_human_audited": 2380,
+      "feature_positive": 2244,
+      "boundary": 2367
+    },
+    "independentHoldout": 6,
+    "hardNegativeHoldout": 3
+  },
+  "training": {
+    "count": 2553,
+    "byDomain": {
+      "tactic": 2197,
+      "opening": 2,
+      "strategy": 127,
+      "endgame": 38,
+      "conversion": 161,
+      "defense": 28
+    },
+    "byConcept": {
+      "tactic/fork": 429,
+      "tactic/pin": 357,
+      "opening/development": 1,
+      "opening/center_control": 1,
+      "strategy/improve_worst_piece": 17,
+      "strategy/open_file": 17,
+      "strategy/weak_pawn": 16,
+      "strategy/pawn_break": 40,
+      "endgame/king_and_pawn": 7,
+      "endgame/rook_endgame": 1,
+      "endgame/rook_behind_pawn": 19,
+      "endgame/king_activity": 5,
+      "conversion/convert_small_advantage": 26,
+      "conversion/restrict_counterplay": 9,
+      "conversion/use_material_advantage": 49,
+      "conversion/favorable_endgame_transition": 41,
+      "conversion/preserve_activity": 36,
+      "strategy/outpost": 10,
+      "strategy/weak_square": 5,
+      "strategy/piece_activity": 22,
+      "endgame/opposition": 5,
+      "endgame/rook_activity": 1,
+      "tactic/remove_defender": 461,
+      "tactic/loose_piece": 316,
+      "tactic/opponent_threat": 315,
+      "tactic/skewer": 319,
+      "defense/active_defense": 4,
+      "defense/defensive_counterplay": 3,
+      "defense/defensive_endgame_activity": 3,
+      "defense/exchange_attacker": 10,
+      "defense/return_material": 1,
+      "defense/simplification_to_hold": 7
+    }
+  },
+  "exclusions": {
+    "overlappingHumanGates": {
+      "outcome": 1147,
+      "human_value": 975,
+      "sequence": 763,
+      "causality": 2367,
+      "verification": 331,
+      "triviality": 701
+    },
+    "technical": {
+      "total": 6991,
+      "active": 2553,
+      "reference": 6991,
+      "referenceOnly": 4438,
+      "postQualityRejected": 2,
+      "needsVerification": 1314,
+      "rejected": 145
+    }
+  },
+  "remining": {
+    "provenance": {
+      "report": {
+        "games": 2720,
+        "eligibleGames": 1180,
+        "positionsExamined": 4855,
+        "candidates": 1200,
+        "byConcept": {
+          "piece_activity": 120,
+          "convert_small_advantage": 120,
+          "pawn_break": 120,
+          "weak_pawn": 81,
+          "outpost": 20,
+          "open_file": 120,
+          "improve_worst_piece": 29,
+          "restrict_counterplay": 120,
+          "weak_square": 35,
+          "king_activity": 102,
+          "rook_activity": 59,
+          "use_material_advantage": 120,
+          "preserve_activity": 73,
+          "passed_pawn": 63,
+          "rook_behind_pawn": 13,
+          "king_and_pawn": 2,
+          "rook_endgame": 3
+        },
+        "source": "cached Lichess standard January 2013 · CC0",
+        "coverageBefore": {
+          "strategy/improve_worst_piece": 15,
+          "strategy/open_file": 10,
+          "strategy/weak_pawn": 12,
+          "strategy/pawn_break": 35,
+          "endgame/king_and_pawn": 5,
+          "endgame/rook_endgame": 1,
+          "endgame/rook_behind_pawn": 11,
+          "endgame/king_activity": 5,
+          "conversion/convert_small_advantage": 22,
+          "conversion/restrict_counterplay": 8,
+          "conversion/use_material_advantage": 31,
+          "conversion/favorable_endgame_transition": 41,
+          "conversion/preserve_activity": 30,
+          "strategy/outpost": 7,
+          "strategy/weak_square": 4,
+          "strategy/piece_activity": 12,
+          "endgame/opposition": 3,
+          "endgame/rook_activity": 1,
+          "defense/active_defense": 3,
+          "defense/defensive_counterplay": 2,
+          "defense/defensive_endgame_activity": 3,
+          "defense/exchange_attacker": 10,
+          "defense/simplification_to_hold": 1
+        }
+      }
+    },
+    "accepted": 65
+  },
+  "strategy": {
+    "units": {
+      "single_move": 116,
+      "decision_then_continuation": 11
+    },
+    "sequences": 11,
+    "meanPlayerDecisions": 2
+  },
+  "endings": {
+    "milestoneTypes": {
+      "concept_state": 14,
+      "rook_behind_passer": 19,
+      "opposition": 5
+    },
+    "proof": {
+      "structural": 38
+    },
+    "outcomeEvidence": {
+      "stockfish_wdl": 34,
+      "syzygy": 4
+    }
+  },
+  "diversity": {
+    "sourceGamesKnown": 2509,
+    "playersKnown": 279,
+    "positionsWithPlayerMetadata": 282,
+    "topSources": [
+      [
+        "Capablanca-104",
+        3
+      ],
+      [
+        "vb3w3rmn",
+        3
+      ],
+      [
+        "8xhe8sx6",
+        3
+      ]
+    ],
+    "topPlayers": [
+      [
+        "Marzinkus",
+        9
+      ],
+      [
+        "peter2",
+        9
+      ],
+      [
+        "Maklaud695",
+        9
+      ]
+    ]
+  }
+}

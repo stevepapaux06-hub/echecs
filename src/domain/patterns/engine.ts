@@ -2,6 +2,8 @@ import { Chess, type Color, type Move, type Square } from "chess.js";
 import type { AnalyzedMove } from "../chess/types";
 import { classifyPhase } from "../chess/phase";
 import type { ConceptSlug } from "../knowledge/concepts";
+import { causalFeatures, CONCEPT_SPECIFICATIONS, matchesConceptSpecification } from "./concept-specifications";
+import { referenceSupportedConfidence } from "./reference-profile";
 import {
   PAWN_STRUCTURES,
   recognizePawnStructure,
@@ -259,7 +261,11 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
   if (isBishopEndgame(fen) && isBishopEndgame(after.fen()) && move.piece === "b" && activityGain >= 3) add("bishop_endgame", 0.86);
   if (isKnightEndgame(fen) && isKnightEndgame(after.fen()) && move.piece === "n" && activityGain >= 3) add("knight_endgame", 0.86);
 
-  return [...detected.entries()].map(([conceptSlug, confidence]) => ({ conceptSlug, confidence }));
+  const causal = causalFeatures(fen, moveUci);
+  return [...detected.entries()]
+    .filter(([concept]) => !CONCEPT_SPECIFICATIONS[concept] || (causal && matchesConceptSpecification(concept, causal)))
+    .map(([conceptSlug, confidence]) => ({ conceptSlug, confidence: CONCEPT_SPECIFICATIONS[conceptSlug]
+      ? referenceSupportedConfidence(conceptSlug, confidence) : confidence }));
 }
 
 function highSignalForcingMove(fen: string, moveUci: string): boolean {
@@ -313,6 +319,7 @@ export function patternsForAnalyzedMove(move: AnalyzedMove, minConfidence = 0.8)
   const occurrences = new Map<ConceptSlug, PatternOccurrence>();
 
   for (const candidate of independent.filter((item) => engineMoves.has(item.moveUci))) {
+    if (CONCEPT_SPECIFICATIONS[candidate.conceptSlug] && move.playerCpBefore < -150) continue;
     occurrences.set(candidate.conceptSlug, {
       conceptSlug: candidate.conceptSlug,
       fen: move.fenBefore,
@@ -329,6 +336,7 @@ export function patternsForAnalyzedMove(move: AnalyzedMove, minConfidence = 0.8)
   // equally good engine move occupied MultiPV 1.
   if (move.lossCp <= 60) {
     for (const pattern of playedPatterns) {
+      if (CONCEPT_SPECIFICATIONS[pattern.conceptSlug] && move.playerCpBefore < -150) continue;
       if (occurrences.has(pattern.conceptSlug)) continue;
       occurrences.set(pattern.conceptSlug, {
         conceptSlug: pattern.conceptSlug,
@@ -368,12 +376,16 @@ export function patternsForAnalyzedMove(move: AnalyzedMove, minConfidence = 0.8)
       conversionConcepts.push("restrict_counterplay");
     }
     for (const conceptSlug of conversionConcepts) {
+      const feature = causalFeatures(move.fenBefore, move.before.bestMove || move.uci);
+      if (!feature || !matchesConceptSpecification(conceptSlug, feature)) continue;
+      const confidence = referenceSupportedConfidence(conceptSlug, conceptSlug === "convert_small_advantage" ? 0.9 : 0.85);
+      if (confidence < minConfidence) continue;
       if (occurrences.has(conceptSlug)) continue;
       occurrences.set(conceptSlug, {
         conceptSlug,
         fen: move.fenBefore,
         ply: move.ply,
-        confidence: conceptSlug === "convert_small_advantage" ? 0.9 : 0.85,
+        confidence,
         opportunity: true,
         success: move.lossCp <= 80 && Boolean(played),
         source: "pattern_engine_stockfish_validated",

@@ -1,5 +1,6 @@
 import type { TrainingExercise } from "@/domain/chess/types";
 import { pedagogicalUnitFor } from "./contract";
+import { milestoneReached } from "./milestones";
 
 export type TrainingResult = "success" | "partial" | "failed";
 export type PedagogicalMoveResult = "concept" | "good-alternative" | "error";
@@ -57,6 +58,8 @@ export function decideSequence({
   promoted,
   captured,
   pedagogicalMove = "concept",
+  afterFen,
+  decisionFen,
 }: {
   exercise: TrainingExercise;
   playerMoves: number;
@@ -69,6 +72,8 @@ export function decideSequence({
   promoted: boolean;
   captured: boolean;
   pedagogicalMove?: PedagogicalMoveResult;
+  afterFen?: string;
+  decisionFen?: string;
 }): SequenceDecision {
   if (pedagogicalMove === "error") {
     return { finished: true, result: "failed", reason: "mistake" };
@@ -83,9 +88,19 @@ export function decideSequence({
     if (isCheckmate) return { finished: true, result: "success", reason: "terminal" };
     return {
       finished: true,
-      result: exercise.type === "defense" ? "success" : "partial",
+      result: exercise.type === "defense" || exercise.trainingAssessment?.outcome?.root === "draw" ? "success" : "partial",
       reason: "terminal",
     };
+  }
+
+  if (exercise.pedagogicalMilestone || exercise.category === "endgame") {
+    // Neither centipawns nor a fixed move budget establishes a technical method.
+    // Legacy persisted endings without a milestone can finish only at a terminal
+    // result, never claim a successful method after an arbitrary number of moves.
+    if (milestoneReached(exercise, afterFen, playerMoves, decisionFen, playedMoveUcis.at(-1))) {
+      return { finished: true, result: pedagogicalMove === "concept" ? "success" : "partial", reason: "target" };
+    }
+    return { finished: false, reason: "continue" };
   }
 
   const threshold = exercise.successThresholdCp;

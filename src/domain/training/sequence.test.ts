@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allConceptExercises } from "./library";
+import { allConceptExercises, referenceBank } from "./library";
 import { classifyPedagogicalMove, decideSequence, referenceReply } from "./sequence";
 
 function exercise(id: string) {
@@ -77,7 +77,7 @@ describe("multi-move training sequences", () => {
   });
 
   it("keeps a king-and-pawn endgame alive for several player moves", () => {
-    const endgame = exercise("endgame-opposition");
+    const endgame = referenceBank().find((candidate) => candidate.id === "concept-endgame-opposition")!;
     expect(decideSequence({
       exercise: endgame,
       playerMoves: 1,
@@ -99,12 +99,12 @@ describe("multi-move training sequences", () => {
       isCheckmate: false,
       promoted: false,
       captured: false,
-    }).result).toBe("success");
+    }).finished).toBe(false);
   });
 
   it("validates conversion over a technical sequence and stops on a true error", () => {
     const conversion = allConceptExercises().find((candidate) => (
-      candidate.id === "bank-conversion-simplify-queens"
+      candidate.category === "conversion" && candidate.pedagogicalMilestone
     ))!;
     expect(decideSequence({
       exercise: conversion,

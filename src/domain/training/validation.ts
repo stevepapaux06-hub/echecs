@@ -236,15 +236,21 @@ export function gateTrainingExercises(exercises: TrainingExercise[]): {
       continue;
     }
     seen.add(duplicateKey);
-    if (exercise.sourceGameId && Number.isFinite(exercise.positionPly)) {
+    // Older master seeds encode game/ply only in sourceId (Capablanca-3-105).
+    // They must not escape the same-game/same-mechanism duplicate gate.
+    const legacySource = ["master_game", "lichess_standard"].includes(exercise.source ?? "")
+      ? exercise.sourceId?.match(/^(.+)-(\d+)$/) : null;
+    const gameId = exercise.sourceGameId ?? legacySource?.[1];
+    const positionPly = exercise.positionPly ?? (legacySource ? Number(legacySource[2]) : undefined);
+    if (gameId && Number.isFinite(positionPly)) {
       const mechanism = exercise.pedagogicalMechanism ?? trainingTaxonomy(exercise).primaryConcept;
-      const momentKey = `${exercise.sourceGameId}|${mechanism}`;
+      const momentKey = `${gameId}|${mechanism}`;
       const neighbouringPlies = sourceMoments.get(momentKey) ?? [];
-      if (neighbouringPlies.some((ply) => Math.abs(ply - exercise.positionPly!) <= 6)) {
+      if (neighbouringPlies.some((ply) => Math.abs(ply - positionPly!) <= 6)) {
         rejected.push({ ...exercise, verificationStatus: "rejected" });
         continue;
       }
-      neighbouringPlies.push(exercise.positionPly!);
+      neighbouringPlies.push(positionPly!);
       sourceMoments.set(momentKey, neighbouringPlies);
     }
     const validation = validateTrainingExercise(exercise);

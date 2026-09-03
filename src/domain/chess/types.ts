@@ -210,6 +210,7 @@ export type SequenceStopCondition =
   | "first_decision"
   | "required_steps"
   | "evaluation_target"
+  | "pedagogical_milestone"
   | "promotion_or_terminal";
 export type PedagogyExerciseType = "move" | "plan" | "defense" | "conversion" | "principle";
 
@@ -283,6 +284,8 @@ export type TrainingExercise = {
   sequenceGoal?: string;
   requiredSteps?: RequiredTrainingStep[];
   sequenceStopCondition?: SequenceStopCondition;
+  pedagogicalMilestone?: import("../training/milestones").PedagogicalMilestone;
+  trainingAssessment?: import("../training/human-quality").TrainingAssessment;
   theme: string;
   /** Precise pedagogical concept. Unlike `theme`, this is never a broad category. */
   conceptSlug: string;

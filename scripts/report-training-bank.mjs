@@ -1,7 +1,14 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+
+// The old generated corpus count is Reference, not the active Training count.
+const qualityReport = resolve("docs/bank-quality-report.json");
+if (existsSync(qualityReport)) {
+  console.log(readFileSync(qualityReport, "utf8"));
+  process.exit(0);
+}
 
 const nonTactical = JSON.parse(readFileSync(resolve("src/domain/training/nontactical-bank.generated.json"), "utf8"));
 const defense = JSON.parse(readFileSync(resolve("src/domain/training/defense-bank.generated.json"), "utf8"));

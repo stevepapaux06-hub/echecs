@@ -25,7 +25,7 @@ import type {
 } from "@/domain/chess/types";
 import { analyzePayload } from "@/domain/chess/analyze";
 import { parsePgnCollection } from "@/domain/chess/pgn";
-import { allConceptExercises } from "@/domain/training/library";
+import { currentTrainingPool } from "@/domain/training/library";
 import {
   buildTrainingSession,
   DEFAULT_TRAINING_BATCH_SIZE,
@@ -643,11 +643,7 @@ export function ChessPathApp() {
       ...(result?.exercises ?? []),
       ...(persistent?.analyses.flatMap((analysis) => analysis.exercises) ?? []),
     ].map((exercise) => [exercise.id, withTrainingTaxonomy(exercise)])).values()];
-    const historicalIds = new Set(historical.map((exercise) => exercise.id));
-    return [
-      ...historical,
-      ...allConceptExercises().map(withTrainingTaxonomy).filter((exercise) => !historicalIds.has(exercise.id)),
-    ];
+    return currentTrainingPool(historical);
   }, [persistent?.analyses, result?.exercises]);
   const navProps = { onNavigate: navigate, connected };
 

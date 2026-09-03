@@ -57,7 +57,7 @@ describe("deterministic Pattern Engine", () => {
     expect(transition.some((pattern) => pattern.conceptSlug === "king_and_pawn")).toBe(false);
   });
 
-  it("records a Stockfish-validated small advantage as a conversion opportunity", () => {
+  it("does not turn an advantage into Conversion without a causal mechanism", () => {
     const fen = "2b3nr/1pp2k2/1p5p/2bP4/r2N1p1P/2P3p1/PP2B1P1/R1B3KR b - - 2 17";
     const chess = new Chess(fen);
     chess.move({ from: "c5", to: "d4" });
@@ -78,11 +78,7 @@ describe("deterministic Pattern Engine", () => {
       after: {},
     } as unknown as AnalyzedMove;
     const occurrences = patternsForAnalyzedMove(analyzed);
-    expect(occurrences).toContainEqual(expect.objectContaining({
-      conceptSlug: "convert_small_advantage",
-      opportunity: true,
-      success: true,
-    }));
+    expect(occurrences.some((entry) => entry.conceptSlug === "convert_small_advantage")).toBe(false);
   });
 
   it("labels an active answer to a concrete threat as a defensive resource", () => {
@@ -90,10 +86,9 @@ describe("deterministic Pattern Engine", () => {
       "6k1/5ppp/8/8/2p5/3r4/5PPP/3R2K1 w - - 0 1",
       "d1d3",
     );
-    expect(patterns).toContainEqual(expect.objectContaining({
-      conceptSlug: "defensive_resource",
-      confidence: expect.any(Number),
-    }));
+    // Rxd3 removes the attacker, but the pawn on c4 can still recapture:
+    // feature recognition alone does not establish a saved outcome.
+    expect(patterns.some((entry) => entry.conceptSlug === "defensive_resource")).toBe(false);
     expect(patterns).toContainEqual(expect.objectContaining({
       conceptSlug: "exchange_attacker",
       confidence: expect.any(Number),

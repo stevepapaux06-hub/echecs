@@ -69,4 +69,13 @@ describe("training bank gate", () => {
     expect(gated.active).toHaveLength(1);
     expect(gated.rejected).toHaveLength(1);
   });
+  it("also deduplicates legacy master-game source IDs without explicit game/ply fields", () => {
+    const other = allConceptExercises().find((e) => e.conceptSlug === base.conceptSlug && e.fen !== base.fen)!;
+    const gated = gateTrainingExercises([
+      { ...base, id: "legacy-a", source: "master_game", sourceId: "Capablanca-3-105", sourceGameId: undefined, positionPly: undefined },
+      { ...other, id: "legacy-b", source: "master_game", sourceId: "Capablanca-3-109", sourceGameId: undefined, positionPly: undefined },
+    ]);
+    expect(gated.active).toHaveLength(1);
+    expect(gated.rejected).toHaveLength(1);
+  });
 });

@@ -10,7 +10,10 @@ import type { TrainingPosition } from "./positions";
 import { withTrainingTaxonomy } from "./taxonomy";
 import { STRUCTURED_TRAINING_BANK } from "./structured-bank";
 import { withPedagogicalContract } from "./contract";
-import { gateTrainingExercises } from "./validation";
+import { gateTrainingExercises, validateTrainingExercise } from "./validation";
+import QUALITY_BANK from "./quality-bank.generated.json";
+import REMINED_REFERENCE from "./remined-reference.generated.json";
+import { isReferencePosition, type TrainingAssessment } from "./human-quality";
 
 type ConceptExercise = Omit<
   TrainingExercise,
@@ -476,15 +479,44 @@ const RAW_EXERCISE_POOL = [
     ].includes(exercise.key))
     .map(curatedExercise),
   ...STRUCTURED_TRAINING_BANK.map(verifiedStructuredExercise).map(withTrainingTaxonomy),
+  ...(REMINED_REFERENCE.positions as TrainingExercise[]).map(verifiedStructuredExercise).map(withTrainingTaxonomy),
   ...LICHESS_LIBRARY,
 ].map(withPedagogicalContract);
 
-const GATED_EXERCISE_POOL = gateTrainingExercises(RAW_EXERCISE_POOL);
-const EXERCISE_POOL = GATED_EXERCISE_POOL.active;
+const assessments = QUALITY_BANK.assessments as Record<string, TrainingAssessment>;
+const patches = QUALITY_BANK.patches as Record<string, Partial<TrainingExercise>>;
+const GATED_EXERCISE_POOL = gateTrainingExercises(RAW_EXERCISE_POOL.map((exercise) => ({ ...exercise, ...patches[exercise.id] })));
+// Deduplicate after human qualification: a rejected neighbouring reference
+// must not reserve the game/mechanism slot of an excellent later decision.
+const TRAINING_GATED_POOL = gateTrainingExercises(RAW_EXERCISE_POOL
+  .map((exercise) => ({ ...exercise, ...patches[exercise.id] }))
+  .filter((exercise) => exercise.category === "tactic" || exercise.category === "opening"
+    || assessments[exercise.id]?.exerciseability === true));
+const EXERCISE_POOL = TRAINING_GATED_POOL.active
+  .map((exercise) => {
+    const current = { ...exercise, ...patches[exercise.id], trainingAssessment: assessments[exercise.id] };
+    return current.pedagogicalUnit === "single_move"
+      ? { ...current, mode: "one-move" as const, maxPlayerMoves: 1 }
+      : current;
+  });
+
+export function referenceBank(): TrainingExercise[] {
+  return RAW_EXERCISE_POOL.filter(isReferencePosition)
+    .map((exercise) => ({ ...exercise, trainingAssessment: assessments[exercise.id] }));
+}
+
+/** Offline audit input: before human gates, with existing technical quarantine. */
+export function technicallyVerifiedBank(): TrainingExercise[] {
+  // Deduplication belongs after the human gates, including in offline audits.
+  return RAW_EXERCISE_POOL.filter((exercise) => validateTrainingExercise(exercise).status === "active");
+}
 
 export const TRAINING_BANK_GATE_REPORT = {
   total: RAW_EXERCISE_POOL.length,
-  active: GATED_EXERCISE_POOL.active.length,
+  active: EXERCISE_POOL.length,
+  reference: RAW_EXERCISE_POOL.filter(isReferencePosition).length,
+  referenceOnly: RAW_EXERCISE_POOL.filter(isReferencePosition).length - EXERCISE_POOL.length,
+  postQualityRejected: TRAINING_GATED_POOL.rejected.length,
   needsVerification: GATED_EXERCISE_POOL.needsVerification.length,
   rejected: GATED_EXERCISE_POOL.rejected.length,
   needsVerificationIds: GATED_EXERCISE_POOL.needsVerification.map((exercise) => exercise.id),
@@ -540,4 +572,12 @@ export function conceptExercisesForSlug(conceptSlug: string, limit = 2, userRati
 
 export function allConceptExercises(): TrainingExercise[] {
   return [...EXERCISE_POOL];
+}
+
+/** Historical analyses remain intact. Bank snapshots must never override the
+ * current gate/contract. Personal candidates keep their existing selection path:
+ * this bank-only pass does not rewrite or delete the player's analysis data. */
+export function currentTrainingPool(historical: TrainingExercise[]): TrainingExercise[] {
+  const personal = historical.filter((exercise) => exercise.origin === "personal");
+  return [...personal, ...EXERCISE_POOL];
 }
