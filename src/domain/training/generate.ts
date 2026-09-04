@@ -7,7 +7,7 @@ import type {
   TrainingType,
 } from "@/domain/chess/types";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
-import { conceptExercisesFor } from "./library";
+import { conceptExercisesFor } from "./library-runtime";
 import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
 import { detectMovePatterns } from "../patterns/engine";
 import { buildExerciseTeaching } from "./explanation";

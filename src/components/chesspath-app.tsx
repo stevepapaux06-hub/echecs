@@ -23,9 +23,8 @@ import type {
   PlayerProfile,
   TrainingExercise,
 } from "@/domain/chess/types";
-import { analyzePayload } from "@/domain/chess/analyze";
 import { parsePgnCollection } from "@/domain/chess/pgn";
-import { currentTrainingPool } from "@/domain/training/library";
+import type * as TrainingLibrary from "@/domain/training/library-runtime";
 import {
   buildTrainingSession,
   DEFAULT_TRAINING_BATCH_SIZE,
@@ -323,6 +322,9 @@ export function ChessPathApp() {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<CompleteAnalysis | null>(null);
   const [trainingExercises, setTrainingExercises] = useState<TrainingExercise[]>([]);
+  const [trainingLibrary, setTrainingLibrary] = useState<typeof TrainingLibrary | null>(null);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [libraryRetry, setLibraryRetry] = useState(0);
   const [trainingFilter, setTrainingFilter] = useState<TrainingFilter>("recommended");
   const [trainingSourceFilter, setTrainingSourceFilter] = useState<TrainingSourceFilter>("mix");
   const [trainingSeenIds, setTrainingSeenIds] = useState<ReadonlySet<string>>(new Set());
@@ -442,6 +444,19 @@ export function ChessPathApp() {
     // Supabase's listener emits INITIAL_SESSION, including restored sessions.
   }, []);
 
+  // Keep the navigation and forms hydrated without loading the entire bank.
+  // Native import caches the module; changing tabs never rebuilds the bank.
+  useEffect(() => {
+    if (screen !== "training-hub" || trainingLibrary) return;
+    let active = true;
+    import("@/domain/training/library-runtime").then((library) => {
+      if (active) setTrainingLibrary(library);
+    }).catch(() => {
+      if (active) setLibraryError("Le chargement des exercices a échoué. Vérifie ta connexion puis réessaie.");
+    });
+    return () => { active = false; };
+  }, [screen, trainingLibrary, libraryRetry]);
+
   function navigate(section: AppSection) {
     setError(null);
     setAuthNotice(null);
@@ -461,6 +476,7 @@ export function ChessPathApp() {
     setProgress(14);
     setLoadingLabel(`${payload.games.length} parties récupérées · préparation du moteur`);
     const engine = await ensureEngine();
+    const { analyzePayload } = await import("@/domain/chess/analyze");
     setProgress(20);
     const analysis = await analyzePayload(payload, engine, ({ completed, total, label }) => {
       setLoadingLabel(label);
@@ -643,14 +659,15 @@ export function ChessPathApp() {
       ...(result?.exercises ?? []),
       ...(persistent?.analyses.flatMap((analysis) => analysis.exercises) ?? []),
     ].map((exercise) => [exercise.id, withTrainingTaxonomy(exercise)])).values()];
-    return currentTrainingPool(historical);
-  }, [persistent?.analyses, result?.exercises]);
+    return trainingLibrary?.currentTrainingPool(historical) ?? historical.filter((exercise) => exercise.origin === "personal");
+  }, [persistent?.analyses, result?.exercises, trainingLibrary]);
   const navProps = { onNavigate: navigate, connected };
 
   if (screen === "loading") return <LoadingScreen label={loadingLabel} progress={progress} {...navProps} />;
   if (screen === "dashboard" && result) return <Dashboard result={result} saveStatus={saveStatus} onTrain={() => navigate("training-hub")} onReset={() => navigate("analyze")} {...navProps} />;
   if (screen === "training" && trainingExercises.length && trainingEngine) return <TrainingBoard key={trainingExercises[0].id} exercises={trainingExercises} engine={trainingEngine} activeFilter={trainingFilter} onBack={() => navigate("training-hub")} onContinue={continueTraining} onAttempt={(...args) => void recordAttempt(...args)} />;
   if (screen === "analyze") return <AnalyzeScreen username={persistent?.chess?.username} error={error} onAnalyze={(request) => void startAnalysis(request)} {...navProps} />;
+  if (screen === "training-hub" && !trainingLibrary) return <main className="app-page"><AppNav active="training-hub" {...navProps} /><section className="page-shell"><p role={libraryError ? "alert" : "status"}>{libraryError ?? "Chargement de tes exercices…"}</p>{libraryError ? <button className="primary-button" type="button" onClick={() => { setLibraryError(null); setLibraryRetry((value) => value + 1); }}>Réessayer</button> : null}</section></main>;
   if (screen === "training-hub") return <main className="app-page"><AppNav active="training-hub" {...navProps} /><TrainingHub exercises={hubExercises} attempts={persistent?.trainingAttempts ?? []} priority={result?.metrics.priorityTitle ?? persistent?.analyses[0]?.metrics.priorityTitle} priorityConcept={result?.metrics.primaryTheme.id ?? persistent?.analyses[0]?.metrics.primaryTheme.id} priorityDomain={result?.metrics.primaryTheme.category ?? persistent?.analyses[0]?.metrics.primaryTheme.category} conceptStats={(persistent?.conceptStats.length ? persistent.conceptStats : result?.metrics.conceptStats ?? []).map((stat) => ({ conceptSlug: stat.conceptSlug, opportunities: stat.opportunities, failures: stat.failures, confidence: "high", lastSeenAt: "lastSeenAt" in stat ? stat.lastSeenAt : null }))} userRating={result?.profile.rating ?? persistent?.chess?.rating} onStart={(items, filter, source) => void startTraining(items, filter, source)} onAnalyze={() => navigate("analyze")} /></main>;
   if (screen === "progress") return <main className="app-page"><AppNav active="progress" {...navProps} /><ProgressView profile={persistent} onProfile={() => navigate("profile")} /></main>;
   if (screen === "profile") return <main className="app-page"><AppNav active="profile" {...navProps} />{authNotice ? <p className={`global-notice ${authNotice.kind === "error" ? "error" : ""}`} role={authNotice.kind === "error" ? "alert" : "status"}>{authNotice.message}</p> : null}{saveStatus ? <p className="global-notice">{saveStatus}</p> : null}{error ? <p className="global-notice error">{error}</p> : null}<ProfileView key={user?.id ?? "guest"} user={user} profile={persistent} loading={profileLoading} profileError={profileError} initialAuthMode={authEntryMode} passwordRecovery={passwordRecovery} onPasswordRecovered={() => setPasswordRecovery(false)} onRetryProfile={() => refreshProfile(user)} onSync={synchronize} onLinkChess={linkChessAccount} onUnlinkChess={unlinkChessAccount} onOpenAnalysis={openAnalysis} /></main>;

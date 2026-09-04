@@ -45,3 +45,7 @@ next-env.d.ts
 
 # local corpora used by reproducible bank-mining scripts
 .tmp-corpus/
+
+# Built from the unchanged source banks before dev/build.
+/src/domain/training/runtime-bank.generated.json
+/src/domain/training/runtime-bank.generated.ts

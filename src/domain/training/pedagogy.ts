@@ -7,7 +7,7 @@ import type {
   TrainingExercise,
 } from "@/domain/chess/types";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
-import { conceptExercisesForSlug } from "./library";
+import { conceptExercisesForSlug } from "./library-runtime";
 import { withTrainingTaxonomy } from "./taxonomy";
 
 export const PEDAGOGY_PROMPT_VERSION = "training-phase1-v1";
