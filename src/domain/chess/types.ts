@@ -272,6 +272,27 @@ export type StructuredExerciseExplanation = {
   whyCommonMistakeFails?: string;
   transferRule?: string;
   primaryConceptRationale?: string;
+  /** Position-first causal model used by non-tactical lessons. Legacy fields
+   * above remain serializable for analyses saved before this model existed. */
+  problem?: string;
+  primaryConcept?: string;
+  opponentResource?: string;
+  candidatePlans?: Array<{
+    moveUci: string;
+    label: string;
+    mechanism: string;
+  }>;
+  chosenPlan?: string;
+  whyItWorksHere?: string;
+  stateChange?: string;
+  milestone?: string;
+  acceptableMoves?: string[];
+  evidence?: {
+    source: "tablebase" | "stockfish" | "lichess" | "causal_detector";
+    detail: string;
+  };
+  humanDifficulty?: "easy" | "appropriate" | "challenging_but_useful" | "advanced";
+  difficultyReasons?: string[];
 };
 
 export type TrainingExercise = {

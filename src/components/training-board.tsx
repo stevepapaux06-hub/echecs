@@ -468,15 +468,26 @@ export function TrainingBoard({
             <div className={`feedback-card ${feedback.tone}`} aria-live="polite">
               <span className="feedback-icon">{feedback.tone === "warning" ? "!" : <Check size={20} />}</span>
               <div><small>Bilan de la séquence</small><h2>{feedback.title}</h2><p>{feedback.body}</p></div>
-              {feedback.explanation ? (
+              {feedback.explanation && !["tactic", "opening"].includes(exercise.category) ? (
                 <div className="why-block causal-feedback">
+                  <small>Le problème de la position</small><p>{feedback.explanation.problem ?? feedback.explanation.notice}</p>
+                  <small>Concept principal</small><p>{feedback.explanation.primaryConcept ?? feedback.explanation.focus}</p>
+                  <small>Plan choisi — pourquoi ici</small><p>{feedback.explanation.chosenPlan ?? feedback.explanation.plan} {feedback.explanation.whyItWorksHere ?? feedback.explanation.objective}</p>
+                  {feedback.explanation.candidatePlans?.length ? <><small>Plans humains à comparer</small><p>{feedback.explanation.candidatePlans.map((candidate) => `${candidate.label} : ${candidate.mechanism}`).join(" · ")}</p></> : null}
+                  {feedback.explanation.planSteps?.length ? <><small>Étapes du plan</small><p>{feedback.explanation.planSteps.join(" → ")}</p></> : null}
+                  {(feedback.explanation.opponentResource ?? feedback.explanation.opponentIdea) ? <><small>Ressource adverse</small><p>{feedback.explanation.opponentResource ?? feedback.explanation.opponentIdea}</p></> : null}
+                  {feedback.explanation.naturalAlternative ? <><small>Alternative naturelle</small><p>{feedback.explanation.naturalAlternative}{feedback.explanation.whyNaturalAlternativeIsInferior ? ` — ${feedback.explanation.whyNaturalAlternativeIsInferior}` : ""}</p></> : null}
+                  {(feedback.explanation.stateChange ?? feedback.explanation.resultingPositionChange) ? <><small>Ce qui change réellement</small><p>{feedback.explanation.stateChange ?? feedback.explanation.resultingPositionChange}</p></> : null}
+                  {feedback.explanation.milestone ? <><small>Jalon de réussite</small><p>{feedback.explanation.milestone}</p></> : null}
+                  <small>Règle à transférer</small><p>{feedback.explanation.transferRule ?? feedback.explanation.rule}</p>
+                </div>
+              ) : feedback.explanation ? (
+                <div className="why-block">
                   <small>Ce qu’il fallait remarquer</small><p>{feedback.explanation.notice}</p>
                   <small>Pièce ou faiblesse</small><p>{feedback.explanation.focus}</p>
                   <small>Plan et objectif</small><p>{feedback.explanation.plan} {feedback.explanation.objective}</p>
                   {feedback.explanation.planSteps?.length ? <><small>Étapes du plan</small><p>{feedback.explanation.planSteps.join(" → ")}</p></> : null}
                   {feedback.explanation.opponentIdea ? <><small>Réaction adverse</small><p>{feedback.explanation.opponentIdea}</p></> : null}
-                  {feedback.explanation.naturalAlternative ? <><small>Alternative naturelle</small><p>{feedback.explanation.naturalAlternative}{feedback.explanation.whyNaturalAlternativeIsInferior ? ` — ${feedback.explanation.whyNaturalAlternativeIsInferior}` : ""}</p></> : null}
-                  {feedback.explanation.resultingPositionChange ? <><small>Ce qui change</small><p>{feedback.explanation.resultingPositionChange}</p></> : null}
                   <small>Règle à retenir</small><p>{feedback.explanation.rule}</p>
                 </div>
               ) : <div className="why-block"><small>Concept travaillé</small><p>{feedback.idea}</p></div>}
@@ -522,7 +533,17 @@ export function TrainingBoard({
           ) : (
             <>
               <div className="hint-card"><Sparkles size={20} /><p><strong>Avant de jouer</strong>{pedagogicalUnit === "single_move" ? "Identifie le plan ou la décision clé." : "Calcule aussi la meilleure réponse adverse : la position continue jusqu’à ce que l’objectif pédagogique soit atteint."}</p></div>
-              {pedagogicalUnit !== "single_move" ? <div className="sequence-status"><span>Objectif</span><strong>{exercise.sequenceGoal}</strong></div> : null}
+              {pedagogicalUnit !== "single_move" && !["tactic", "opening"].includes(exercise.category) ? (
+                <div className="sequence-status" aria-live="polite">
+                  <span>{playerMoves > 0 ? `Étape ${playerMoves} validée` : "Objectif"}</span>
+                  <strong>{playerMoves > 0
+                    ? exercise.requiredSteps?.[playerMoves - 1]?.label ?? exercise.explanation?.milestone ?? exercise.sequenceGoal
+                    : exercise.sequenceGoal}</strong>
+                  {playerMoves > 0 && exercise.requiredSteps?.[playerMoves]
+                    ? <p>Décision suivante : {exercise.requiredSteps[playerMoves].label}</p>
+                    : null}
+                </div>
+              ) : pedagogicalUnit !== "single_move" ? <div className="sequence-status"><span>Objectif</span><strong>{exercise.sequenceGoal}</strong></div> : null}
             </>
           )}
 

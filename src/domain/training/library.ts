@@ -14,6 +14,8 @@ import { gateTrainingExercises, validateTrainingExercise } from "./validation";
 import QUALITY_BANK from "./quality-bank.generated.json";
 import REMINED_REFERENCE from "./remined-reference.generated.json";
 import { isReferencePosition, type TrainingAssessment } from "./human-quality";
+import { enrichCausalExplanation } from "./causal-explanation";
+import { assessExplanationQuality } from "./explanation-quality";
 
 type ConceptExercise = Omit<
   TrainingExercise,
@@ -492,17 +494,67 @@ const TRAINING_GATED_POOL = gateTrainingExercises(RAW_EXERCISE_POOL
   .map((exercise) => ({ ...exercise, ...patches[exercise.id] }))
   .filter((exercise) => exercise.category === "tactic" || exercise.category === "opening"
     || assessments[exercise.id]?.exerciseability === true));
-const EXERCISE_POOL = TRAINING_GATED_POOL.active
-  .map((exercise) => {
-    const current = { ...exercise, ...patches[exercise.id], trainingAssessment: assessments[exercise.id] };
-    return current.pedagogicalUnit === "single_move"
-      ? { ...current, mode: "one-move" as const, maxPlayerMoves: 1 }
-      : current;
-  });
+function normalizeNonTacticalTeaching(exercise: TrainingExercise): TrainingExercise {
+  if (["tactic", "opening"].includes(exercise.category)) return exercise;
+  const ownReferenceMoves = exercise.solutionLine?.filter((_move, index) => index % 2 === 0) ?? [];
+  const activeTraining = exercise.trainingAssessment?.exerciseability === true;
+  const canNormalizeSequence = activeTraining && exercise.category !== "endgame" && !exercise.pedagogicalMilestone;
+  const shortDeclaredSequence = canNormalizeSequence && exercise.pedagogicalUnit !== "single_move" && ownReferenceMoves.length < 2;
+  const stoppedBeforeContinuation = canNormalizeSequence && exercise.pedagogicalUnit !== "single_move"
+    && exercise.sequenceStopCondition === "first_decision" && ownReferenceMoves.length >= 2;
+  const normalized: TrainingExercise = {
+    ...exercise,
+    sourceLabel: exercise.source === "lichess_standard"
+      ? "Partie Lichess · position vérifiée"
+      : exercise.sourceLabel,
+    ...(shortDeclaredSequence ? {
+      pedagogicalUnit: "single_move" as const,
+      sequenceStopCondition: "first_decision" as const,
+      mode: "one-move" as const,
+      maxPlayerMoves: 1,
+      requiredSteps: undefined,
+      pedagogicalMilestone: undefined,
+    } : {}),
+    ...(stoppedBeforeContinuation ? {
+      pedagogicalUnit: "decision_then_continuation" as const,
+      sequenceStopCondition: "required_steps" as const,
+      mode: "line" as const,
+      maxPlayerMoves: Math.max(2, exercise.maxPlayerMoves),
+      requiredSteps: [
+        { label: "Trouver la ressource principale", acceptedMoveUcis: exercise.acceptedConceptMoveUcis?.length ? exercise.acceptedConceptMoveUcis : [ownReferenceMoves[0]] },
+        { label: "Confirmer la ressource après la meilleure réponse", acceptedMoveUcis: [ownReferenceMoves[1]] },
+      ],
+    } : {}),
+  };
+  return enrichCausalExplanation(normalized);
+}
+
+const QUALITY_INPUT_POOL = TRAINING_GATED_POOL.active.map((exercise) => {
+  const current = { ...exercise, ...patches[exercise.id], trainingAssessment: assessments[exercise.id] };
+  return current.pedagogicalUnit === "single_move"
+    ? { ...current, mode: "one-move" as const, maxPlayerMoves: 1 }
+    : current;
+});
+const QUALITY_PREPARED_POOL = QUALITY_INPUT_POOL.map(normalizeNonTacticalTeaching);
+
+const EXPLANATION_ASSESSMENTS = new Map(QUALITY_PREPARED_POOL
+  .filter((exercise) => !["tactic", "opening"].includes(exercise.category))
+  .map((exercise) => [exercise.id, assessExplanationQuality(exercise)]));
+
+// The explanation gate is reported independently from the existing chess and
+// outcome gates. It must not silently collapse a previously validated bank;
+// only explicitly audited hard failures are moved to Reference below.
+const EXPLANATION_HARD_FAILURES = new Set([...EXPLANATION_ASSESSMENTS]
+  .filter(([, assessment]) => assessment.hardNegatives.includes("variant_mismatch")
+    || assessment.hardNegatives.includes("generic_concept_without_mechanism"))
+  .map(([id]) => id));
+const EXERCISE_POOL = QUALITY_PREPARED_POOL.filter((exercise) => !EXPLANATION_HARD_FAILURES.has(exercise.id));
+
+const REFERENCE_POOL = RAW_EXERCISE_POOL.filter(isReferencePosition)
+  .map((exercise) => normalizeNonTacticalTeaching({ ...exercise, ...patches[exercise.id], trainingAssessment: assessments[exercise.id] }));
 
 export function referenceBank(): TrainingExercise[] {
-  return RAW_EXERCISE_POOL.filter(isReferencePosition)
-    .map((exercise) => ({ ...exercise, trainingAssessment: assessments[exercise.id] }));
+  return [...REFERENCE_POOL];
 }
 
 /** Offline audit input: before human gates, with existing technical quarantine. */
@@ -514,13 +566,19 @@ export function technicallyVerifiedBank(): TrainingExercise[] {
 export const TRAINING_BANK_GATE_REPORT = {
   total: RAW_EXERCISE_POOL.length,
   active: EXERCISE_POOL.length,
-  reference: RAW_EXERCISE_POOL.filter(isReferencePosition).length,
-  referenceOnly: RAW_EXERCISE_POOL.filter(isReferencePosition).length - EXERCISE_POOL.length,
+  reference: REFERENCE_POOL.length,
+  referenceOnly: REFERENCE_POOL.length - EXERCISE_POOL.length,
   postQualityRejected: TRAINING_GATED_POOL.rejected.length,
   needsVerification: GATED_EXERCISE_POOL.needsVerification.length,
   rejected: GATED_EXERCISE_POOL.rejected.length,
   needsVerificationIds: GATED_EXERCISE_POOL.needsVerification.map((exercise) => exercise.id),
   rejectedIds: GATED_EXERCISE_POOL.rejected.map((exercise) => exercise.id),
+  explanationTrainingToReference: EXPLANATION_HARD_FAILURES.size,
+  explanationQualityPassed: [...EXPLANATION_ASSESSMENTS.values()].filter((assessment) => assessment.passed).length,
+  explanationQualityAverage: (() => {
+    const values = [...EXPLANATION_ASSESSMENTS.values()];
+    return values.length ? Number((values.reduce((sum, assessment) => sum + assessment.score, 0) / values.length).toFixed(2)) : 0;
+  })(),
 } as const;
 
 function exercisePool(): TrainingExercise[] {
@@ -572,6 +630,18 @@ export function conceptExercisesForSlug(conceptSlug: string, limit = 2, userRati
 
 export function allConceptExercises(): TrainingExercise[] {
   return [...EXERCISE_POOL];
+}
+
+export function explanationQualityFor(exerciseId: string) {
+  return EXPLANATION_ASSESSMENTS.get(exerciseId);
+}
+
+/** Test/report surface. The app itself consumes only the prepared runtime bank. */
+export function pedagogyAuditPairs() {
+  const beforeById = new Map(QUALITY_INPUT_POOL.map((exercise) => [exercise.id, exercise]));
+  return QUALITY_PREPARED_POOL
+    .filter((exercise) => !["tactic", "opening"].includes(exercise.category))
+    .map((after) => ({ before: beforeById.get(after.id)!, after }));
 }
 
 /** Historical analyses remain intact. Bank snapshots must never override the

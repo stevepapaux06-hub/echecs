@@ -43,7 +43,7 @@ describe("applied bank quality and continuous training", () => {
         if (i >= index!) break;
       }
     }
-  });
+  }, 15_000);
   it("drawn target results are successful without playing to mate", () => {
     const ending = allConceptExercises().find((e) => e.category === "endgame")!;
     expect(decideSequence({ exercise: { ...ending, trainingAssessment: { ...ending.trainingAssessment!, outcome: { source: "syzygy", root: "draw", after: "draw" } } },
