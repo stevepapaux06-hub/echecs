@@ -743,6 +743,45 @@ button:disabled { cursor: not-allowed; opacity: .48; }
 .why-block p { margin-top: 6px; color: var(--ink); font-size: 12px; }
 .causal-feedback { display: grid; grid-template-columns: 130px 1fr; gap: 8px 12px; }
 .causal-feedback p { margin: 0; }
+.coach-feedback { display: grid; gap: 14px; }
+.coach-feedback section { display: grid; gap: 5px; }
+.coach-feedback section p { margin: 0; font-size: 12px; line-height: 1.58; }
+.coach-feedback .tempting-reflex { padding-top: 11px; border-top: 1px solid rgba(20,33,28,.08); }
+.coach-feedback .tempting-reflex p { color: #7d552e; }
+.coach-feedback .coach-takeaway { padding: 11px 12px; background: rgba(25,78,59,.07); border-radius: 8px; }
+.engine-details { grid-column: 1 / -1; }
+.engine-details summary { width: fit-content; padding: 7px 0; color: var(--muted); cursor: pointer; font-size: 9px; font-weight: 750; }
+.engine-details[open] summary { color: var(--emerald); }
+.reveal-solution { width: fit-content; margin-top: 12px; padding: 8px 0; color: var(--muted); background: transparent; border: 0; border-bottom: 1px solid rgba(20,33,28,.2); cursor: pointer; font-size: 9px; font-weight: 720; }
+.analysis-launch { min-height: 36px; padding: 0 12px; color: var(--emerald); background: rgba(184,227,109,.15); border: 1px solid rgba(25,78,59,.18); border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: 780; }
+.analysis-lab { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 38px 0 60px; }
+.analysis-lab-heading { margin-bottom: 26px; display: grid; gap: 10px; }
+.analysis-lab-heading .back-button { width: fit-content; }
+.analysis-lab-heading small { color: var(--emerald); font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.analysis-lab-heading h1 { margin: 5px 0 7px; font-family: Georgia, serif; font-size: clamp(32px, 4vw, 48px); font-weight: 500; }
+.analysis-lab-heading p { max-width: 720px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.analysis-lab-grid { display: grid; grid-template-columns: minmax(420px, 680px) minmax(280px, 1fr); gap: clamp(28px, 5vw, 60px); align-items: start; }
+.analysis-board-wrap { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: stretch; }
+.evaluation-bar { position: relative; min-height: 420px; display: flex; align-items: flex-end; overflow: hidden; color: white; background: #17251f; border-radius: 8px; }
+.evaluation-bar > div { width: 100%; background: #f4f1e8; transition: height 220ms ease; }
+.evaluation-bar span { position: absolute; inset: 8px 0 auto; color: white; text-align: center; font-size: 9px; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.analysis-controls { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.analysis-controls button { min-height: 38px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; color: var(--ink); background: rgba(255,255,255,.55); border: 1px solid rgba(20,33,28,.1); border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: 730; }
+.analysis-controls button:disabled { opacity: .45; cursor: default; }
+.analysis-engine-panel { padding: 22px; display: grid; gap: 20px; background: #fbfaf5; border: 1px solid var(--line); border-radius: 15px; }
+.analysis-engine-status { display: flex; gap: 9px; align-items: center; color: var(--muted); font-size: 9px; }
+.analysis-engine-status svg { color: var(--emerald); }
+.analysis-best-move { display: grid; gap: 6px; }
+.analysis-best-move small { color: var(--emerald); font-size: 8px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.analysis-best-move strong { font-family: Georgia, serif; font-size: 30px; font-weight: 500; }
+.analysis-best-move span { color: var(--muted); font-size: 9px; line-height: 1.5; }
+.analysis-lines { display: grid; gap: 8px; }
+.analysis-lines > div { padding: 10px; display: grid; grid-template-columns: 22px 1fr auto; gap: 9px; align-items: start; background: rgba(20,33,28,.035); border-radius: 9px; }
+.analysis-lines > div > span { width: 20px; height: 20px; display: grid; place-items: center; color: white; border-radius: 6px; font-size: 8px; font-weight: 800; }
+.analysis-lines p { margin: 0; display: grid; gap: 3px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; line-height: 1.5; }
+.analysis-lines p strong { color: var(--ink); font-size: 12px; }
+.analysis-lines small { color: var(--emerald); font-size: 10px; font-weight: 800; }
+.analysis-waiting { font-family: inherit !important; }
 .variant-toggle { width: fit-content; padding: 7px 10px; color: var(--emerald); background: transparent; border: 1px solid rgba(23,75,56,.18); border-radius: 7px; cursor: pointer; font-size: 9px; font-weight: 750; }
 .variant-controls { display: flex !important; grid-template-columns: none !important; justify-content: center; align-items: center !important; gap: 12px !important; }
 .variant-controls button { width: 30px; height: 30px; display: grid; place-items: center; color: var(--ink); background: white; border: 1px solid var(--line); border-radius: 7px; cursor: pointer; }
@@ -787,6 +826,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .training-modes { grid-template-columns: repeat(2, 1fr); }
   .subtheme-buttons { grid-template-columns: repeat(2, 1fr); }
   .weakness-signals { grid-template-columns: repeat(2, 1fr); }
+  .analysis-lab-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 680px) {
   .app-nav { width: calc(100% - 28px); min-height: 72px; grid-template-columns: 1fr; gap: 7px; padding: 10px 0; }
@@ -806,6 +846,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .continuous-training-actions > div { justify-content: stretch; }
   .continuous-training-actions > div button { flex: 1; }
   .subtheme-buttons, .causal-feedback { grid-template-columns: 1fr; }
+  .analysis-lab { width: calc(100% - 28px); padding-top: 24px; }
+  .analysis-board-wrap { grid-template-columns: 24px minmax(0, 1fr); gap: 7px; }
+  .evaluation-bar { min-height: 280px; }
+  .analysis-controls button { flex: 1 1 auto; justify-content: center; }
   .games-table > div { grid-template-columns: 55px 1fr; }
   .games-table small { grid-column: 2; }
   .skills-list > div { grid-template-columns: 1fr auto; }

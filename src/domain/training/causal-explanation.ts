@@ -49,7 +49,7 @@ const SIGNAL_COPY: Record<string, (from: string, to: string, targets: string[]) 
   threat_reduced: (from, to) => `Après ${from}–${to}, la menace adverse détectée n’est plus disponible dans la même forme.`,
   attacker_removed: (_from, to) => `La pièce qui portait la menace est éliminée en ${to}.`,
   active_threat_answer: (from, to) => `${from}–${to} répond à la menace tout en créant une activité qui impose une décision à l’adversaire.`,
-  forcing_threat_answer: (from, to) => `${from}–${to} neutralise l’urgence par une menace forcing immédiate.`,
+  forcing_threat_answer: (from, to) => `${from}–${to} neutralise l’urgence en créant une menace directe.`,
   saving_exchange: (_from, to) => `L’échange en ${to} réduit l’attaque et conduit à une position objectivement plus tenable.`,
   material_return: (from, to) => `Le matériel rendu par ${from}–${to} supprime une ressource offensive plus dangereuse que sa valeur nominale.`,
   defensive_activity: (from, to) => `La défense devient active après ${from}–${to} : la pièce défend et agit en même temps.`,
@@ -147,7 +147,7 @@ function immediateProblem(exercise: TrainingExercise, chosen: NonNullable<Return
     case "rook_activity": case "rook_endgame": return `La tour en ${chosen.from} est trop passive ; ${chosen.to} lui permet d’agir sur ${detected.targets.join(", ") || "le pion et le roi adverses"}.`;
     case "convert_small_advantage": case "simplify_when_ahead": case "use_material_advantage":
     case "favorable_endgame_transition": case "preserve_activity": case "create_second_weakness": case "avoid_forcing_too_soon":
-      return `L’avantage d’environ ${(exercise.baselinePlayerCp / 100).toFixed(1)} pion doit être transformé sans abandonner l’activité ni autoriser la ressource adverse vérifiée.`;
+      return `Ton avantage ne progressera que si tu conserves l’activité et contrôles d’abord la ressource adverse.`;
     default: return legacy.positionEssentials ?? legacy.notice;
   }
 }
@@ -213,9 +213,6 @@ export function enrichCausalExplanation(exercise: TrainingExercise): TrainingExe
   });
   const naturalUci = contrast?.naturalMistake ?? exercise.trainingAssessment?.naturalMistake;
   const natural = naturalUci ? moveInfo(exercise.fen, naturalUci) : null;
-  const chosenLine = exercise.engineCandidates?.find((line) => line.uci === exercise.bestMove);
-  const naturalLine = naturalUci ? exercise.engineCandidates?.find((line) => line.uci === naturalUci) : undefined;
-  const objectiveCost = chosenLine && naturalLine ? Math.max(0, Math.round(chosenLine.playerCp - naturalLine.playerCp)) : null;
   const acceptableMoves = [...new Set([
     exercise.bestMove,
     ...(exercise.acceptedConceptMoveUcis ?? []),
@@ -234,7 +231,7 @@ export function enrichCausalExplanation(exercise: TrainingExercise): TrainingExe
     whyItWorksHere: detected.signal ? stateChange : legacy.chosenPlanRationale ?? legacy.objective,
     naturalAlternative: natural ? `${natural.label} est une alternative humaine naturelle.` : legacy.naturalAlternative,
     whyNaturalAlternativeIsInferior: natural
-      ? `${natural.label} ne réalise pas le mécanisme « ${CONCEPTS[exercise.conceptSlug] ?? exercise.conceptSlug} »${objectiveCost !== null ? ` et concède environ ${objectiveCost} centipions face à la meilleure défense` : " dans cette position"}.`
+      ? `${natural.label} ne crée pas le changement concret recherché et laisse l’adversaire conserver sa ressource principale.`
       : legacy.whyNaturalAlternativeIsInferior,
     stateChange,
     resultingPositionChange: stateChange,

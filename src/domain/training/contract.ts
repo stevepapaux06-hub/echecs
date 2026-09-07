@@ -4,6 +4,7 @@ import type {
   TrainingExercise,
 } from "@/domain/chess/types";
 import { normalizeConceptSlug } from "../knowledge/concepts";
+import { coachInstructionFor } from "./coaching-copy";
 
 const THEORETICAL_METHODS = new Set([
   "opposition",
@@ -29,52 +30,9 @@ function stopConditionFor(unit: PedagogicalUnit): SequenceStopCondition {
   return "required_steps";
 }
 
-function publicCopy(exercise: TrainingExercise): Pick<TrainingExercise, "title" | "prompt"> {
-  if (exercise.origin === "personal") {
-    return {
-      title: "Reprends cette décision",
-      prompt: "Cette position vient de ta partie. Compare les plans, puis joue la continuation que tu juges la plus précise.",
-    };
-  }
-  if (exercise.category === "strategy") {
-    return {
-      title: "Choisis le meilleur plan",
-      prompt: "Évalue les pièces, les faiblesses et le contre-jeu avant de choisir une direction.",
-    };
-  }
-  if (exercise.category === "endgame") {
-    return {
-      title: "Trouve la méthode",
-      prompt: "Identifie le principe technique, puis applique-le jusqu’à clarifier le résultat.",
-    };
-  }
-  if (exercise.category === "conversion") {
-    return {
-      title: "Consolide ton avantage",
-      prompt: "Choisis le plan qui progresse sans rendre de contre-jeu inutile.",
-    };
-  }
-  if (exercise.category === "defense") {
-    return {
-      title: "Neutralise le danger",
-      prompt: "Repère la menace prioritaire et cherche une défense active qui garde la position jouable.",
-    };
-  }
-  if (exercise.category === "opening") {
-    return {
-      title: "Choisis la bonne priorité",
-      prompt: "Cherche le coup qui sert le développement, le centre ou la sécurité du roi.",
-    };
-  }
-  return {
-    title: "Trouve la suite",
-    prompt: "Calcule les coups forcing jusqu’au résultat concret avant de jouer.",
-  };
-}
-
 export function withPedagogicalContract<T extends TrainingExercise>(exercise: T): T {
   const pedagogicalUnit = pedagogicalUnitFor(exercise);
-  const copy = publicCopy(exercise);
+  const copy = coachInstructionFor(exercise);
   const playerStepsInReference = Math.max(1, Math.ceil((exercise.solutionLine?.length ?? 1) / 2));
   const maxPlayerMoves = pedagogicalUnit === "single_move"
     ? 1
@@ -98,4 +56,3 @@ export function withPedagogicalContract<T extends TrainingExercise>(exercise: T)
     sequenceStopCondition: exercise.sequenceStopCondition ?? stopConditionFor(pedagogicalUnit),
   };
 }
-

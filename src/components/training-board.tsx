@@ -30,15 +30,19 @@ import {
 import { isLegalTrainingDrop } from "@/domain/training/interaction";
 import {
   nextExerciseIndex,
+  conceptTrainingFilter,
+  preciseConcept,
   sharesPreciseConcept,
   type TrainingFilter,
 } from "@/domain/training/session";
 import { trainingTaxonomy } from "@/domain/training/taxonomy";
 import { pedagogicalUnitFor } from "@/domain/training/contract";
+import { coachExplanationFor, exerciseProvenance } from "@/domain/training/coaching-copy";
 import { detectMovePatterns } from "@/domain/patterns/engine";
 import type { StockfishClient } from "@/infrastructure/engine/stockfish-client";
 import { evaluationForPlayer, formatWhiteCentricEvaluation } from "@/infrastructure/engine/uci";
 import { Brand } from "./brand";
+import { PositionAnalysisLab } from "./position-analysis-lab";
 
 type ThinkingStage = "checking" | "reply" | null;
 
@@ -108,6 +112,8 @@ export function TrainingBoard({
   const [result, setResult] = useState<TrainingResult | null>(null);
   const [variantStep, setVariantStep] = useState<number | null>(null);
   const [continuing, setContinuing] = useState(false);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [solutionRevealed, setSolutionRevealed] = useState(false);
   const [boardRevision, setBoardRevision] = useState(0);
   const baselineCache = useRef(new Map<string, EngineEvaluation>());
   const initialEvaluation = useRef<EngineEvaluation | null>(null);
@@ -116,6 +122,7 @@ export function TrainingBoard({
   const firstMovePedagogy = useRef<PedagogicalMoveResult | null>(null);
   const attemptToken = useRef(0);
   const moveInFlight = useRef(false);
+  const trainingScrollPosition = useRef(0);
   const exercise = exercises[index];
 
   function resetBoard(targetIndex = index) {
@@ -130,6 +137,7 @@ export function TrainingBoard({
     setPlayerMoves(0);
     setAttemptMoves([]);
     setResult(null);
+    setSolutionRevealed(false);
     setVariantStep(null);
     setBoardRevision((revision) => revision + 1);
     initialEvaluation.current = null;
@@ -158,6 +166,22 @@ export function TrainingBoard({
     }
     setIndex(next);
     resetBoard(next);
+  }
+
+  async function continueSameConcept() {
+    if (!onContinue) return;
+    setContinuing(true);
+    try {
+      const taxonomy = trainingTaxonomy(exercise);
+      await onContinue(
+        exercises.map((candidate) => candidate.id),
+        conceptTrainingFilter(preciseConcept(exercise), taxonomy.domain),
+      );
+    } catch {
+      setEngineError("Une autre position sur ce concept n’a pas pu être chargée. Tu peux poursuivre le filtre courant.");
+    } finally {
+      setContinuing(false);
+    }
   }
 
   async function analyzePosition(
@@ -199,6 +223,33 @@ export function TrainingBoard({
     setResult(status);
     setVariantStep(null);
     onAttempt?.(exercise, status, lossCp, moves);
+  }
+
+  async function revealSolution(): Promise<void> {
+    if (thinkingStage || feedback || result || moveInFlight.current) return;
+    const token = ++attemptToken.current;
+    moveInFlight.current = true;
+    setThinkingStage("checking");
+    setEngineError(null);
+    try {
+      const baseline = await analyzePosition(exercise.fen, { multiPv: 3 });
+      if (token !== attemptToken.current) return;
+      initialEvaluation.current = baseline;
+      initialPlayerCp.current = evaluationForPlayer(baseline.whiteCp, exercise.playerColor);
+      firstMovePedagogy.current = "error";
+      setSolutionRevealed(true);
+      finishSequence({
+        status: "failed",
+        lossCp: 0,
+        moves: [],
+        afterPlayerCp: initialPlayerCp.current ?? evaluationForPlayer(baseline.whiteCp, exercise.playerColor),
+      });
+    } catch {
+      if (token !== attemptToken.current) return;
+      moveInFlight.current = false;
+      setThinkingStage(null);
+      setEngineError("L’explication n’a pas pu être préparée. Tu peux réessayer sans perdre la position.");
+    }
   }
 
   async function attemptMove(sourceSquare: string, targetSquare: string | null): Promise<boolean> {
@@ -389,6 +440,8 @@ export function TrainingBoard({
     followingExercise && sharesPreciseConcept(exercise, followingExercise),
   );
   const currentDomainFilter = trainingTaxonomy(exercise).domain as TrainingFilter;
+  const coachExplanation = coachExplanationFor(exercise);
+  const provenance = exerciseProvenance(exercise);
   const pedagogicalUnit = pedagogicalUnitFor(exercise);
   const unitLabel = pedagogicalUnit === "single_move"
     ? "Décision ciblée"
@@ -411,7 +464,7 @@ export function TrainingBoard({
     boardStyle: { borderRadius: "14px", overflow: "hidden", boxShadow: "0 28px 70px rgba(17, 39, 30, .2)" },
     arrows: feedback ? [
       ...planArrows,
-      ...(feedback.playedMove !== feedback.bestMove && !playedArrowAlreadyExplained ? [{
+      ...(feedback.playedMove && feedback.playedMove !== feedback.bestMove && !playedArrowAlreadyExplained ? [{
         startSquare: feedback.playedMove.slice(0, 2),
         endSquare: feedback.playedMove.slice(2, 4),
         color: feedback.tone === "warning" ? arrowColor.warning : "rgba(213, 161, 74, .85)",
@@ -436,6 +489,26 @@ export function TrainingBoard({
     },
   };
 
+  function openAnalysisLab(): void {
+    trainingScrollPosition.current = window.scrollY;
+    setAnalysisOpen(true);
+  }
+
+  function closeAnalysisLab(): void {
+    setAnalysisOpen(false);
+    window.requestAnimationFrame(() => window.scrollTo({ top: trainingScrollPosition.current, behavior: "auto" }));
+  }
+
+  if (analysisOpen) return (
+    <PositionAnalysisLab
+      initialFen={exercise.fen}
+      initialOrientation={exercise.playerColor}
+      question={coachExplanation?.exploreQuestion ?? "Compare librement les plans possibles et leurs meilleures réponses."}
+      engine={engine}
+      onClose={closeAnalysisLab}
+    />
+  );
+
   return (
     <main className="training-shell" id="top">
       <nav className="training-nav">
@@ -458,28 +531,22 @@ export function TrainingBoard({
             <span>{labelFor(exercise)}</span>
             <small>{exercise.origin === "personal" ? "Position personnelle" : "Nouvelle position"}</small>
           </div>
-          <p className="source-label">{exercise.sourceLabel}</p>
+          <p className="source-label">{provenance}</p>
           <h1>{exercise.title}</h1>
           <p className="exercise-prompt">{exercise.prompt}</p>
 
           {thinkingStage ? (
-            <div className="thinking-card" aria-live="polite"><Search size={22} /><div><strong>{thinkingStage === "checking" ? "Stockfish vérifie toute la position…" : "L’adversaire répond automatiquement…"}</strong><span>{thinkingStage === "checking" ? "Ton coup reste sur l’échiquier pendant l’analyse." : "Prépare déjà ta continuation."}</span></div></div>
+            <div className="thinking-card" aria-live="polite"><Search size={22} /><div><strong>{thinkingStage === "checking" ? "ChessPath vérifie ton choix…" : "L’adversaire répond automatiquement…"}</strong><span>{thinkingStage === "checking" ? "Ton coup reste sur l’échiquier pendant la vérification." : "Prépare déjà ta continuation."}</span></div></div>
           ) : feedback ? (
             <div className={`feedback-card ${feedback.tone}`} aria-live="polite">
               <span className="feedback-icon">{feedback.tone === "warning" ? "!" : <Check size={20} />}</span>
               <div><small>Bilan de la séquence</small><h2>{feedback.title}</h2><p>{feedback.body}</p></div>
-              {feedback.explanation && !["tactic", "opening"].includes(exercise.category) ? (
-                <div className="why-block causal-feedback">
-                  <small>Le problème de la position</small><p>{feedback.explanation.problem ?? feedback.explanation.notice}</p>
-                  <small>Concept principal</small><p>{feedback.explanation.primaryConcept ?? feedback.explanation.focus}</p>
-                  <small>Plan choisi — pourquoi ici</small><p>{feedback.explanation.chosenPlan ?? feedback.explanation.plan} {feedback.explanation.whyItWorksHere ?? feedback.explanation.objective}</p>
-                  {feedback.explanation.candidatePlans?.length ? <><small>Plans humains à comparer</small><p>{feedback.explanation.candidatePlans.map((candidate) => `${candidate.label} : ${candidate.mechanism}`).join(" · ")}</p></> : null}
-                  {feedback.explanation.planSteps?.length ? <><small>Étapes du plan</small><p>{feedback.explanation.planSteps.join(" → ")}</p></> : null}
-                  {(feedback.explanation.opponentResource ?? feedback.explanation.opponentIdea) ? <><small>Ressource adverse</small><p>{feedback.explanation.opponentResource ?? feedback.explanation.opponentIdea}</p></> : null}
-                  {feedback.explanation.naturalAlternative ? <><small>Alternative naturelle</small><p>{feedback.explanation.naturalAlternative}{feedback.explanation.whyNaturalAlternativeIsInferior ? ` — ${feedback.explanation.whyNaturalAlternativeIsInferior}` : ""}</p></> : null}
-                  {(feedback.explanation.stateChange ?? feedback.explanation.resultingPositionChange) ? <><small>Ce qui change réellement</small><p>{feedback.explanation.stateChange ?? feedback.explanation.resultingPositionChange}</p></> : null}
-                  {feedback.explanation.milestone ? <><small>Jalon de réussite</small><p>{feedback.explanation.milestone}</p></> : null}
-                  <small>Règle à transférer</small><p>{feedback.explanation.transferRule ?? feedback.explanation.rule}</p>
+              {coachExplanation && !["tactic", "opening"].includes(exercise.category) ? (
+                <div className="why-block coach-feedback">
+                  <section><small>L’idée</small><p>{coachExplanation.idea}</p></section>
+                  <section><small>Pourquoi ça marche</small>{coachExplanation.whyItWorks.map((sentence) => <p key={sentence}>{sentence}</p>)}</section>
+                  {coachExplanation.temptingReflex ? <section className="tempting-reflex"><small>Le réflexe tentant</small><p>{coachExplanation.temptingReflex}</p></section> : null}
+                  <section className="coach-takeaway"><small>À retenir</small><p>{coachExplanation.takeaway}</p></section>
                 </div>
               ) : feedback.explanation ? (
                 <div className="why-block">
@@ -491,11 +558,13 @@ export function TrainingBoard({
                   <small>Règle à retenir</small><p>{feedback.explanation.rule}</p>
                 </div>
               ) : <div className="why-block"><small>Concept travaillé</small><p>{feedback.idea}</p></div>}
-              <div className="move-comparison sequence-summary">
-                <div><span>Ta séquence</span><strong>{feedback.playedMoveSan || "—"}</strong></div>
-                <div><span>Départ de la ligne clé</span><strong>{feedback.bestMoveSan}</strong></div>
-                <div><span>Écart maximal</span><strong>{formatLoss(feedback.lossCp)}</strong></div>
-              </div>
+              <details className="engine-details">
+                <summary>Détails de la ligne</summary>
+                <div className="move-comparison sequence-summary">
+                  <div><span>Ta séquence</span><strong>{feedback.playedMoveSan || "Non jouée"}</strong></div>
+                  <div><span>Départ de la ligne clé</span><strong>{feedback.bestMoveSan}</strong></div>
+                  <div><span>Écart maximal</span><strong>{formatLoss(feedback.lossCp)}</strong></div>
+                </div>
               {feedback.bestLineSan ? (
                 <div className="line-comparison">
                   <div><span>Variante clé</span><p>{feedback.bestLineSan}</p></div>
@@ -517,9 +586,12 @@ export function TrainingBoard({
                   <div>{feedback.candidates.map((candidate) => <p key={candidate.uci}><strong>{candidate.san}</strong><small>{formatWhiteCentricEvaluation(candidate.whiteCentricCp)}</small></p>)}</div>
                 </div>
               ) : null}
+              </details>
               <div className={`exercise-result ${result}`}>
-                <strong>{result === "success" ? "Réussi" : result === "partial" ? "À consolider" : "Échoué — reviendra plus tard"}</strong>
-                <span>{result === "failed"
+                <strong>{solutionRevealed ? "Solution consultée — à revoir" : result === "success" ? "Réussi" : result === "partial" ? "À consolider" : "Échoué — reviendra plus tard"}</strong>
+                <span>{solutionRevealed
+                  ? "Tu peux maintenant tester tes propres variantes dans le laboratoire d’analyse."
+                  : result === "failed"
                   ? "Cette position est mémorisée pour une future séance espacée."
                   : sameConceptNext
                     ? "La prochaine position réutilise exactement ce concept dans un autre contexte."
@@ -544,23 +616,22 @@ export function TrainingBoard({
                     : null}
                 </div>
               ) : pedagogicalUnit !== "single_move" ? <div className="sequence-status"><span>Objectif</span><strong>{exercise.sequenceGoal}</strong></div> : null}
+              <button type="button" className="reveal-solution" onClick={() => void revealSolution()}>Voir l’explication</button>
             </>
           )}
 
           <div className="exercise-footer">
-            {exercise.gameUrl ? <a href={exercise.gameUrl} target="_blank" rel="noreferrer">Voir la partie source <ExternalLink size={14} /></a> : <span className="concept-source">Position pédagogique vérifiée avec Stockfish</span>}
+            {exercise.gameUrl ? <a href={exercise.gameUrl} target="_blank" rel="noreferrer">Voir la source <ExternalLink size={14} /></a> : <span className="concept-source">{provenance}</span>}
             <div className="continuous-training-actions">
               <button type="button" className="primary-button" onClick={() => void nextExercise()} disabled={!result || continuing}>
-                {followingExercise
-                  ? sameConceptNext
-                    ? "Nouvelle position sur ce concept"
-                    : "Exercice suivant"
-                  : continuing ? "Chargement…" : "Continuer ce thème"} <ArrowRight size={17} />
+                {continuing ? "Chargement…" : "Exercice suivant"} <ArrowRight size={17} />
               </button>
-              {!followingExercise && result && onContinue ? (
+              {result ? <button type="button" className="analysis-launch" onClick={openAnalysisLab}>Explorer avec Stockfish</button> : null}
+              {result && onContinue ? (
                 <div>
-                  <button type="button" onClick={() => void nextExercise(currentDomainFilter)} disabled={continuing}>Même domaine</button>
-                  <button type="button" onClick={() => void nextExercise("mix")} disabled={continuing}>Mix</button>
+                  <button type="button" onClick={() => void continueSameConcept()} disabled={continuing}>Nouvelle position sur ce concept</button>
+                  {!followingExercise ? <button type="button" onClick={() => void nextExercise(currentDomainFilter)} disabled={continuing}>Même domaine</button> : null}
+                  {!followingExercise ? <button type="button" onClick={() => void nextExercise("mix")} disabled={continuing}>Mix</button> : null}
                   <button type="button" onClick={onBack} disabled={continuing}>Changer de thème</button>
                 </div>
               ) : null}

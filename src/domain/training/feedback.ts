@@ -287,24 +287,30 @@ export function buildSequenceFeedback({
 
   const rootCause = exercise.pedagogy?.rootCause;
   const learningGoal = exercise.pedagogy?.learningGoal || exercise.concept;
+  const causalProblem = exercise.explanation?.problem ?? exercise.explanation?.notice;
+  const achievedChange = exercise.explanation?.stateChange
+    ?? exercise.explanation?.resultingPositionChange
+    ?? exercise.explanation?.whyItWorksHere;
   const copy = result === "success"
     ? {
         title: "Séquence réussie",
-        body: `Avec ${playedSequenceSan}, tu as trouvé l’idée travaillée et conservé sa valeur concrète. ${learningGoal}`,
+        body: `Avec ${playedSequenceSan}, tu as trouvé l’idée travaillée et elle résiste à la réponse adverse.${achievedChange ? ` ${achievedChange}` : ""}`,
       }
     : result === "partial" && pedagogicalMove === "good-alternative"
       ? {
-          title: "Bon coup, autre idée",
-          body: `${playedSequenceSan} est bon, mais il ne correspond pas à l’idée travaillée ici. ${learningGoal}`,
+        title: "Bon coup, autre idée",
+          body: `${playedSequenceSan} est un choix sain. Ici, l’exercice cherchait une autre manière de résoudre le problème.`,
         }
       : result === "partial"
         ? {
             title: "Idée comprise, technique à consolider",
-            body: `${playedSequenceSan} reste jouable, mais n’atteint pas encore clairement l’objectif. ${learningGoal}`,
+            body: `${playedSequenceSan} va dans la bonne direction, mais la méthode n’est pas encore complètement installée.`,
           }
         : {
             title: "Séquence à revoir",
-            body: `${playedSequenceSan} change réellement l’évaluation de la position. ${rootCause || learningGoal}`,
+            body: playedSequenceSan === "ton choix"
+              ? `Voici la méthode à comparer avec les idées que tu avais envisagées. ${rootCause || learningGoal}`
+              : `${playedSequenceSan} ne résout pas encore le problème prioritaire.${causalProblem ? ` ${causalProblem}` : ` ${rootCause || learningGoal}`}`,
           };
 
   return {
