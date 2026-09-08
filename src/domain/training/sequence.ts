@@ -93,6 +93,13 @@ export function decideSequence({
     };
   }
 
+  const threshold = exercise.successThresholdCp;
+  const targetReached = threshold === undefined || afterPlayerCp >= threshold;
+  const pedagogicalUnit = pedagogicalUnitFor(exercise);
+  const requiredStepsReached = !exercise.requiredSteps?.length || exercise.requiredSteps.every((step, index) => (
+    Boolean(playedMoveUcis[index]) && step.acceptedMoveUcis.includes(playedMoveUcis[index])
+  ));
+
   if (exercise.pedagogicalMilestone || exercise.category === "endgame") {
     // Neither centipawns nor a fixed move budget establishes a technical method.
     // Legacy persisted endings without a milestone can finish only at a terminal
@@ -100,15 +107,12 @@ export function decideSequence({
     if (milestoneReached(exercise, afterFen, playerMoves, decisionFen, playedMoveUcis.at(-1))) {
       return { finished: true, result: pedagogicalMove === "concept" ? "success" : "partial", reason: "target" };
     }
+    if (!exercise.pedagogicalMilestone && exercise.requiredSteps?.length
+      && playerMoves >= exercise.requiredSteps.length && requiredStepsReached) {
+      return { finished: true, result: pedagogicalMove === "concept" && targetReached ? "success" : "partial", reason: "target" };
+    }
     return { finished: false, reason: "continue" };
   }
-
-  const threshold = exercise.successThresholdCp;
-  const targetReached = threshold === undefined || afterPlayerCp >= threshold;
-  const pedagogicalUnit = pedagogicalUnitFor(exercise);
-  const requiredStepsReached = !exercise.requiredSteps?.length || exercise.requiredSteps.every((step, index) => (
-    Boolean(playedMoveUcis[index]) && step.acceptedMoveUcis.includes(playedMoveUcis[index])
-  ));
 
   if (pedagogicalUnit === "single_move") {
     return {

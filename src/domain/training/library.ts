@@ -16,6 +16,7 @@ import REMINED_REFERENCE from "./remined-reference.generated.json";
 import { isReferencePosition, type TrainingAssessment } from "./human-quality";
 import { enrichCausalExplanation } from "./causal-explanation";
 import { assessExplanationQuality } from "./explanation-quality";
+import { GOLD_TRAINING_IDS, refineTrainingLesson, shouldPublishTrainingLesson } from "./lesson-refinement";
 
 type ConceptExercise = Omit<
   TrainingExercise,
@@ -493,7 +494,8 @@ const GATED_EXERCISE_POOL = gateTrainingExercises(RAW_EXERCISE_POOL.map((exercis
 const TRAINING_GATED_POOL = gateTrainingExercises(RAW_EXERCISE_POOL
   .map((exercise) => ({ ...exercise, ...patches[exercise.id] }))
   .filter((exercise) => exercise.category === "tactic" || exercise.category === "opening"
-    || assessments[exercise.id]?.exerciseability === true));
+    || assessments[exercise.id]?.exerciseability === true)
+  .toSorted((first, second) => Number(GOLD_TRAINING_IDS.has(second.id)) - Number(GOLD_TRAINING_IDS.has(first.id))));
 function normalizeNonTacticalTeaching(exercise: TrainingExercise): TrainingExercise {
   if (["tactic", "opening"].includes(exercise.category)) return exercise;
   const ownReferenceMoves = exercise.solutionLine?.filter((_move, index) => index % 2 === 0) ?? [];
@@ -529,12 +531,13 @@ function normalizeNonTacticalTeaching(exercise: TrainingExercise): TrainingExerc
   return enrichCausalExplanation(normalized);
 }
 
-const QUALITY_INPUT_POOL = TRAINING_GATED_POOL.active.map((exercise) => {
+const REFINEMENT_INPUT_POOL = TRAINING_GATED_POOL.active.map((exercise) => {
   const current = { ...exercise, ...patches[exercise.id], trainingAssessment: assessments[exercise.id] };
   return current.pedagogicalUnit === "single_move"
     ? { ...current, mode: "one-move" as const, maxPlayerMoves: 1 }
     : current;
 });
+const QUALITY_INPUT_POOL = REFINEMENT_INPUT_POOL.map((exercise) => withPedagogicalContract(refineTrainingLesson(exercise)));
 const QUALITY_PREPARED_POOL = QUALITY_INPUT_POOL.map(normalizeNonTacticalTeaching);
 
 const EXPLANATION_ASSESSMENTS = new Map(QUALITY_PREPARED_POOL
@@ -548,7 +551,9 @@ const EXPLANATION_HARD_FAILURES = new Set([...EXPLANATION_ASSESSMENTS]
   .filter(([, assessment]) => assessment.hardNegatives.includes("variant_mismatch")
     || assessment.hardNegatives.includes("generic_concept_without_mechanism"))
   .map(([id]) => id));
-const EXERCISE_POOL = QUALITY_PREPARED_POOL.filter((exercise) => !EXPLANATION_HARD_FAILURES.has(exercise.id));
+const EXERCISE_POOL = QUALITY_PREPARED_POOL.filter((exercise) => (
+  !EXPLANATION_HARD_FAILURES.has(exercise.id) && shouldPublishTrainingLesson(exercise)
+));
 
 const REFERENCE_POOL = RAW_EXERCISE_POOL.filter(isReferencePosition)
   .map((exercise) => normalizeNonTacticalTeaching({ ...exercise, ...patches[exercise.id], trainingAssessment: assessments[exercise.id] }));
@@ -642,6 +647,11 @@ export function pedagogyAuditPairs() {
   return QUALITY_PREPARED_POOL
     .filter((exercise) => !["tactic", "opening"].includes(exercise.category))
     .map((after) => ({ before: beforeById.get(after.id)!, after }));
+}
+
+export function lessonRefinementAuditPairs() {
+  const beforeById = new Map(REFINEMENT_INPUT_POOL.map((exercise) => [exercise.id, exercise]));
+  return QUALITY_INPUT_POOL.map((after) => ({ before: beforeById.get(after.id)!, after }));
 }
 
 /** Historical analyses remain intact. Bank snapshots must never override the

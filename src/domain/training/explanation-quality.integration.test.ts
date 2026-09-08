@@ -15,8 +15,8 @@ function stratifiedSample(): TrainingExercise[] {
       .toSorted((first, second) => (first.difficulty ?? 1300) - (second.difficulty ?? 1300) || first.id.localeCompare(second.id));
     const single = exercises.filter((exercise) => exercise.pedagogicalUnit === "single_move");
     const multi = exercises.filter((exercise) => exercise.pedagogicalUnit !== "single_move");
-    const selected = [...spreadSample(single, 13), ...spreadSample(multi, 13)];
-    return selected.length >= 25 ? selected : spreadSample(exercises, 25);
+    const selected = [...spreadSample(single, 15), ...spreadSample(multi, 15)];
+    return selected.length >= 30 ? selected : spreadSample(exercises, 30);
   });
 }
 
@@ -24,8 +24,8 @@ describe("stratified non-tactical explanation audit", () => {
   const sample = stratifiedSample();
   const assessments = sample.map((exercise) => ({ exercise, assessment: assessExplanationQuality(exercise) }));
 
-  it("covers at least 100 exercises across four domains, units and rating bands", () => {
-    expect(sample.length).toBeGreaterThanOrEqual(100);
+  it("covers 120 exercises across four domains, units and rating bands", () => {
+    expect(sample.length).toBe(120);
     expect(new Set(sample.map((exercise) => exercise.category))).toEqual(new Set(["strategy", "endgame", "conversion", "defense"]));
     expect(new Set(sample.map((exercise) => exercise.pedagogicalUnit === "single_move" ? "single" : "multi"))).toEqual(new Set(["single", "multi"]));
     expect(Math.min(...sample.map((exercise) => exercise.difficulty ?? 1300))).toBeLessThan(1200);
@@ -44,12 +44,11 @@ describe("stratified non-tactical explanation audit", () => {
   });
 
   it("keeps declared defense continuations alive for their second real decision", () => {
-    const repaired = pedagogyAuditPairs().filter(({ before, after }) => before.category === "defense"
-      && before.pedagogicalUnit !== "single_move" && before.sequenceStopCondition === "first_decision"
-      && after.sequenceStopCondition === "required_steps");
-    expect(repaired).toHaveLength(24);
-    expect(repaired.every(({ after }) => after.requiredSteps?.length === 2
-      && (after.solutionLine?.filter((_move, index) => index % 2 === 0).length ?? 0) >= 2)).toBe(true);
+    const published = allConceptExercises().filter((exercise) => exercise.category === "defense"
+      && exercise.pedagogicalUnit !== "single_move");
+    expect(published.length).toBeGreaterThanOrEqual(24);
+    expect(published.every((exercise) => (exercise.requiredSteps?.length ?? 0) >= 2
+      && (exercise.solutionLine?.filter((_move, index) => index % 2 === 0).length ?? 0) >= 2)).toBe(true);
   });
 
   it("materially improves the same stratified sample over legacy copy", () => {

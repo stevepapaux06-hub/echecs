@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isLegalTrainingDrop } from "./interaction";
+import { isLegalTrainingDrop, legalMoveTargets } from "./interaction";
 
 const initialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -18,5 +18,18 @@ describe("isLegalTrainingDrop", () => {
 
   it("rejects a cancelled drop", () => {
     expect(isLegalTrainingDrop(initialFen, "e2", null)).toBe(false);
+  });
+
+  it("returns legal quiet and capture targets for click-to-move", () => {
+    expect(legalMoveTargets(initialFen, "e2")).toEqual([
+      { square: "e3", capture: false },
+      { square: "e4", capture: false },
+    ]);
+    expect(legalMoveTargets("8/8/8/3p4/4P3/8/8/4K2k w - - 0 1", "e4"))
+      .toContainEqual({ square: "d5", capture: true });
+  });
+
+  it("does not select an opponent piece", () => {
+    expect(legalMoveTargets(initialFen, "e7")).toEqual([]);
   });
 });

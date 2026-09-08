@@ -106,6 +106,75 @@ for (const target of targets) {
       await activate(page.getByRole("button", { name: "Commencer mon entraînement" }));
       await page.locator(".board-frame [data-square]").first().waitFor();
     }, step, 30_000);
+    step = "training click-to-move";
+    await deadline(async () => {
+      const squares = page.locator(".board-frame [data-square]");
+      let sourceSquare;
+      let targetSquare;
+      for (let index = 0; index < await squares.count(); index++) {
+        const square = squares.nth(index);
+        await (mobile ? square.tap() : square.click());
+        // React applies the selected/legal-square styles on the next render.
+        await page.waitForTimeout(60);
+        const quietTarget = await page.locator('.board-frame [data-square]').evaluateAll((elements) => {
+          const target = elements.find((element) => [...element.children].some((child) => (
+            getComputedStyle(child).backgroundImage.includes("radial-gradient")
+          )));
+          return target?.getAttribute("data-square") ?? null;
+        });
+        if (quietTarget) {
+          sourceSquare = await square.getAttribute("data-square");
+          targetSquare = quietTarget;
+          break;
+        }
+      }
+      assert.ok(sourceSquare && targetSquare, "No selectable piece with a legal quiet move was found");
+      const source = page.locator(`.board-frame [data-square="${sourceSquare}"]`);
+      const before = await source.innerHTML();
+      const target = page.locator(`.board-frame [data-square="${targetSquare}"]`);
+      await (mobile ? target.tap() : target.click());
+      await page.waitForFunction(({ sourceSquare, before }) => {
+        const source = document.querySelector(`.board-frame [data-square="${sourceSquare}"]`);
+        return Boolean(source && source.innerHTML !== before);
+      }, { sourceSquare, before });
+    }, step, 20_000);
+    if (target.name.includes("Desktop")) {
+      step = "Stockfish lab history";
+      await deadline(async () => {
+        await activate(page.getByRole("button", { name: "Recommencer", exact: true }));
+        await activate(page.getByRole("button", { name: "Voir l’explication", exact: true }));
+        const launch = page.getByRole("button", { name: "Explorer avec Stockfish", exact: true });
+        await launch.waitFor({ timeout: 50_000 });
+        await activate(launch);
+        await page.getByRole("button", { name: "Début de la ligne", exact: true }).waitFor();
+
+        const movable = page.locator('.board-frame [data-square]:has([aria-disabled="false"])');
+        let targetSquare;
+        for (let index = 0; index < await movable.count(); index++) {
+          await movable.nth(index).click();
+          await page.waitForTimeout(60);
+          targetSquare = await page.locator('.board-frame [data-square]').evaluateAll((elements) => {
+            const target = elements.find((element) => [...element.children].some((child) => {
+              const style = getComputedStyle(child);
+              return style.backgroundImage.includes("radial-gradient") || style.boxShadow.includes("6px");
+            }));
+            return target?.getAttribute("data-square") ?? null;
+          });
+          if (targetSquare) break;
+        }
+        assert.ok(targetSquare, "The Stockfish lab did not expose legal click targets");
+        await page.locator(`.board-frame [data-square="${targetSquare}"]`).click();
+        await page.waitForFunction(() => document.querySelectorAll(".analysis-move-history button").length >= 2);
+
+        await activate(page.getByRole("button", { name: "Précédent", exact: true }));
+        await activate(page.getByRole("button", { name: "Coup suivant", exact: true }));
+        await activate(page.getByRole("button", { name: "Début de la ligne", exact: true }));
+        await activate(page.getByRole("button", { name: "Fin de la ligne", exact: true }));
+        await activate(page.getByRole("button", { name: "Position initiale", exact: true }));
+        await activate(page.getByRole("button", { name: "Retourner l’échiquier", exact: true }));
+        await activate(page.getByRole("button", { name: "Retour à l’exercice", exact: true }));
+      }, step, 55_000);
+    }
     step = "training buttons and scroll outside the board";
     await deadline(async () => {
       await activate(page.getByRole("button", { name: "Recommencer", exact: true }));

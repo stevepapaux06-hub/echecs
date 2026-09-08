@@ -27,7 +27,7 @@ import {
   type PedagogicalMoveResult,
   type TrainingResult,
 } from "@/domain/training/sequence";
-import { isLegalTrainingDrop } from "@/domain/training/interaction";
+import { isLegalTrainingDrop, legalMoveTargets } from "@/domain/training/interaction";
 import {
   nextExerciseIndex,
   conceptTrainingFilter,
@@ -115,6 +115,7 @@ export function TrainingBoard({
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [solutionRevealed, setSolutionRevealed] = useState(false);
   const [boardRevision, setBoardRevision] = useState(0);
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const baselineCache = useRef(new Map<string, EngineEvaluation>());
   const initialEvaluation = useRef<EngineEvaluation | null>(null);
   const initialPlayerCp = useRef<number | null>(null);
@@ -140,6 +141,7 @@ export function TrainingBoard({
     setSolutionRevealed(false);
     setVariantStep(null);
     setBoardRevision((revision) => revision + 1);
+    setSelectedSquare(null);
     initialEvaluation.current = null;
     initialPlayerCp.current = null;
     largestLossCp.current = 0;
@@ -273,6 +275,7 @@ export function TrainingBoard({
     const movesAfterPlayer = [...attemptMoves, playedUci];
     const nextPlayerMoves = playerMoves + 1;
     setPosition(fenAfter);
+    setSelectedSquare(null);
     setEngineError(null);
     setThinkingStage("checking");
 
@@ -434,6 +437,20 @@ export function TrainingBoard({
   ]));
   const playerTurn = new Chess(position).turn() === (exercise.playerColor === "white" ? "w" : "b");
   const boardInteractive = !thinkingStage && !feedback && !result && playerTurn;
+  const legalTargets = boardInteractive && selectedSquare
+    ? legalMoveTargets(position, selectedSquare)
+    : [];
+  const clickMoveSquares = Object.fromEntries([
+    ...(selectedSquare ? [[selectedSquare, {
+      boxShadow: "inset 0 0 0 4px rgba(247, 201, 72, .95)",
+    }]] : []),
+    ...legalTargets.map((target) => [target.square, target.capture ? {
+      boxShadow: "inset 0 0 0 6px rgba(247, 201, 72, .72)",
+      borderRadius: "10%",
+    } : {
+      backgroundImage: "radial-gradient(circle, rgba(247, 201, 72, .8) 0 13%, transparent 15%)",
+    }]),
+  ]);
   const followingIndex = nextExerciseIndex(index, exercises.length);
   const followingExercise = followingIndex === null ? null : exercises[followingIndex];
   const sameConceptNext = Boolean(
@@ -450,6 +467,21 @@ export function TrainingBoard({
       : pedagogicalUnit === "short_plan_sequence"
         ? "Plan à conduire"
         : "Décision et continuation";
+
+  function handleBoardSquareClick(square: string): void {
+    if (!boardInteractive || moveInFlight.current) return;
+    if (selectedSquare && legalTargets.some((target) => target.square === square)) {
+      moveInFlight.current = true;
+      const source = selectedSquare;
+      setSelectedSquare(null);
+      void attemptMove(source, square);
+      return;
+    }
+    const chess = new Chess(position);
+    const piece = chess.get(square as Square);
+    const expected = exercise.playerColor === "white" ? "w" : "b";
+    setSelectedSquare(piece?.color === expected && chess.turn() === expected ? square : null);
+  }
 
   const options: ChessboardOptions = {
     id: `chesspath-training-${exercise.id}`,
@@ -470,7 +502,7 @@ export function TrainingBoard({
         color: feedback.tone === "warning" ? arrowColor.warning : "rgba(213, 161, 74, .85)",
       }] : []),
     ] : [],
-    squareStyles: feedback ? planSquares : {},
+    squareStyles: feedback ? planSquares : clickMoveSquares,
     canDragPiece: ({ piece }) => {
       const expected = exercise.playerColor === "white" ? "w" : "b";
       return boardInteractive && piece.pieceType.toLowerCase().startsWith(expected);
@@ -484,9 +516,12 @@ export function TrainingBoard({
         return false;
       }
       moveInFlight.current = true;
+      setSelectedSquare(null);
       void attemptMove(sourceSquare, targetSquare);
       return true;
     },
+    onPieceClick: ({ square }) => { if (square) handleBoardSquareClick(square); },
+    onSquareClick: ({ square }) => handleBoardSquareClick(square),
   };
 
   function openAnalysisLab(): void {

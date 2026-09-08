@@ -768,6 +768,10 @@ button:disabled { cursor: not-allowed; opacity: .48; }
 .analysis-controls { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
 .analysis-controls button { min-height: 38px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; color: var(--ink); background: rgba(255,255,255,.55); border: 1px solid rgba(20,33,28,.1); border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: 730; }
 .analysis-controls button:disabled { opacity: .45; cursor: default; }
+.analysis-move-history { margin-top: 10px; min-height: 42px; padding: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 5px; background: rgba(255,255,255,.45); border: 1px solid rgba(20,33,28,.08); border-radius: 10px; }
+.analysis-move-history > span { margin: 0 5px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.analysis-move-history button { min-width: 38px; min-height: 26px; padding: 3px 7px; color: var(--ink); background: transparent; border: 0; border-radius: 6px; cursor: pointer; font-size: 10px; }
+.analysis-move-history button:hover, .analysis-move-history button.active { color: white; background: var(--emerald); }
 .analysis-engine-panel { padding: 22px; display: grid; gap: 20px; background: #fbfaf5; border: 1px solid var(--line); border-radius: 15px; }
 .analysis-engine-status { display: flex; gap: 9px; align-items: center; color: var(--muted); font-size: 9px; }
 .analysis-engine-status svg { color: var(--emerald); }

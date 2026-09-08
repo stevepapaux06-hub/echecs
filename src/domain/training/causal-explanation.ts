@@ -6,6 +6,10 @@ const PIECES: Record<PieceSymbol, string> = {
   p: "pion", n: "cavalier", b: "fou", r: "tour", q: "dame", k: "roi",
 };
 
+function piecePhrase(piece: string): string {
+  return `${piece === "tour" || piece === "dame" ? "la" : "le"} ${piece}`;
+}
+
 const CONCEPTS: Record<string, string> = {
   open_file: "utiliser une colonne ouverte", outpost: "installer une pièce sur un avant-poste",
   weak_square: "exploiter une case faible", improve_worst_piece: "améliorer la pièce la moins active",
@@ -46,7 +50,7 @@ const SIGNAL_COPY: Record<string, (from: string, to: string, targets: string[]) 
   pawn_method: (from, to) => `Le coup ${from}–${to} obtient une case clé liée à la course des pions.`,
   bishop_activated: (from, to, targets) => `Le fou gagne une diagonale utile de ${from} à ${to}${targets.length ? ` vers ${targets.join(", ")}` : ""}.`,
   knight_activated: (from, to, targets) => `Le cavalier se centralise en ${to}${targets.length ? ` et vise ${targets.join(", ")}` : ""}.`,
-  threat_reduced: (from, to) => `Après ${from}–${to}, la menace adverse détectée n’est plus disponible dans la même forme.`,
+  threat_reduced: (from, to) => `Après ${from}–${to}, la ressource adverse immédiate est neutralisée.`,
   attacker_removed: (_from, to) => `La pièce qui portait la menace est éliminée en ${to}.`,
   active_threat_answer: (from, to) => `${from}–${to} répond à la menace tout en créant une activité qui impose une décision à l’adversaire.`,
   forcing_threat_answer: (from, to) => `${from}–${to} neutralise l’urgence en créant une menace directe.`,
@@ -72,6 +76,19 @@ function moveInfo(fen: string, uci: string): { label: string; piece: string; fro
 
 function afterMoveFen(fen: string, uci: string): string | null {
   try { const chess = new Chess(fen); chess.move({ from: uci.slice(0, 2) as Square, to: uci.slice(2, 4) as Square, promotion: uci[4] || "q" }); return chess.fen(); } catch { return null; }
+}
+
+function threatenedSquares(fen: string): string[] {
+  try {
+    const chess = new Chess(fen);
+    const color = chess.turn();
+    return chess.board().flatMap((row) => row).filter((piece) => piece
+      && piece.color === color && piece.type !== "k"
+      && chess.attackers(piece.square, color === "w" ? "b" : "w").length > 0
+      && chess.attackers(piece.square, color).length === 0).map((piece) => piece!.square);
+  } catch {
+    return [];
+  }
 }
 
 function primarySignal(exercise: TrainingExercise): { signal?: string; from: string; to: string; targets: string[] } {
@@ -111,17 +128,14 @@ function opponentResource(exercise: TrainingExercise): string | undefined {
   if (!reply || !after) return undefined;
   const info = moveInfo(after, reply);
   if (!info) return undefined;
-  const effect = info.check ? "donne échec et force une réponse" : info.capture ? "échange ou récupère du matériel" : `repositionne le ${info.piece} vers ${info.to}`;
+  const effect = info.check ? "donne échec et force une réponse" : info.capture ? "échange ou récupère du matériel" : `repositionne ${piecePhrase(info.piece)} vers ${info.to}`;
   return `La meilleure résistance est ${info.label} : elle ${effect}. Le plan choisi doit rester valable après cette réponse précise.`;
 }
 
 function immediateProblem(exercise: TrainingExercise, chosen: NonNullable<ReturnType<typeof moveInfo>>,
   detected: ReturnType<typeof primarySignal>, legacy: StructuredExerciseExplanation): string {
   const chess = new Chess(exercise.fen);
-  const color = chess.turn();
-  const threatened = chess.board().flatMap((row) => row).filter((piece) => piece && piece.color === color && piece.type !== "k"
-    && chess.attackers(piece.square, color === "w" ? "b" : "w").length > 0
-    && chess.attackers(piece.square, color).length === 0).map((piece) => piece!.square);
+  const threatened = threatenedSquares(exercise.fen);
   const article = chosen.piece === "tour" || chosen.piece === "dame" ? "La" : "Le";
   const pronoun = article === "La" ? "elle" : "il";
   switch (exercise.conceptSlug) {
@@ -130,7 +144,7 @@ function immediateProblem(exercise: TrainingExercise, chosen: NonNullable<Return
     case "weak_square": return `La case ${chosen.to} ne peut pas être contestée par un pion adverse et donne accès à ${detected.targets.join(", ") || "une cible concrète"}.`;
     case "improve_worst_piece": return `${article} ${chosen.piece} en ${chosen.from} est la pièce la moins active ; la route vers ${detected.to} lui donne un rôle contre ${detected.targets.join(", ") || "une case d’entrée"}.`;
     case "piece_activity": return `${article} ${chosen.piece} en ${chosen.from} manque de cible ; depuis ${chosen.to}, ${pronoun} agit sur ${detected.targets.join(", ") || "une case d’entrée"}.`;
-    case "weak_pawn": return `Le pion adverse ${detected.targets[0] ?? "isolé"} est une faiblesse atteignable que le ${chosen.piece} peut fixer et attaquer.`;
+    case "weak_pawn": return `Le pion adverse ${detected.targets[0] ?? "isolé"} est une faiblesse atteignable que ${piecePhrase(chosen.piece)} peut fixer et attaquer.`;
     case "pawn_break": return `La structure est encore fermée autour de ${chosen.to} ; la poussée ${chosen.from}–${chosen.to} crée le contact avec ${detected.targets.join(", ") || "la chaîne adverse"}.`;
     case "favorable_exchange": return `La pièce adverse en ${chosen.to} remplit un rôle plus actif ; l’échange proposé retire précisément cette pièce.`;
     case "restrict_counterplay": return threatened.length
@@ -145,10 +159,58 @@ function immediateProblem(exercise: TrainingExercise, chosen: NonNullable<Return
     case "rule_of_square": return `Le pion adverse menace de promouvoir ; le roi doit choisir immédiatement une route qui entre dans son carré.`;
     case "rook_behind_pawn": return `Le pion passé a besoin d’un soutien ou d’un blocage par l’arrière ; la tour en ${chosen.from} n’occupe pas encore cette ligne.`;
     case "rook_activity": case "rook_endgame": return `La tour en ${chosen.from} est trop passive ; ${chosen.to} lui permet d’agir sur ${detected.targets.join(", ") || "le pion et le roi adverses"}.`;
-    case "convert_small_advantage": case "simplify_when_ahead": case "use_material_advantage":
-    case "favorable_endgame_transition": case "preserve_activity": case "create_second_weakness": case "avoid_forcing_too_soon":
-      return `Ton avantage ne progressera que si tu conserves l’activité et contrôles d’abord la ressource adverse.`;
+    case "simplify_when_ahead": return `L’échange en ${chosen.to} retire ${chess.get(chosen.to as Square) ? `${piecePhrase(PIECES[chess.get(chosen.to as Square)!.type])} adverse` : "une ressource adverse"} ; il faut vérifier les pièces et les pions qui resteront.`;
+    case "use_material_advantage": return `${article} ${chosen.piece} en ${chosen.from} représente une partie de l’avantage matériel ; ${chosen.from}–${chosen.to} lui donne enfin un rôle dans la position.`;
+    case "favorable_endgame_transition": return `La position permet l’échange en ${chosen.to}, mais la leçon dépend de la finale réellement obtenue après la reprise adverse.`;
+    case "preserve_activity": return `${article} ${chosen.piece} en ${chosen.from} doit rester ${article === "La" ? "active" : "actif"} : depuis ${chosen.to}, ${pronoun} conserve ${detected.targets.length ? `l’accès à ${detected.targets.join(", ")}` : "une ligne utile"}.`;
+    case "convert_small_advantage": return `Le petit avantage dépend du changement concret créé par ${chosen.from}–${chosen.to}, pas d’une recherche immédiate de matériel.`;
+    case "create_second_weakness": return `La première faiblesse est contenue ; ${chosen.from}–${chosen.to} oblige la défense à surveiller une deuxième cible.`;
+    case "avoid_forcing_too_soon": return `Forcer tout de suite laisserait la défense coordonnée ; ${chosen.from}–${chosen.to} améliore d’abord la pièce concernée.`;
     default: return legacy.positionEssentials ?? legacy.notice;
+  }
+}
+
+function alternativeConsequence(
+  exercise: TrainingExercise,
+  natural: NonNullable<ReturnType<typeof moveInfo>>,
+  chosen: NonNullable<ReturnType<typeof moveInfo>>,
+  detected: ReturnType<typeof primarySignal>,
+): string {
+  const target = detected.targets[0];
+  const reply = exercise.solutionLine?.[1];
+  switch (exercise.conceptSlug) {
+    case "open_file":
+      return `${natural.label} laisse la tour hors de la colonne ${chosen.to[0]} et ne crée pas l’accès à ${target ?? chosen.to}.`;
+    case "outpost":
+      return `${natural.label} n’installe pas la pièce en ${detected.to} ; la case forte et ses cibles ${detected.targets.join(", ") || "dans le camp adverse"} restent inexploitées.`;
+    case "weak_square":
+      return `${natural.label} renonce au point d’appui ${detected.to}${target ? ` et à la cible ${target}` : ""}.`;
+    case "improve_worst_piece": case "piece_activity":
+      return `${natural.label} ne donne pas à ${piecePhrase(chosen.piece)} de ${chosen.from} le rôle obtenu en ${detected.to}${target ? ` contre ${target}` : ""}.`;
+    case "weak_pawn":
+      return `${natural.label} ne fixe ni n’attaque le pion ${target ?? "faible"}, qui conserve sa possibilité d’avancer ou de s’échanger.`;
+    case "pawn_break":
+      return `${natural.label} ne crée pas le contact ${chosen.from}–${chosen.to}${target ? ` avec ${target}` : ""} ; la structure reste fermée.`;
+    case "favorable_exchange": case "simplify_when_ahead": case "simplification_to_hold": case "exchange_attacker":
+      return `${natural.label} conserve la pièce adverse en ${chosen.to}, donc la cible de l’échange reste active.`;
+    case "restrict_counterplay": case "defensive_resource": case "active_defense": case "defensive_counterplay":
+      return `${natural.label} laisse subsister ${threatenedSquares(exercise.fen).length ? `la menace contre ${threatenedSquares(exercise.fen).join(", ")}` : reply ? `la ressource ${reply.slice(0, 2)}–${reply.slice(2, 4)}` : "la ressource active adverse"}.`;
+    case "return_material":
+      return `${natural.label} tente de conserver le matériel, mais ne supprime pas l’attaquant ou la ligne qui menace le roi.`;
+    case "favorable_endgame_transition":
+      return `${natural.label} évite l’échange en ${chosen.to} et maintient le contre-jeu du milieu de jeu.`;
+    case "use_material_advantage":
+      return `${natural.label} laisse ${piecePhrase(chosen.piece)} supplémentaire hors du jeu au lieu de l’activer par ${chosen.from}–${chosen.to}.`;
+    case "preserve_activity":
+      return `${natural.label} abandonne l’activité obtenue en ${chosen.to}${target ? ` vers ${target}` : ""}.`;
+    case "opposition": case "king_and_pawn": case "king_activity": case "rule_of_square":
+      return `${natural.label} perd le tempo ou la route vers ${detected.to}, ce qui permet au roi adverse de contrôler les cases clés.`;
+    case "rook_endgame": case "rook_activity": case "rook_behind_pawn":
+      return `${natural.label} laisse la tour sans l’activité obtenue en ${detected.to}${target ? ` contre ${target}` : ""}.`;
+    case "passed_pawn":
+      return `${natural.label} ne fait pas progresser ou soutenir le pion sur la route ${chosen.from}–${chosen.to}.`;
+    default:
+      return `${natural.label} change une autre pièce, mais n’obtient pas le jalon visible en ${detected.to}${target ? ` contre ${target}` : ""}.`;
   }
 }
 
@@ -172,7 +234,9 @@ function milestoneCopy(exercise: TrainingExercise, stateChange: string): string 
     rook_behind_passer: "la tour est placée derrière le pion passé", concept_state: stateChange,
     theoretical_position: "la position théorique de référence est atteinte",
   };
-  return `Étape validée lorsque ${labels[milestone.kind] ?? stateChange.toLowerCase()}.`;
+  const observation = (labels[milestone.kind] ?? stateChange)
+    .replace(/[.!?]+$/, "");
+  return `Étape validée lorsque ${observation.charAt(0).toLowerCase()}${observation.slice(1)}.`;
 }
 
 function normalizeSource(exercise: TrainingExercise): StructuredExerciseExplanation["evidence"] {
@@ -192,9 +256,18 @@ export function enrichCausalExplanation(exercise: TrainingExercise): TrainingExe
   const chosen = moveInfo(exercise.fen, exercise.bestMove);
   if (!chosen) return exercise;
   const detected = primarySignal(exercise);
-  const stateChange = detected.signal
+  const detectedStateChange = detected.signal
     ? SIGNAL_COPY[detected.signal](detected.from, detected.to, detected.targets)
-    : `Après ${chosen.label}, le rôle du ${chosen.piece} change de ${chosen.from} vers ${chosen.to}.`;
+    : `Après ${chosen.label}, le rôle de ${piecePhrase(chosen.piece)} change de ${chosen.from} vers ${chosen.to}.`;
+  const threatened = threatenedSquares(exercise.fen);
+  const verifiedReply = exercise.solutionLine?.[1];
+  const stateChange = detected.signal === "threat_reduced"
+    ? `Après ${detected.from}–${detected.to}, ${threatened.length
+      ? `la menace contre ${threatened.join(", ")} est neutralisée`
+      : verifiedReply
+        ? `la ressource ${verifiedReply.slice(0, 2)}–${verifiedReply.slice(2, 4)} n’est plus disponible`
+        : "le contre-jeu adverse immédiat est neutralisé"}.`
+    : detectedStateChange;
   const contrast = exercise.trainingAssessment?.contrast;
   const plausible = [...new Set([exercise.bestMove, ...(contrast?.plausible ?? [])])].slice(0, 4);
   const candidatePlans = plausible.map((uci) => {
@@ -231,7 +304,7 @@ export function enrichCausalExplanation(exercise: TrainingExercise): TrainingExe
     whyItWorksHere: detected.signal ? stateChange : legacy.chosenPlanRationale ?? legacy.objective,
     naturalAlternative: natural ? `${natural.label} est une alternative humaine naturelle.` : legacy.naturalAlternative,
     whyNaturalAlternativeIsInferior: natural
-      ? `${natural.label} ne crée pas le changement concret recherché et laisse l’adversaire conserver sa ressource principale.`
+      ? alternativeConsequence(exercise, natural, chosen, detected)
       : legacy.whyNaturalAlternativeIsInferior,
     stateChange,
     resultingPositionChange: stateChange,
@@ -249,15 +322,14 @@ export function enrichCausalExplanation(exercise: TrainingExercise): TrainingExe
   };
   const reply = exercise.solutionLine?.[1];
   const nextOwn = exercise.solutionLine?.[2];
-  const conceptualTarget = detected.targets[0];
   const planArrows = [
-    { from: chosen.from, to: chosen.to, color: "primary" as const, label: "décision" },
-    ...(conceptualTarget && conceptualTarget !== chosen.to ? [{ from: chosen.to, to: conceptualTarget, color: "secondary" as const, label: "rôle obtenu" }] : []),
-    ...(!conceptualTarget && nextOwn ? [{ from: nextOwn.slice(0, 2), to: nextOwn.slice(2, 4), color: "secondary" as const, label: "suite vérifiée" }] : []),
-    ...(reply ? [{ from: reply.slice(0, 2), to: reply.slice(2, 4), color: "warning" as const, label: "meilleure résistance" }] : []),
+    { from: chosen.from, to: chosen.to, color: "primary" as const, role: "move" as const, label: "décision" },
+    ...(nextOwn ? [{ from: nextOwn.slice(0, 2), to: nextOwn.slice(2, 4), color: "secondary" as const, role: "route" as const, label: "suite vérifiée" }] : []),
+    ...(reply ? [{ from: reply.slice(0, 2), to: reply.slice(2, 4), color: "warning" as const, role: "opponent_resource" as const, label: "meilleure résistance" }] : []),
   ].slice(0, 3);
   const planSquares = [...new Set([chosen.to, ...detected.targets])].slice(0, 3).map((square, index) => ({
     square, color: index === 0 ? "primary" as const : "secondary" as const,
+    role: index === 0 ? "milestone" as const : "target" as const,
   }));
   return {
     ...exercise,

@@ -246,12 +246,15 @@ export type PlanArrow = {
   from: string;
   to: string;
   color: "primary" | "secondary" | "warning";
+  /** Visual meaning: a target is represented by PlanSquare, never by a fake move. */
+  role?: "move" | "route" | "opponent_resource";
   label?: string;
 };
 
 export type PlanSquare = {
   square: string;
   color: "primary" | "secondary" | "warning";
+  role?: "target" | "milestone" | "danger";
 };
 
 export type StructuredExerciseExplanation = {
