@@ -1,0 +1,44 @@
+/**
+ * Traceable positions already present in ChessPath's source corpus. Nothing in
+ * this file is a generated chess position. Labels are intentionally absent:
+ * provenance collection and conceptual annotation remain separate paths.
+ */
+export type ReferenceSourcePosition = {
+  key: string;
+  fen: string;
+  source: "lichess_standard" | "lichess_broadcast";
+  sourceUrl: string;
+  gameId: string;
+  sourceRecordId: string;
+  ply: number;
+  players: string[];
+  eloBucket: "1200-1400" | "1400-1600" | "1600-1800" | "1800+" | "unknown";
+  phase: "middlegame" | "endgame";
+  structure: string;
+};
+
+export const REFERENCE_SOURCE_CATALOG = [
+  { key: "outpost-a", fen: "1r3rk1/1p3p1p/p7/8/4Pp2/2NPb2b/PPP1B2P/R2K4 w - - 2 22", source: "lichess_standard", sourceUrl: "https://lichess.org/7tuxquet", gameId: "7tuxquet", sourceRecordId: "quality-mine-outpost-82cc0483c1a0fe", ply: 43, players: ["excel", "VanillaShamanilla"], eloBucket: "1400-1600", phase: "middlegame", structure: "open-center-kingside-pressure" },
+  { key: "outpost-b", fen: "Qnq1k2r/4bppp/p2p1n2/2p5/P3P3/2N2N2/1P3PPP/R1B2RK1 w k - 1 13", source: "lichess_standard", sourceUrl: "https://lichess.org/zca9vxup", gameId: "zca9vxup", sourceRecordId: "quality-mine-outpost-0339b16515cfb4", ply: 25, players: ["sakrat", "psonio"], eloBucket: "1400-1600", phase: "middlegame", structure: "open-center-queens-present" },
+  { key: "outpost-c", fen: "r4rk1/pp3ppp/3p1q2/2p5/2PbPpQ1/2NP3P/PP3PP1/2R2R1K w - - 0 16", source: "lichess_standard", sourceUrl: "https://lichess.org/oyytom21", gameId: "oyytom21", sourceRecordId: "quality-mine-outpost-f5f11aab2d29df", ply: 31, players: ["MihaSAH", "akayhan"], eloBucket: "1400-1600", phase: "middlegame", structure: "isolated-center-tactical-pressure" },
+  { key: "file-a", fen: "2r2rk1/pp1b3p/4pp2/1P1p2p1/P2n4/2N3B1/2R2PPP/5RK1 w - - 0 22", source: "lichess_standard", sourceUrl: "https://lichess.org/l9vbwjsg", gameId: "l9vbwjsg", sourceRecordId: "quality-mine-open_file-54b323d265504c", ply: 43, players: ["b777", "Marzinkus"], eloBucket: "1400-1600", phase: "middlegame", structure: "queens-off-central-target" },
+  { key: "file-b", fen: "2r2rk1/3p4/p1n1p1p1/1p3pN1/6p1/2P5/P4PBP/R3R1K1 w - - 2 25", source: "lichess_standard", sourceUrl: "https://lichess.org/lq8ul77r", gameId: "lq8ul77r", sourceRecordId: "quality-mine-open_file-6570e6df983f87", ply: 49, players: ["dissident_with_love", "Beibus"], eloBucket: "1400-1600", phase: "middlegame", structure: "queens-off-open-d-file" },
+  { key: "file-c", fen: "4rrk1/5p1p/p5p1/5b2/2Q2p2/2N4P/PqP2PP1/R5K1 w - - 0 22", source: "lichess_standard", sourceUrl: "https://lichess.org/lvgg5cfk", gameId: "lvgg5cfk", sourceRecordId: "quality-mine-open_file-3e28f8ca64c0e2", ply: 43, players: ["Milligan", "Quixote91"], eloBucket: "1400-1600", phase: "middlegame", structure: "open-center-heavy-pieces" },
+  { key: "worst-a", fen: "6k1/pp3r1p/4p3/1b1pBn2/r7/8/3RN1PP/5RK1 w - - 2 28", source: "lichess_standard", sourceUrl: "https://lichess.org/l9vbwjsg", gameId: "l9vbwjsg", sourceRecordId: "quality-mine-improve_worst_piece-58d7e0f957208c", ply: 55, players: ["b777", "Marzinkus"], eloBucket: "1400-1600", phase: "middlegame", structure: "queens-off-minor-piece-maneuver" },
+  { key: "worst-b", fen: "r1b2rk1/1pp1bppp/p1np4/5n2/8/N1PB1P2/PP1K3P/6R1 w - - 2 19", source: "lichess_standard", sourceUrl: "https://lichess.org/t14hv2aj", gameId: "t14hv2aj", sourceRecordId: "quality-mine-improve_worst_piece-5f50d5e570790b", ply: 37, players: ["nazer", "jorespi"], eloBucket: "1400-1600", phase: "middlegame", structure: "open-center-knight-reroute" },
+  { key: "worst-c", fen: "4qrk1/1p1b1pp1/3p1n1p/rP1Pp3/P2pP3/N4N2/5PPP/R3R1K1 w - - 0 22", source: "lichess_standard", sourceUrl: "https://lichess.org/rrk2abyi", gameId: "rrk2abyi", sourceRecordId: "quality-mine-improve_worst_piece-8f0ab1e7658094", ply: 43, players: ["castulo", "burina"], eloBucket: "1400-1600", phase: "middlegame", structure: "closed-center-knight-reroute" },
+  { key: "opposition-a", fen: "8/5p1p/1p2k1p1/p5P1/3p4/3K4/PP3P1P/8 b - - 1 35", source: "lichess_broadcast", sourceUrl: "https://lichess.org/broadcast/4ncl-division-1-2025-2026/round-9/06obkLvX/uXukfoNd", gameId: "1b6fcfc08da3d14afa55", sourceRecordId: "contrast-mine-opposition-d33649af4e53e6ad44", ply: 70, players: ["Villiers, Thomas", "Rendle, Thomas E"], eloBucket: "1800+", phase: "endgame", structure: "multi-pawn-king-ending" },
+  { key: "opposition-b", fen: "8/8/8/p1p5/P2p3k/1P1P1P2/6K1/8 w - - 1 49", source: "lichess_broadcast", sourceUrl: "https://lichess.org/broadcast/4th-gujarat-international-open-grandmasters-chess-tournament-2026-category-a/round-2/OkJRmiLM/0Jtcnq8j", gameId: "217f3018b9b005455f32", sourceRecordId: "contrast-mine-opposition-865f5d5ce49ed89693", ply: 97, players: ["Gorshtein, Ido", "Pranay Akula"], eloBucket: "1800+", phase: "endgame", structure: "multi-pawn-reserve-tempi" },
+  { key: "opposition-c", fen: "8/8/5k2/p1p2P2/P2pK3/1P1P4/8/8 w - - 1 55", source: "lichess_broadcast", sourceUrl: "https://lichess.org/broadcast/4th-gujarat-international-open-grandmasters-chess-tournament-2026-category-a/round-2/OkJRmiLM/0Jtcnq8j", gameId: "217f3018b9b005455f32", sourceRecordId: "contrast-mine-opposition-a953bf8de68eae0bb1", ply: 109, players: ["Gorshtein, Ido", "Pranay Akula"], eloBucket: "1800+", phase: "endgame", structure: "reduced-pawn-reserve-tempi" },
+  { key: "restrict-a", fen: "3r4/2n3p1/p3pp1p/1k5P/R1N2PP1/4P3/PP2K3/8 w - - 1 31", source: "lichess_broadcast", sourceUrl: "https://lichess.org/broadcast/ljubljana-chess-festival-2026/round-6/yqrbAHiJ/Be5sxTQ1", gameId: "5526ee86405131f05937", sourceRecordId: "contrast-mine-restrict_counterplay-56c9a5fce7bc060b36", ply: 61, players: ["unknown", "unknown"], eloBucket: "1800+", phase: "endgame", structure: "rook-minor-piece-conversion" },
+  { key: "restrict-b", fen: "r1b1k2r/pp3p1p/2nq2p1/2ppp2Q/3P4/2PBP3/PP1N1PPP/R4RK1 w kq - 0 13", source: "lichess_broadcast", sourceUrl: "https://lichess.org/broadcast/ljubljana-chess-festival-2026/round-6/yqrbAHiJ/nFy3SrEE", gameId: "3358b8cc4b33096d0435", sourceRecordId: "contrast-mine-restrict_counterplay-058315ddd570982e59", ply: 25, players: ["unknown", "unknown"], eloBucket: "1800+", phase: "middlegame", structure: "closed-center-kingside-space" },
+  { key: "restrict-c", fen: "1r3rk1/p4ppp/b1p1qn2/P1Pp4/5Q2/2N2BP1/1P2PP1P/R4RK1 w - - 1 19", source: "lichess_broadcast", sourceUrl: "https://lichess.org/broadcast/autonomico-absoluto-facv-2026/round-2/Yt6Jl73M/UTNo0xl1", gameId: "31194e7ea9a80e5c679f", sourceRecordId: "contrast-mine-restrict_counterplay-be061fbeba70be6961", ply: 37, players: ["unknown", "unknown"], eloBucket: "1800+", phase: "middlegame", structure: "queenside-space-break" },
+  { key: "exchange-a", fen: "2kr3r/p1pq1ppp/2p5/3b4/QP6/2N5/P4bPP/R1B1R1K1 w - - 0 19", source: "lichess_standard", sourceUrl: "https://lichess.org/9GusI6EE/black#36", gameId: "9GusI6EE", sourceRecordId: "lichess-2afWP", ply: 36, players: ["unknown", "unknown"], eloBucket: "1200-1400", phase: "middlegame", structure: "king-under-attack" },
+  { key: "exchange-b", fen: "rnr3k1/pp3p1p/1b2pp2/8/3P4/P1q1P1P1/2Q1BP1P/2R1K1R1 w - - 0 17", source: "lichess_standard", sourceUrl: "https://lichess.org/amxPOGfM/black#32", gameId: "amxPOGfM", sourceRecordId: "lichess-Ay1hj", ply: 32, players: ["unknown", "unknown"], eloBucket: "1400-1600", phase: "middlegame", structure: "queen-invasion-forced-exchange" },
+  { key: "exchange-c", fen: "3r4/p5k1/1nprp3/1p3pp1/3P2P1/PPNR4/2P2P2/3R2K1 w - - 1 28", source: "lichess_broadcast", sourceUrl: "https://lichess.org/broadcast/montenegro-league-2026--premier/round-2/hkf0zKQy/wNZ5xqIZ", gameId: "2a55baa93303235f73f9", sourceRecordId: "contrast-mine-exchange_attacker-2837258e65ddaa0c09", ply: 55, players: ["Zivkovic, Slaven", "Milovic, Jovan"], eloBucket: "1400-1600", phase: "middlegame", structure: "rook-minor-piece-endgame-transition" },
+  { key: "exchange-d", fen: "r3k1nr/pp3ppp/4p3/1N1pPb2/N7/8/Pq2BPPP/2R1bRK1 w kq - 0 16", source: "lichess_broadcast", sourceUrl: "https://lichess.org/broadcast/ljubljana-chess-festival-2026/round-8/kOI8hRR9/0wspq1Ax", gameId: "a7c7cdf0887a552c79ee", sourceRecordId: "contrast-mine-exchange_attacker-95cb0c967bcc69287b", ply: 31, players: ["Chekanov, Timur", "Skube, Zan"], eloBucket: "1400-1600", phase: "middlegame", structure: "tactical-king-attack" },
+] as const satisfies readonly ReferenceSourcePosition[];
+
+export const REFERENCE_SOURCE_BY_KEY = new Map<string, ReferenceSourcePosition>(
+  REFERENCE_SOURCE_CATALOG.map((source) => [source.key, source]),
+);

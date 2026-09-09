@@ -1,0 +1,193 @@
+import { DEVELOPMENT_REFERENCE_BANK } from "./development-reference";
+import { PILOT_CONCEPT_CONTRACTS } from "./pilot-contracts";
+import { PILOT_CONCEPT_IDS, type CoverageCell, type FutureHoldoutManifest, type PilotConceptId, type RelationProbe } from "./types";
+
+export type CounterfactualPair = {
+  id: string;
+  concept_id: PilotConceptId;
+  kind: "natural" | "branch" | "synthetic";
+  baseline_reference_id: string;
+  comparison_reference_id: string;
+  changed_variable: string;
+  controlled_variables: string[];
+  legality_checked: boolean;
+  plausibility_checked: boolean;
+  hidden_tactic_status: "not_detected" | "requires_engine_check";
+  synthetic: boolean;
+  intended_effect: string;
+};
+
+function idFor(concept: PilotConceptId, family: string, occurrence = 0): string {
+  const matches = DEVELOPMENT_REFERENCE_BANK.filter((sample) => sample.concept_id === concept && sample.family === family);
+  const match = matches[occurrence];
+  if (!match) throw new Error(`Missing ${family}[${occurrence}] for ${concept}`);
+  return match.id;
+}
+
+export const COUNTERFACTUAL_PAIRS: readonly CounterfactualPair[] = PILOT_CONCEPT_IDS.flatMap((concept) => {
+  const naturalPair = concept === "opposition"
+    ? { baseline_reference_id: idFor(concept, "natural_positive", 1), comparison_reference_id: idFor(concept, "centrality_negative"), changed_variable: "pawn tempi and king route in later natural position", kind: "natural" as const }
+    : concept === "open_file"
+      ? { baseline_reference_id: idFor(concept, "natural_positive"), comparison_reference_id: idFor(concept, "neighbor_negative"), changed_variable: "natural game evolution from file decision to piece role", kind: "natural" as const }
+      : { baseline_reference_id: idFor(concept, "natural_positive"), comparison_reference_id: idFor(concept, "affordance_negative"), changed_variable: "legal decision branch from same position", kind: "branch" as const };
+  return [
+    {
+      id: `counterfactual-${concept}-affordance`, concept_id: concept,
+      ...naturalPair,
+      controlled_variables: naturalPair.kind === "branch" ? ["FEN", "trait", "matériel", "structure"] : ["source game cluster"],
+      legality_checked: true, plausibility_checked: true, hidden_tactic_status: "requires_engine_check" as const,
+      synthetic: false,
+      intended_effect: "La propriété peut survivre tandis que l’affordance ou la centralité chute.",
+    },
+    {
+      id: `counterfactual-${concept}-constitutive`, concept_id: concept,
+      kind: "branch" as const,
+      baseline_reference_id: idFor(concept, "natural_positive"),
+      comparison_reference_id: idFor(concept, "constitutive_negative"),
+      changed_variable: "condition constitutive ciblée par une branche légale",
+      controlled_variables: ["FEN", "trait", "matériel", "structure"],
+      legality_checked: true, plausibility_checked: true, hidden_tactic_status: "requires_engine_check" as const,
+      synthetic: false,
+      intended_effect: "La présence, la relevance et la priorité doivent chuter ensemble.",
+    },
+  ];
+});
+
+export const RELATION_PROBES: readonly RelationProbe[] = PILOT_CONCEPT_IDS.flatMap((concept) => [
+  {
+    id: `invariance-${concept}-source-structure`, concept_id: concept, kind: "invariance" as const,
+    baseline_reference_id: idFor(concept, "natural_positive"),
+    comparison_reference_id: idFor(concept, "natural_positive", 1),
+    variable: "source, structure, matériel and position context",
+    expected: { presence: "stable" as const, affordance: "stable" as const, decision_relevance: "stable" as const, pedagogical_priority: "stable" as const },
+    rationale: "Le mécanisme contractuel doit survivre à des indices de source et de structure différents.",
+  },
+  {
+    id: `causal-flip-${concept}-constitutive`, concept_id: concept, kind: "causal_flip" as const,
+    baseline_reference_id: idFor(concept, "natural_positive"),
+    comparison_reference_id: idFor(concept, "constitutive_negative"),
+    variable: "constitutive condition",
+    expected: { presence: "down" as const, affordance: "down" as const, decision_relevance: "down" as const, pedagogical_priority: "down" as const },
+    rationale: "Retirer la condition constitutive doit casser le mécanisme, pas seulement modifier l’évaluation.",
+  },
+  {
+    id: `causal-flip-${concept}-affordance`, concept_id: concept, kind: "causal_flip" as const,
+    baseline_reference_id: idFor(concept, "natural_positive"),
+    comparison_reference_id: idFor(concept, "affordance_negative"),
+    variable: "access, target or practical consequence",
+    expected: { presence: "stable" as const, affordance: "down" as const, decision_relevance: "down" as const, pedagogical_priority: "down" as const },
+    rationale: "La propriété peut rester présente alors que sa possibilité d’exploitation disparaît.",
+  },
+]);
+
+function naturalVsSynthetic(referenceId: string): "natural" | "branch" | "synthetic" {
+  const pair = COUNTERFACTUAL_PAIRS.find((candidate) => candidate.baseline_reference_id === referenceId || candidate.comparison_reference_id === referenceId);
+  return pair?.kind ?? "natural";
+}
+
+export function buildCoverageMatrix(): CoverageCell[] {
+  const cells = new Map<string, CoverageCell>();
+  for (const sample of DEVELOPMENT_REFERENCE_BANK) {
+    const neighboring = PILOT_CONCEPT_CONTRACTS[sample.concept_id].neighboring_concepts.join("|") || "none";
+    const negativeType = sample.family === "natural_positive" ? "positive" : sample.family;
+    const natural = naturalVsSynthetic(sample.id);
+    const dimensions = [
+      sample.concept_id, sample.mechanism_family, sample.structure, sample.material_signature,
+      sample.side_to_move, sample.elo_bucket, sample.eval_state,
+      sample.decision_comparison.tactical_competition, neighboring, sample.provenance.source,
+      sample.difficulty, negativeType, natural, sample.agreement_status,
+    ];
+    const key = dimensions.join("::");
+    const existing = cells.get(key);
+    if (existing) existing.reference_ids.push(sample.id);
+    else cells.set(key, {
+      concept_id: sample.concept_id,
+      mechanism_family: sample.mechanism_family,
+      structure: sample.structure,
+      material_signature: sample.material_signature,
+      side_to_move: sample.side_to_move,
+      elo_bucket: sample.elo_bucket,
+      eval_state: sample.eval_state,
+      tactical_competition: sample.decision_comparison.tactical_competition,
+      neighboring_concept: neighboring,
+      source: sample.provenance.source,
+      difficulty: sample.difficulty,
+      negative_type: negativeType,
+      natural_vs_synthetic: natural,
+      agreement_status: sample.agreement_status,
+      reference_ids: [sample.id],
+    });
+  }
+  return [...cells.values()].toSorted((a, b) => a.concept_id.localeCompare(b.concept_id)
+    || a.mechanism_family.localeCompare(b.mechanism_family)
+    || a.negative_type.localeCompare(b.negative_type));
+}
+
+export const COVERAGE_MATRIX = buildCoverageMatrix();
+
+export const COVERAGE_GAPS: Record<PilotConceptId, string[]> = {
+  outpost: ["prevent_enemy family", "800–1200 natural games", "installed outpost later exchanged", "independent double annotation"],
+  open_file: ["prepare_entry family", "choice between two files", "open file without target from natural game", "800–1200 natural games"],
+  improve_worst_piece: ["rook reroute family", "defensively essential low-mobility piece", "three-step maneuver", "800–1200 natural games"],
+  opposition: ["Syzygy WDL/DTZ attached to every <=7-piece case", "distant opposition", "edge-board stalemate boundary", "800–1200 natural games"],
+  restrict_counterplay: ["independently annotated opponent resource", "alternative resource after restriction", "low-Elo natural cases", "stable short sequences"],
+  exchange_attacker: ["offer-exchange family", "multiple replaceable attackers", "non-forcing defensive examples", "independent attack-state annotation"],
+};
+
+export const SHORTCUT_CHALLENGE_SET = DEVELOPMENT_REFERENCE_BANK.filter((sample) => (
+  sample.family === "human_plausible_misconception"
+  || sample.family === "neighbor_negative"
+  || sample.family === "tactical_override"
+));
+
+export const FUTURE_HOLDOUT_MANIFEST: FutureHoldoutManifest = {
+  version: "1.0.0-pilot",
+  status: "manifest_only_no_labels",
+  target_concepts: [...PILOT_CONCEPT_IDS],
+  target_elo_buckets: ["800-1000", "1000-1200", "1200-1400", "1400-1600", "1600-1800"],
+  collection_requirements: [
+    "échantillonner des parties sans exécuter les détecteurs ChessPath",
+    "stratifier Elo, structure, phase, résultat et présence tactique",
+    "conserver les positions propres, chaotiques, égales, meilleures et inférieures",
+    "geler la liste des positions avant annotation",
+  ],
+  annotation_requirements: [
+    "deux annotateurs utilisant uniquement le contrat versionné",
+    "presence, affordance, relevance et priority annotées séparément",
+    "abstention autorisée et motivée",
+    "adjudication d’expert aveugle à la sortie du Pattern Engine",
+  ],
+  exclusion_clusters: [...new Set(DEVELOPMENT_REFERENCE_BANK.flatMap((sample) => [
+    sample.clusters.game_cluster,
+    ...sample.clusters.player_clusters,
+    sample.clusters.position_cluster,
+    sample.clusters.structure_cluster,
+    sample.clusters.counterfactual_cluster,
+  ]))],
+  split_strategies: [
+    "leave_one_game_out",
+    "leave_one_source_out",
+    "leave_one_structure_out",
+    "leave_one_counterfactual_generator_out",
+    "leave_one_player_cluster_out",
+  ],
+  release_gate: [
+    "aucun cluster Development Reference dans le holdout",
+    "accord et désaccords publiés par segment",
+    "calibration et abstention mesurées séparément",
+    "aucune revendication gold avant annotation indépendante",
+  ],
+};
+
+export const PILOT_BENCHMARK_METADATA = {
+  name: "ChessPath Pilot Concept Development Reference",
+  version: "1.0.0-pilot",
+  status: "development_reference_not_independent_holdout",
+  concepts: [...PILOT_CONCEPT_IDS],
+  referenceCount: DEVELOPMENT_REFERENCE_BANK.length,
+  relationProbeCount: RELATION_PROBES.length,
+  counterfactualPairCount: COUNTERFACTUAL_PAIRS.length,
+  syntheticCounterfactualCount: COUNTERFACTUAL_PAIRS.filter((pair) => pair.synthetic).length,
+  coverageCellCount: COVERAGE_MATRIX.length,
+  explicitGapCount: Object.values(COVERAGE_GAPS).flat().length,
+} as const;
