@@ -1,3 +1,5 @@
+Frozen Work A scaffold kept only for audit traceability.
+Active exports live in adjudicated-benchmark.ts.
 import { DEVELOPMENT_REFERENCE_BANK } from "./development-reference";
 import { PILOT_CONCEPT_CONTRACTS } from "./pilot-contracts";
 import { PILOT_CONCEPT_IDS, type CoverageCell, type FutureHoldoutManifest, type PilotConceptId, type RelationProbe } from "./types";

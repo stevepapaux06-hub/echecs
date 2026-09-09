@@ -25,6 +25,8 @@ export type AxisAssessment = {
   score: number;
   status: "absent" | "weak" | "present" | "strong" | "unknown";
   rationale: string;
+  evidence: Evidence[];
+  uncertainty: string[];
 };
 
 export type AbstentionReason =
@@ -110,6 +112,7 @@ export type ReferenceFamily =
   | "engine_disagreement";
 
 export type ReferenceStatus = "development_reference";
+export type AuditDisposition = "KEEP" | "RELABEL" | "REPAIR" | "REJECT";
 export type CounterfactualKind = "natural" | "branch" | "synthetic";
 export type AgreementStatus = "annotator_agreement" | "needs_second_review" | "expert_disagreement";
 
@@ -137,6 +140,7 @@ export type ClusterMetadata = {
 
 export type DevelopmentReference = {
   id: string;
+  observation_key: string;
   status: ReferenceStatus;
   concept_id: PilotConceptId;
   family: ReferenceFamily;
@@ -161,7 +165,48 @@ export type DevelopmentReference = {
   eval_state: "clearly_winning" | "winning" | "slightly_better" | "equal" | "slightly_worse" | "losing" | "clearly_lost" | "unknown";
   difficulty: "introductory" | "intermediate" | "advanced" | "unknown";
   agreement_status: AgreementStatus;
+  candidate_interpretations: Array<{
+    concept_id: PilotConceptId | string;
+    rationale: string;
+    confidence: number;
+  }>;
+  adjudicated_interpretation: PilotConceptId | "unresolved";
+  secondary_concepts: string[];
+  unresolved_disagreement?: string;
+  internal_second_review: {
+    completed: boolean;
+    reviewer: "same_work_internal_review";
+    notes: string[];
+  };
+  external_review_required: true;
+  semantic_claims: {
+    subject_piece?: { square: string; type: "p" | "n" | "b" | "r" | "q" | "k"; color: "white" | "black" };
+    destination_square?: string;
+    target_squares?: string[];
+    open_file?: string;
+    outpost_square?: string;
+    opponent_resource_before?: string;
+    opponent_resource_after?: "available" | "unavailable" | "changed" | "unknown";
+    attacker_before?: { square: string; type: "p" | "n" | "b" | "r" | "q" | "k"; color: "white" | "black" };
+    threat_target?: string;
+    exchange_action?: string;
+    opposition_kings?: [string, string];
+    tablebase_wdl?: "win" | "draw" | "loss" | "cursed-win" | "blessed-loss" | "unknown";
+  };
+  quality_gates: Array<{
+    gate: "board_truth" | "concept_presence_truth" | "affordance_truth" | "decision_truth" | "centrality_truth" | "provenance" | "contradiction" | "uncertainty";
+    status: "pass" | "unresolved";
+    rationale: string;
+  }>;
   notes: string[];
+};
+
+export type LegacyReferenceAudit = {
+  legacy_id: string;
+  concept_id: PilotConceptId;
+  disposition: AuditDisposition;
+  reason: string;
+  resulting_observation_id?: string;
 };
 
 export type MechanismFamily = {
@@ -216,6 +261,10 @@ export type RelationProbe = {
   baseline_reference_id: string;
   comparison_reference_id: string;
   variable: string;
+  controlled_variables: string[];
+  variables_also_changed: string[];
+  confidence: number;
+  limitations: string[];
   expected: {
     presence: "stable" | "up" | "down";
     affordance: "stable" | "up" | "down";

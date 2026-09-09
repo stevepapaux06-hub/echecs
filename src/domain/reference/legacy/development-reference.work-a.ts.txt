@@ -1,3 +1,4 @@
+Frozen Work A scaffold retained solely for the 60-item audit ledger.
 import { Chess } from "chess.js";
 import { REFERENCE_SOURCE_BY_KEY } from "./source-catalog";
 import type {
@@ -34,7 +35,7 @@ const OBJECT_TYPES: Record<PilotConceptId, ConceptObjectType> = {
   exchange_attacker: "decision_comparison",
 };
 
-function assessmentFor(family: ReferenceFamily): { assessment: ConceptAssessment; available: boolean | "unknown"; label: DevelopmentReference["label"] } {
+function legacyScaffoldAssessmentFor(family: ReferenceFamily): { assessment: ConceptAssessment; available: boolean | "unknown"; label: DevelopmentReference["label"] } {
   const axis = (score: number, status: "absent" | "weak" | "present" | "strong" | "unknown", rationale: string) => ({ score, status, rationale });
   if (family === "natural_positive") return {
     label: "positive", available: true,
@@ -119,7 +120,7 @@ function materialSignature(fen: string): string {
 function reference(conceptId: PilotConceptId, index: number, seed: CaseSeed): DevelopmentReference {
   const source = REFERENCE_SOURCE_BY_KEY.get(seed.sourceKey);
   if (!source) throw new Error(`Unknown reference source: ${seed.sourceKey}`);
-  const { assessment, available, label } = assessmentFor(seed.family);
+  const { assessment, available, label } = legacyScaffoldAssessmentFor(seed.family);
   const scope: AnnotationScope = conceptId === "opposition" && !seed.move
     ? "theoretical_state"
     : seed.line && seed.line.length > 1 ? "short_sequence" : seed.move ? "move" : "position";
@@ -293,13 +294,14 @@ const CASES: Record<PilotConceptId, CaseSeed[]> = {
   ],
 };
 
-export const DEVELOPMENT_REFERENCE_BANK: readonly DevelopmentReference[] = Object.entries(CASES)
+/** @deprecated Work A scaffold. Never use as conceptual truth or validation. */
+export const LEGACY_SCAFFOLD_REFERENCES: readonly DevelopmentReference[] = Object.entries(CASES)
   .flatMap(([conceptId, cases]) => cases.map((seed, index) => reference(conceptId as PilotConceptId, index, seed)));
 
 /** This module validates only source integrity and legality. It deliberately
  * does not call the current Pattern Engine, avoiding validation by the rules
  * that originally surfaced part of the source corpus. */
-export function assertDevelopmentReferenceIntegrity(references = DEVELOPMENT_REFERENCE_BANK): void {
+export function assertLegacyScaffoldIntegrity(references = LEGACY_SCAFFOLD_REFERENCES): void {
   const ids = new Set<string>();
   for (const sample of references) {
     if (ids.has(sample.id)) throw new Error(`Duplicate development reference id: ${sample.id}`);
