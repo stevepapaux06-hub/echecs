@@ -2,6 +2,7 @@ import { Chess } from "chess.js";
 import { describe, expect, it } from "vitest";
 import type { AnalyzedMove } from "../chess/types";
 import { detectMovePatterns, patternCandidatesForPosition, patternsForAnalyzedMove } from "./engine";
+import { analyzePilotDecision } from "./pilot-engine";
 
 describe("deterministic Pattern Engine", () => {
   it("recognizes an obvious knight fork", () => {
@@ -89,9 +90,13 @@ describe("deterministic Pattern Engine", () => {
     // Rxd3 removes the attacker, but the pawn on c4 can still recapture:
     // feature recognition alone does not establish a saved outcome.
     expect(patterns.some((entry) => entry.conceptSlug === "defensive_resource")).toBe(false);
-    expect(patterns).toContainEqual(expect.objectContaining({
-      conceptSlug: "exchange_attacker",
-      confidence: expect.any(Number),
-    }));
+    expect(patterns.some((entry) => entry.conceptSlug === "exchange_attacker")).toBe(false);
+    const experimental = analyzePilotDecision(
+      "6k1/5ppp/8/8/2p5/3r4/5PPP/3R2K1 w - - 0 1",
+      "d1d3",
+      { requestedConcepts: ["exchange_attacker"] },
+    )[0];
+    expect(experimental?.experimental).toBe(true);
+    expect(experimental?.trainingCandidate).not.toBe("yes");
   });
 });

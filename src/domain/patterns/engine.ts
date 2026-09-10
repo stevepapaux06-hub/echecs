@@ -5,6 +5,11 @@ import type { ConceptSlug } from "../knowledge/concepts";
 import { causalFeatures, CONCEPT_SPECIFICATIONS, matchesConceptSpecification } from "./concept-specifications";
 import { referenceSupportedConfidence } from "./reference-profile";
 import {
+  analyzePilotDecision,
+  PILOT_RUNTIME_CONCEPTS,
+  pilotPromotionScore,
+} from "./pilot-engine";
+import {
   PAWN_STRUCTURES,
   recognizePawnStructure,
   type PawnStructureRecognition,
@@ -12,7 +17,6 @@ import {
 import {
   attackedSquaresByPiece,
   distanceToCenter,
-  fileStatus,
   isolatedPawns,
   isBishopEndgame,
   isKnightEndgame,
@@ -86,30 +90,11 @@ function createsAbsolutePin(chess: Chess, attackerSquare: Square, attackerColor:
   return between.length === 1 && between[0]?.color === opposite(attackerColor) && between[0].type !== "k";
 }
 
-function hasOpposition(chess: Chess): boolean {
-  const kings = pieces(chess).filter((piece) => piece.type === "k");
-  if (kings.length !== 2) return false;
-  const [firstFile, firstRank] = squareCoordinates(kings[0].square);
-  const [secondFile, secondRank] = squareCoordinates(kings[1].square);
-  return (firstFile === secondFile && Math.abs(firstRank - secondRank) === 2)
-    || (firstRank === secondRank && Math.abs(firstFile - secondFile) === 2);
-}
-
 function isKnownPawnBreak(fen: string, moveUci: string): boolean {
   const recognition = recognizePawnStructure(fen);
   if (recognition.confidence < 0.9 || recognition.structureSlug === "unknown") return false;
   const definition = PAWN_STRUCTURES.find((structure) => structure.structureSlug === recognition.structureSlug);
   return Boolean(definition?.pawnBreaks.some((move) => move.replace("-", "") === moveUci.slice(0, 4)));
-}
-
-function rookFileHasPurpose(chess: Chess, rookSquare: Square, moverColor: Color): boolean {
-  const attacks = attackedSquaresByPiece(chess, rookSquare);
-  const enemyTarget = attacks.some((square) => {
-    const target = chess.get(square);
-    return target?.color === opposite(moverColor);
-  });
-  const entryRank = moverColor === "w" ? "7" : "2";
-  return enemyTarget || attacks.includes(`${rookSquare[0]}${entryRank}` as Square);
 }
 
 export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePattern[] {
@@ -122,7 +107,6 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
     .map((piece) => piece.square);
   const hadEndangeredPiece = endangeredBefore.length > 0;
   const worstPiece = worstActivePiece(original, moverColor);
-  const activityBefore = worstPiece ? pieceActivity(original, worstPiece) : 0;
   const capturedPiece = before.get(moveUci.slice(2, 4) as Square);
   const materialBefore = materialAdvantage(fen, moverColor);
   const nonPawnBefore = nonPawnMaterial(fen);
@@ -148,7 +132,6 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
   if (resolvedThreat) add("opponent_threat", wasInCheck ? 0.98 : 0.9);
   if (resolvedThreat && (move.captured || after.inCheck() || endangeredAfter.length === 0)) {
     add("defensive_resource", wasInCheck ? 0.94 : 0.86);
-    if (move.captured) add("exchange_attacker", wasInCheck ? 0.94 : 0.87);
     if (after.inCheck()) add("defensive_counterplay", 0.9);
     if (nonPawnMaterial(after.fen()) <= nonPawnBefore - 300) add("simplification_to_hold", 0.88);
     if (!move.captured && !after.inCheck() && endangeredAfter.length === 0) add("active_defense", 0.86);
@@ -158,7 +141,6 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
     && PIECE_VALUE[capturedPiece.type] >= 3
     && PIECE_VALUE[capturedPiece.type] >= PIECE_VALUE[move.piece]) {
     add("defensive_resource", 0.88);
-    add("exchange_attacker", 0.86);
   }
   if (materialBefore <= 0 && after.inCheck() && !wasInCheck) add("defensive_counterplay", 0.86);
 
@@ -172,11 +154,6 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
   if (createsAbsolutePin(after, move.to as Square, moverColor)) add("pin", 0.96);
 
   if (move.piece === "r") {
-    const status = fileStatus(after.fen(), move.to[0]);
-    if ((status === "open" || status === (moverColor === "w" ? "white-semi-open" : "black-semi-open"))
-      && rookFileHasPurpose(after, move.to as Square, moverColor)) {
-      add("open_file", status === "open" ? 0.92 : 0.84);
-    }
     const rank = Number(move.to[1]);
     const activeRank = moverColor === "w" ? rank >= 7 : rank <= 2;
     if (isLowMaterialEndgame(after.fen()) && (
@@ -193,7 +170,6 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
     const chasedByEnemyPawn = pawnAttackSquares(after.fen(), opposite(moverColor)).has(move.to as Square);
     const supportedByPiece = after.attackers(move.to as Square, moverColor)
       .some((square) => square !== move.to);
-    if (move.piece === "n" && advanced && supportedByPawn && !chasedByEnemyPawn) add("outpost", 0.91);
     if (advanced && supportedByPiece && !supportedByPawn && !chasedByEnemyPawn
       && pieceActivity(after, move.to as Square) >= pieceActivity(original, move.from as Square) + 2) {
       add("weak_square", 0.86);
@@ -215,10 +191,6 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
   if (attackedWeakPawn) add("weak_pawn", 0.84);
 
   const quietMove = !move.captured && !move.promotion && !after.inCheck();
-  if (quietMove && worstPiece === move.from) {
-    const activityAfter = pieceActivity(after, move.to as Square);
-    if (activityAfter >= activityBefore + 5) add("improve_worst_piece", 0.86);
-  }
   if (quietMove && ["n", "b", "r"].includes(move.piece)
     && worstPiece !== move.from
     && pieceActivity(after, move.to as Square) >= pieceActivity(original, move.from as Square) + 5) {
@@ -238,13 +210,11 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
   if (materialBefore >= 100 && materialBefore <= 500) {
     if (nonPawnMaterial(after.fen()) <= nonPawnBefore - 300) add("simplify_when_ahead", 0.85);
     if (activityGain >= 5) add("preserve_activity", 0.84);
-    if (after.moves().length <= 14 && quietMove) add("restrict_counterplay", 0.84);
     add("use_material_advantage", 0.82);
   }
 
   if (move.piece === "k" && isLowMaterialEndgame(after.fen())) {
     const remainedPawnEndgame = isPawnEndgame(fen) && isPawnEndgame(after.fen());
-    if (remainedPawnEndgame && hasOpposition(after)) add("opposition", 0.96);
     if (remainedPawnEndgame && !kingWasInsideSquare && kingInsidePassedPawnSquare(after.fen(), moverColor)) {
       add("rule_of_square", 0.94);
     }
@@ -252,7 +222,7 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
   }
   if (isPawnEndgame(fen) && isPawnEndgame(after.fen()) && (
     move.piece === "k" || move.piece === "p"
-  ) && [...detected.keys()].some((concept) => ["opposition", "rule_of_square", "king_activity", "passed_pawn"].includes(concept))) {
+  ) && [...detected.keys()].some((concept) => ["rule_of_square", "king_activity", "passed_pawn"].includes(concept))) {
     add("king_and_pawn", 0.88);
   }
   if (isRookEndgame(fen) && isRookEndgame(after.fen()) && [...detected.keys()].some((concept) => (
@@ -261,11 +231,17 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
   if (isBishopEndgame(fen) && isBishopEndgame(after.fen()) && move.piece === "b" && activityGain >= 3) add("bishop_endgame", 0.86);
   if (isKnightEndgame(fen) && isKnightEndgame(after.fen()) && move.piece === "n" && activityGain >= 3) add("knight_endgame", 0.86);
 
+  const pilotConcepts = new Set<string>(PILOT_RUNTIME_CONCEPTS);
   const causal = causalFeatures(fen, moveUci);
-  return [...detected.entries()]
+  const existing = [...detected.entries()]
+    .filter(([concept]) => !pilotConcepts.has(concept))
     .filter(([concept]) => !CONCEPT_SPECIFICATIONS[concept] || (causal && matchesConceptSpecification(concept, causal)))
     .map(([conceptSlug, confidence]) => ({ conceptSlug, confidence: CONCEPT_SPECIFICATIONS[conceptSlug]
       ? referenceSupportedConfidence(conceptSlug, confidence) : confidence }));
+  const hierarchicalPilot = analyzePilotDecision(fen, moveUci)
+    .map((candidate) => ({ conceptSlug: candidate.conceptId as ConceptSlug, confidence: pilotPromotionScore(candidate) }))
+    .filter((candidate) => candidate.confidence >= 0.62);
+  return [...existing, ...hierarchicalPilot];
 }
 
 function highSignalForcingMove(fen: string, moveUci: string): boolean {
