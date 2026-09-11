@@ -5,16 +5,29 @@ import {
   DEVELOPMENT_REFERENCE_SUMMARY,
   NATURAL_RELATION_RESULTS,
   NATURAL_GENERALIZATION_RESULTS,
+  PRODUCT_THRESHOLD_SENSITIVITY,
   PROBE_RESULTS,
   REFERENCE_BANK_GAP_CANDIDATES,
+  SEMANTIC_CONTRACT_MIGRATIONS,
 } from "./development-evaluation";
 
 describe("pilot development evaluation", () => {
   it("evaluates every A.1 reference while keeping unresolved items observable", () => {
     expect(DEVELOPMENT_REFERENCE_SUMMARY.total).toBe(22);
-    expect(DEVELOPMENT_REFERENCE_SUMMARY.unresolvedObserved).toBe(7);
+    expect(DEVELOPMENT_REFERENCE_SUMMARY.unresolvedObserved).toBe(9);
     expect(DEVELOPMENT_REFERENCE_RESULTS).toHaveLength(22);
     expect(DEVELOPMENT_REFERENCE_SUMMARY.falsePositive).toBe(0);
+  });
+
+  it("reports product-threshold sensitivity for clear, boundary and tactical groups", () => {
+    expect(PRODUCT_THRESHOLD_SENSITIVITY.map((row) => row.threshold)).toEqual([0.55, 0.6, 0.62, 0.65, 0.7, 0.75, 0.8, 0.85]);
+    expect(PRODUCT_THRESHOLD_SENSITIVITY.every((row) => row.clearPositive.total > 0)).toBe(true);
+    expect(PRODUCT_THRESHOLD_SENSITIVITY.every((row) => row.boundary.total > 0)).toBe(true);
+    expect(PRODUCT_THRESHOLD_SENSITIVITY.every((row) => row.tacticalCompetition.total > 0)).toBe(true);
+    const low = PRODUCT_THRESHOLD_SENSITIVITY[0];
+    const high = PRODUCT_THRESHOLD_SENSITIVITY.at(-1)!;
+    expect(low.clearPositive.promoted).toBeGreaterThanOrEqual(high.clearPositive.promoted);
+    expect(low.boundary.promoted).toBeGreaterThanOrEqual(high.boundary.promoted);
   });
 
   it("passes the two same-FEN causal direction checks", () => {
@@ -45,12 +58,17 @@ describe("pilot development evaluation", () => {
       .toBe(REFERENCE_BANK_GAP_CANDIDATES.length);
   });
 
-  it("keeps known shortcut regressions rejected or abstained", () => {
-    for (const id of ["obs-open-file-a-c2d2", "obs-open-file-b-a1d1"]) {
+  it("records the semi-open ontology migration instead of hiding it as a code regression", () => {
+    expect(SEMANTIC_CONTRACT_MIGRATIONS).toEqual(["obs-open-file-a-c2d2", "obs-open-file-b-a1d1"]);
+    for (const id of SEMANTIC_CONTRACT_MIGRATIONS) {
       const result = DEVELOPMENT_REFERENCE_RESULTS.find((item) => item.referenceId === id);
-      expect(result?.candidate?.presence.score).toBeLessThan(0.2);
-      expect(result?.candidate?.trainingCandidate).not.toBe("yes");
+      expect(result?.annotationUnresolved).toBe(true);
+      expect(result?.candidate?.subject.file_state).toMatch(/semi-open/);
+      expect(result?.candidate?.mechanism).toBe("semi_open_file_pressure");
     }
+  });
+
+  it("keeps known experimental shortcuts rejected or abstained", () => {
     const forcedExchange = DEVELOPMENT_REFERENCE_RESULTS.find((item) => item.referenceId === "obs-exchange-a-g1f2");
     expect(forcedExchange?.candidate?.trainingCandidate).not.toBe("yes");
     const fictiveResource = NATURAL_GENERALIZATION_RESULTS.find((item) => item.id === "natural-restrict-c-fictive-resource");

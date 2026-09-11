@@ -47,6 +47,31 @@ describe("deterministic Pattern Engine", () => {
       .some((candidate) => candidate.conceptSlug === "open_file")).toBe(true);
   });
 
+  it("lets clear pilot positives pass the real product path with policy thresholds", () => {
+    const productCases = [
+      {
+        concept: "open_file",
+        fen: "r2q1rk1/pp1nbppp/2p1pn2/8/8/2N1PN2/PPQ1BPPP/R4RK1 w - - 2 13",
+      },
+      {
+        concept: "outpost",
+        fen: "4k3/8/8/8/4P3/2N5/8/4K3 w - - 0 1",
+      },
+      {
+        concept: "improve_worst_piece",
+        fen: "r1b2rk1/1pp1bppp/p1np4/5n2/8/N1PB1P2/PP1K3P/6R1 w - - 2 19",
+      },
+      {
+        concept: "opposition",
+        fen: "8/3p4/4k3/8/8/4K3/8/8 w - - 0 1",
+      },
+    ] as const;
+    for (const sample of productCases) {
+      const candidates = patternCandidatesForPosition(sample.fen);
+      expect(candidates.some((candidate) => candidate.conceptSlug === sample.concept), sample.concept).toBe(true);
+    }
+  });
+
   it("recognizes a real rook ending and rejects a transition as king-and-pawn", () => {
     const rookEnding = detectMovePatterns("8/5p2/2r2k2/p5p1/P7/4P1KP/R4P2/8 w - - 0 37", "a2d2");
     expect(rookEnding.some((pattern) => pattern.conceptSlug === "rook_endgame")).toBe(true);

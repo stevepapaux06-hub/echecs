@@ -7,8 +7,9 @@ import { referenceSupportedConfidence } from "./reference-profile";
 import {
   analyzePilotDecision,
   PILOT_RUNTIME_CONCEPTS,
-  pilotPromotionScore,
+  pilotCandidatesForPosition,
 } from "./pilot-engine";
+import { pilotPolicyDecision } from "./policy";
 import {
   PAWN_STRUCTURES,
   recognizePawnStructure,
@@ -51,7 +52,13 @@ export type PatternOccurrence = {
   moveUci: string;
 };
 
-export type DetectedMovePattern = { conceptSlug: ConceptSlug; confidence: number };
+export type DetectedMovePattern = {
+  conceptSlug: ConceptSlug;
+  confidence: number;
+  pedagogicalPromotionScore?: number;
+  productDisplayThreshold?: number;
+  productEligible?: boolean;
+};
 export type PositionPatternCandidate = DetectedMovePattern & { moveUci: string };
 
 function playUci(chess: Chess, uci: string): Move | null {
@@ -97,7 +104,11 @@ function isKnownPawnBreak(fen: string, moveUci: string): boolean {
   return Boolean(definition?.pawnBreaks.some((move) => move.replace("-", "") === moveUci.slice(0, 4)));
 }
 
-export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePattern[] {
+export function detectMovePatterns(
+  fen: string,
+  moveUci: string,
+  options: { includePilot?: boolean } = {},
+): DetectedMovePattern[] {
   const original = new Chess(fen);
   const before = new Chess(fen);
   const moverColor = before.turn();
@@ -238,9 +249,18 @@ export function detectMovePatterns(fen: string, moveUci: string): DetectedMovePa
     .filter(([concept]) => !CONCEPT_SPECIFICATIONS[concept] || (causal && matchesConceptSpecification(concept, causal)))
     .map(([conceptSlug, confidence]) => ({ conceptSlug, confidence: CONCEPT_SPECIFICATIONS[conceptSlug]
       ? referenceSupportedConfidence(conceptSlug, confidence) : confidence }));
-  const hierarchicalPilot = analyzePilotDecision(fen, moveUci)
-    .map((candidate) => ({ conceptSlug: candidate.conceptId as ConceptSlug, confidence: pilotPromotionScore(candidate) }))
-    .filter((candidate) => candidate.confidence >= 0.62);
+  const hierarchicalPilot = options.includePilot === false ? [] : analyzePilotDecision(fen, moveUci)
+    .map((candidate) => {
+      const policy = pilotPolicyDecision(candidate);
+      return {
+        conceptSlug: candidate.conceptId as ConceptSlug,
+        confidence: policy.conceptConfidence,
+        pedagogicalPromotionScore: policy.pedagogicalPromotionScore,
+        productDisplayThreshold: policy.productDisplayThreshold,
+        productEligible: policy.eligible,
+      };
+    })
+    .filter((candidate) => candidate.productEligible);
   return [...existing, ...hierarchicalPilot];
 }
 
@@ -257,25 +277,48 @@ function highSignalForcingMove(fen: string, moveUci: string): boolean {
  */
 export function patternCandidatesForPosition(
   fen: string,
-  options: { phase?: "opening" | "middlegame" | "endgame"; ply?: number; minConfidence?: number } = {},
+  options: { phase?: "opening" | "middlegame" | "endgame"; ply?: number; minConfidence?: number; pilotDisplayThreshold?: number } = {},
 ): PositionPatternCandidate[] {
   const chess = new Chess(fen);
   const byConcept = new Map<ConceptSlug, PositionPatternCandidate>();
   for (const move of chess.moves({ verbose: true })) {
     const moveUci = `${move.from}${move.to}${move.promotion ?? ""}`;
-    for (const pattern of detectMovePatterns(fen, moveUci)) {
-      if (pattern.confidence < (options.minConfidence ?? 0.84)) continue;
+    for (const pattern of detectMovePatterns(fen, moveUci, { includePilot: false })) {
+      const eligible = pattern.pedagogicalPromotionScore === undefined
+        ? pattern.confidence >= (options.minConfidence ?? 0.84)
+        : pattern.productEligible === true
+          && pattern.pedagogicalPromotionScore >= (options.pilotDisplayThreshold ?? pattern.productDisplayThreshold ?? 0.62);
+      if (!eligible) continue;
       if (pattern.conceptSlug === "forcing_moves" && !highSignalForcingMove(fen, moveUci)) continue;
       const tactical = ["loose_piece", "fork", "pin", "forcing_moves", "opponent_threat"].includes(pattern.conceptSlug);
       if (options.phase === "opening" && (options.ply ?? 20) < 16 && !tactical) continue;
       const previous = byConcept.get(pattern.conceptSlug);
-      if (!previous || pattern.confidence > previous.confidence) {
+      const score = pattern.pedagogicalPromotionScore ?? pattern.confidence;
+      const previousScore = previous?.pedagogicalPromotionScore ?? previous?.confidence ?? 0;
+      if (!previous || score > previousScore) {
         byConcept.set(pattern.conceptSlug, { ...pattern, moveUci });
       }
     }
   }
+  for (const candidate of pilotCandidatesForPosition(fen, 0.5)) {
+    const policy = pilotPolicyDecision(candidate, options.pilotDisplayThreshold);
+    if (!policy.eligible) continue;
+    if (options.phase === "opening" && (options.ply ?? 20) < 16) continue;
+    const pattern: PositionPatternCandidate = {
+      conceptSlug: candidate.conceptId as ConceptSlug,
+      confidence: policy.conceptConfidence,
+      pedagogicalPromotionScore: policy.pedagogicalPromotionScore,
+      productDisplayThreshold: policy.productDisplayThreshold,
+      productEligible: true,
+      moveUci: candidate.moveUci,
+    };
+    const previous = byConcept.get(pattern.conceptSlug);
+    const previousScore = previous?.pedagogicalPromotionScore ?? previous?.confidence ?? 0;
+    if (!previous || policy.pedagogicalPromotionScore > previousScore) byConcept.set(pattern.conceptSlug, pattern);
+  }
   return [...byConcept.values()].toSorted((first, second) => (
-    second.confidence - first.confidence || first.moveUci.localeCompare(second.moveUci)
+    (second.pedagogicalPromotionScore ?? second.confidence) - (first.pedagogicalPromotionScore ?? first.confidence)
+      || first.moveUci.localeCompare(second.moveUci)
   ));
 }
 
@@ -290,7 +333,9 @@ export function patternsForAnalyzedMove(move: AnalyzedMove, minConfidence = 0.8)
     minConfidence,
   });
   const playedPatterns = detectMovePatterns(move.fenBefore, move.uci)
-    .filter((pattern) => pattern.confidence >= minConfidence);
+    .filter((pattern) => pattern.pedagogicalPromotionScore === undefined
+      ? pattern.confidence >= minConfidence
+      : pattern.productEligible === true);
   const playedConcepts = new Set(playedPatterns.map((pattern) => pattern.conceptSlug));
   const occurrences = new Map<ConceptSlug, PatternOccurrence>();
 

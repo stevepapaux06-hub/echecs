@@ -7,6 +7,7 @@ import {
   type PatternDetectionCandidate,
   type PilotRuntimeConcept,
 } from "./pilot-engine";
+import { pilotPolicyDecision } from "./policy";
 
 export type DevelopmentReferenceResult = {
   referenceId: string;
@@ -24,6 +25,15 @@ export type DevelopmentReferenceResult = {
   };
 };
 
+/** These observations were adjudicated under the former strict-pawnless
+ * user-facing open_file contract. B.1 keeps them visible but removes them from
+ * gold scoring because semi-open pressure is now a distinct internal mechanism
+ * under the same generic product concept. */
+export const SEMANTIC_CONTRACT_MIGRATIONS = [
+  "obs-open-file-a-c2d2",
+  "obs-open-file-b-a1d1",
+] as const;
+
 function resourceFrom(reference: DevelopmentReference): string | undefined {
   return reference.semantic_claims.opponent_resource_before;
 }
@@ -39,7 +49,8 @@ export function evaluateDevelopmentReference(reference: DevelopmentReference): D
       ? { wdlBefore: reference.semantic_claims.tablebase_wdl }
       : undefined,
   })[0];
-  const annotationUnresolved = reference.adjudicated_interpretation === "unresolved";
+  const annotationUnresolved = reference.adjudicated_interpretation === "unresolved"
+    || (SEMANTIC_CONTRACT_MIGRATIONS as readonly string[]).includes(reference.id);
   let outcome: DevelopmentReferenceResult["outcome"];
   if (annotationUnresolved) outcome = "unresolved_observed";
   else if (!candidate) outcome = reference.label === "positive" ? "false_negative" : "aligned";
@@ -94,6 +105,25 @@ export const DEVELOPMENT_REFERENCE_SUMMARY = {
     }];
   })),
 } as const;
+
+export const PRODUCT_THRESHOLD_SENSITIVITY = [0.55, 0.6, 0.62, 0.65, 0.7, 0.75, 0.8, 0.85].map((threshold) => {
+  const buckets = {
+    clearPositive: DEVELOPMENT_REFERENCE_RESULTS.filter((item) => item.annotationLabel === "positive" && !item.annotationUnresolved),
+    boundary: DEVELOPMENT_REFERENCE_RESULTS.filter((item) => ["boundary", "abstain"].includes(item.annotationLabel) || item.annotationUnresolved),
+    tacticalCompetition: DEVELOPMENT_REFERENCE_RESULTS.filter((item) => {
+      const reference = DEVELOPMENT_REFERENCE_BANK.find((candidate) => candidate.id === item.referenceId);
+      return reference?.decision_comparison.tactical_competition !== "none";
+    }),
+  };
+  const promoted = (items: DevelopmentReferenceResult[]) => items.filter((item) => item.candidate
+    && pilotPolicyDecision(item.candidate, threshold).eligible).length;
+  return {
+    threshold,
+    clearPositive: { promoted: promoted(buckets.clearPositive), total: buckets.clearPositive.length },
+    boundary: { promoted: promoted(buckets.boundary), total: buckets.boundary.length },
+    tacticalCompetition: { promoted: promoted(buckets.tacticalCompetition), total: buckets.tacticalCompetition.length },
+  };
+});
 
 function result(referenceId: string): DevelopmentReferenceResult {
   const found = DEVELOPMENT_REFERENCE_RESULTS.find((item) => item.referenceId === referenceId);
