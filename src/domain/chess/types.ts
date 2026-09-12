@@ -270,6 +270,9 @@ export type StructuredExerciseExplanation = {
   planSteps?: string[];
   naturalAlternative?: string;
   whyNaturalAlternativeIsInferior?: string;
+  /** Why ChessPath is allowed to describe an alternative as a human reflex.
+   * Engine rank or a legality heuristic alone are deliberately insufficient. */
+  naturalAlternativeEvidence?: "observed_played_move" | "curated_human_annotation";
   resultingPositionChange?: string;
   commonMistake?: string;
   whyCommonMistakeFails?: string;

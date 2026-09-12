@@ -9,7 +9,7 @@ export type CoachExplanation = {
   idea: string;
   whyItWorks: string[];
   temptingReflex?: string;
-  takeaway: string;
+  takeaway?: string;
   exploreQuestion: string;
 };
 
@@ -133,10 +133,26 @@ function compactWhy(explanation: StructuredExerciseExplanation): string[] {
 }
 
 function naturalMoveLabel(exercise: TrainingExercise, explanation: StructuredExerciseExplanation): string | null {
+  const evidence = explanation.naturalAlternativeEvidence
+    ?? (exercise.origin === "personal"
+      && exercise.playedMove
+      && exercise.playedMove === (exercise.trainingAssessment?.contrast?.naturalMistake
+        ?? exercise.trainingAssessment?.naturalMistake)
+      ? "observed_played_move"
+      : undefined);
+  if (!evidence) return null;
   const uci = exercise.trainingAssessment?.contrast?.naturalMistake
     ?? exercise.trainingAssessment?.naturalMistake;
   if (uci) return uciToSan(exercise.fen, uci);
   return explanation.naturalAlternative?.split(" est une alternative")[0]?.trim() || null;
+}
+
+function supportedTakeaway(exercise: TrainingExercise, explanation: StructuredExerciseExplanation): string | undefined {
+  const transfer = explanation.transferRule;
+  if (!transfer || /^quand une position présente le même mécanisme\b/i.test(transfer.trim())) return undefined;
+  const concrete = [exercise.bestMove.slice(0, 2), exercise.bestMove.slice(2, 4), ...(exercise.keySquares ?? [])]
+    .some((square) => `${explanation.problem ?? ""} ${explanation.stateChange ?? ""}`.toLowerCase().includes(square));
+  return concrete ? tidyFrench(transfer) : undefined;
 }
 
 /** Turns the rich internal causal object into a 15–30 second coach explanation. */
@@ -153,16 +169,16 @@ export function coachExplanationFor(exercise: TrainingExercise): CoachExplanatio
       : "il ne règle pas le problème aussi précisément dans cette position"}.`
         .replace(/\.\.$/, ".")
     : undefined;
-  const takeaway = tidyFrench(explanation.transferRule ?? explanation.rule);
+  const takeaway = supportedTakeaway(exercise, explanation);
   const chosenSan = uciToSan(exercise.fen, exercise.bestMove);
   const exploreQuestion = alternative
     ? `À explorer : pourquoi ${chosenSan} répond-il mieux à la position que ${alternative} ?`
-    : `À explorer : quelle ressource adverse apparaît si tu joues immédiatement sans préparer ${chosenSan} ?`;
+    : `À explorer : quel changement concret ${chosenSan} produit-il dans cette position ?`;
   return {
     idea: idea || "La position demande de résoudre un problème concret avant de chercher un coup actif.",
     whyItWorks: whyItWorks.length ? whyItWorks : [tidyFrench(explanation.objective)],
     temptingReflex,
-    takeaway: takeaway || "Avant d’agir, vérifie que ton plan répond au besoin précis de la position.",
+    takeaway,
     exploreQuestion,
   };
 }

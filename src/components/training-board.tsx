@@ -581,7 +581,7 @@ export function TrainingBoard({
                   <section><small>L’idée</small><p>{coachExplanation.idea}</p></section>
                   <section><small>Pourquoi ça marche</small>{coachExplanation.whyItWorks.map((sentence) => <p key={sentence}>{sentence}</p>)}</section>
                   {coachExplanation.temptingReflex ? <section className="tempting-reflex"><small>Le réflexe tentant</small><p>{coachExplanation.temptingReflex}</p></section> : null}
-                  <section className="coach-takeaway"><small>À retenir</small><p>{coachExplanation.takeaway}</p></section>
+                  {coachExplanation.takeaway ? <section className="coach-takeaway"><small>À retenir</small><p>{coachExplanation.takeaway}</p></section> : null}
                 </div>
               ) : feedback.explanation ? (
                 <div className="why-block">

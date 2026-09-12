@@ -38,9 +38,28 @@ describe("human training copy", () => {
       expect(copy!.idea.length, exercise.id).toBeGreaterThan(20);
       expect(copy!.whyItWorks.length, exercise.id).toBeGreaterThanOrEqual(1);
       expect(copy!.whyItWorks.length, exercise.id).toBeLessThanOrEqual(3);
-      expect(copy!.takeaway.length, exercise.id).toBeGreaterThan(15);
+      if (copy!.takeaway) expect(copy!.takeaway.length, exercise.id).toBeGreaterThan(15);
       const visibleText = JSON.stringify(copy);
       expect(visibleText, exercise.id).not.toMatch(/centipions?|\b[+-]\d+[.,]\d+\b|objet JSON|lichess_db_|coups? forcing/i);
+    }
+  });
+
+  it("does not invent a tempting reflex or generic takeaway from engine ordering", () => {
+    const exercise = sample.find((candidate) => candidate.trainingAssessment?.contrast?.naturalMistake)!;
+    expect(exercise).toBeDefined();
+    const copy = coachExplanationFor(exercise)!;
+    expect(copy.temptingReflex).toBeUndefined();
+    if (/^quand une position présente le même mécanisme/i.test(exercise.explanation?.transferRule ?? "")) {
+      expect(copy.takeaway).toBeUndefined();
+    }
+  });
+
+  it("applies the same evidence rule to conversion and defense explanations", () => {
+    for (const domain of ["conversion", "defense"] as const) {
+      const exercise = sample.find((candidate) => candidate.category === domain
+        && candidate.trainingAssessment?.contrast?.naturalMistake)!;
+      expect(exercise, domain).toBeDefined();
+      expect(coachExplanationFor(exercise)?.temptingReflex, domain).toBeUndefined();
     }
   });
 

@@ -286,6 +286,13 @@ export function enrichCausalExplanation(exercise: TrainingExercise): TrainingExe
   });
   const naturalUci = contrast?.naturalMistake ?? exercise.trainingAssessment?.naturalMistake;
   const natural = naturalUci ? moveInfo(exercise.fen, naturalUci) : null;
+  const naturalAlternativeEvidence = exercise.origin === "personal" && naturalUci === exercise.playedMove
+    ? "observed_played_move" as const
+    : legacy.naturalAlternativeEvidence;
+  // MultiPV + the deterministic plausibility filter support a useful decision
+  // contrast, but do not prove that a move is a natural human reflex. Only an
+  // observed played move or an explicit human annotation may carry that claim.
+  const evidencedNatural = natural && naturalAlternativeEvidence ? natural : null;
   const acceptableMoves = [...new Set([
     exercise.bestMove,
     ...(exercise.acceptedConceptMoveUcis ?? []),
@@ -302,16 +309,20 @@ export function enrichCausalExplanation(exercise: TrainingExercise): TrainingExe
     candidatePlans,
     chosenPlan: `${chosen.label} — ${legacy.plan}`,
     whyItWorksHere: detected.signal ? stateChange : legacy.chosenPlanRationale ?? legacy.objective,
-    naturalAlternative: natural ? `${natural.label} est une alternative humaine naturelle.` : legacy.naturalAlternative,
-    whyNaturalAlternativeIsInferior: natural
-      ? alternativeConsequence(exercise, natural, chosen, detected)
-      : legacy.whyNaturalAlternativeIsInferior,
+    naturalAlternative: evidencedNatural ? `${evidencedNatural.label} est un choix humain réellement observé ou annoté.` : undefined,
+    whyNaturalAlternativeIsInferior: evidencedNatural
+      ? alternativeConsequence(exercise, evidencedNatural, chosen, detected)
+      : undefined,
+    naturalAlternativeEvidence: evidencedNatural ? naturalAlternativeEvidence : undefined,
     stateChange,
     resultingPositionChange: stateChange,
     milestone: milestoneCopy(exercise, stateChange),
-    transferRule: /^((si|quand|lorsque|avant)\b)/i.test(legacy.transferRule ?? legacy.rule)
-      ? (legacy.transferRule ?? legacy.rule)
-      : `Quand une position présente le même mécanisme, ${legacy.rule.charAt(0).toLowerCase()}${legacy.rule.slice(1)}`,
+    transferRule: (() => {
+      const authored = legacy.transferRule ?? legacy.rule;
+      if (!/^((si|quand|lorsque|avant)\b)/i.test(authored)) return undefined;
+      if (/^quand une position présente le même mécanisme\b/i.test(authored)) return undefined;
+      return authored;
+    })(),
     acceptableMoves,
     evidence: normalizeSource(exercise),
     ...humanDifficulty(exercise, candidatePlans.length),

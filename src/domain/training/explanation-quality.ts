@@ -2,7 +2,7 @@ import { Chess, type Square } from "chess.js";
 import type { StructuredExerciseExplanation, TrainingExercise } from "../chess/types";
 import { causalFeatures, causalLineFeatures, causalPlanFeatures, matchesConceptSpecification } from "../patterns/concept-specifications";
 
-export const EXPLANATION_QUALITY_VERSION = 1;
+export const EXPLANATION_QUALITY_VERSION = 2;
 export const EXPLANATION_QUALITY_THRESHOLD = 16;
 
 export type ExplanationQualityDimension =
@@ -25,7 +25,9 @@ export type ExplanationHardNegative =
   | "wrong_piece_continuity"
   | "variant_mismatch"
   | "premature_exchange_claim"
-  | "generic_concept_without_mechanism";
+  | "generic_concept_without_mechanism"
+  | "unsupported_naturalness_claim"
+  | "generic_transfer_rule";
 
 export type ExplanationQualityAssessment = {
   version: number;
@@ -139,16 +141,26 @@ export function assessExplanationQuality(exercise: TrainingExercise): Explanatio
   const naturalUci = exercise.trainingAssessment?.contrast?.naturalMistake ?? exercise.trainingAssessment?.naturalMistake;
   const naturalText = explanation.naturalAlternative ?? "";
   const inferiorText = explanation.whyNaturalAlternativeIsInferior ?? "";
-  dimensions.natural_alternative_quality = naturalUci && legalMove(exercise.fen, naturalUci)
-    && naturalText.includes(naturalUci.slice(0, 2)) && naturalText.includes(naturalUci.slice(2, 4))
-    && inferiorText.length >= 35 ? 2 : naturalText && inferiorText ? 1 : 0;
+  const naturalEvidence = explanation.naturalAlternativeEvidence;
+  // An omitted optional section is neutral. A populated section must earn its
+  // score from actual human evidence; completeness never beats honesty.
+  dimensions.natural_alternative_quality = !naturalText && !inferiorText ? 2
+    : naturalEvidence && naturalUci && legalMove(exercise.fen, naturalUci)
+      && naturalText.includes(naturalUci.slice(0, 2)) && naturalText.includes(naturalUci.slice(2, 4))
+      && inferiorText.length >= 35 ? 2 : 0;
+  if (/naturel|tentant|réflexe/i.test(naturalText) && !naturalEvidence) hardNegatives.add("unsupported_naturalness_claim");
   const objective = explanation.objective;
   if (compact(state) === compact(objective)) hardNegatives.add("objective_repetition");
   dimensions.state_change_verifiability = causal && state.length >= 35 && mentionsPosition(state, exercise)
     && !hardNegatives.has("objective_repetition") ? 2 : state.length >= 30 ? 1 : 0;
-  const transfer = explanation.transferRule ?? explanation.rule;
-  dimensions.transferability = /^(si|quand|lorsque|avant)\b/i.test(transfer.trim()) && transfer.length >= 45 ? 2
-    : /\b(si|quand|lorsque|avant)\b/i.test(transfer) ? 1 : 0;
+  const transfer = explanation.transferRule;
+  dimensions.transferability = !transfer ? 2
+    : /^(si|quand|lorsque|avant)\b/i.test(transfer.trim()) && transfer.length >= 45 ? 2
+      : 0;
+  if (transfer && /^quand une position présente le même mécanisme\b/i.test(transfer.trim())) {
+    dimensions.transferability = 0;
+    hardNegatives.add("generic_transfer_rule");
+  }
   const sequence = sequenceConsistency(exercise, explanation);
   dimensions.sequence_consistency = sequence.score;
   sequence.negatives.forEach((negative) => hardNegatives.add(negative));

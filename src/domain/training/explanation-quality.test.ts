@@ -31,11 +31,35 @@ function strongExercise(): TrainingExercise {
 }
 
 describe("causal explanation quality gate", () => {
-  it("MUST PASS: accepts a precise problem, causal plan, natural alternative and observable change", () => {
+  it("MUST PASS: accepts a precise problem, causal plan and observable change without inventing human naturalness", () => {
     const result = assessExplanationQuality(strongExercise());
     expect(result.hardNegatives).toEqual([]);
     expect(result.passed).toBe(true);
     expect(result.score).toBeGreaterThanOrEqual(16);
+  });
+
+  it("MUST FAIL: rejects an unsupported claim that an engine alternative is a natural human reflex", () => {
+    const exercise = strongExercise();
+    exercise.explanation = {
+      ...exercise.explanation!,
+      naturalAlternative: "Rb1 (a1–b1) est une alternative humaine naturelle.",
+      whyNaturalAlternativeIsInferior: "Rb1 abandonne la case d6 et ne crée aucune cible concrète sur la colonne d.",
+      naturalAlternativeEvidence: undefined,
+    };
+    const result = assessExplanationQuality(exercise);
+    expect(result.passed).toBe(false);
+    expect(result.hardNegatives).toContain("unsupported_naturalness_claim");
+  });
+
+  it("MUST FAIL: rejects the copy-pastable same-mechanism transfer rule", () => {
+    const exercise = strongExercise();
+    exercise.explanation = {
+      ...exercise.explanation!,
+      transferRule: "Quand une position présente le même mécanisme, applique le plan indiqué par le concept.",
+    };
+    const result = assessExplanationQuality(exercise);
+    expect(result.passed).toBe(false);
+    expect(result.hardNegatives).toContain("generic_transfer_rule");
   });
 
   it.each([
