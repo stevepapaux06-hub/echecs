@@ -1,5 +1,6 @@
 import type { GamePhase } from "@/domain/chess/types";
 import type { PatternOccurrence } from "@/domain/patterns/engine";
+import { isPatternProductEligible } from "../patterns/policy";
 
 export type EvaluationState =
   | "clearly_winning"
@@ -88,7 +89,7 @@ export function scorePedagogicalMoment({
   const stateDrop = Math.max(0, beforeRank - afterRank);
   const stateGain = Math.max(0, afterRank - beforeRank);
   const reliableFailures = patterns.filter((pattern) => (
-    pattern.opportunity && !pattern.success && pattern.confidence >= 0.84
+    pattern.opportunity && !pattern.success && isPatternProductEligible(pattern)
   ));
   const reliablePatternConfidence = reliableFailures.reduce(
     (best, pattern) => Math.max(best, pattern.confidence),

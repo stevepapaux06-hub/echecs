@@ -10,7 +10,11 @@ import type { TrainingPosition } from "./positions";
 import { withTrainingTaxonomy } from "./taxonomy";
 import { STRUCTURED_TRAINING_BANK } from "./structured-bank";
 import { withPedagogicalContract } from "./contract";
-import { gateTrainingExercises, validateTrainingExercise } from "./validation";
+import {
+  finalizeTrainingExerciseValidation,
+  gateTrainingExercises,
+  validateTrainingExercise,
+} from "./validation";
 import QUALITY_BANK from "./quality-bank.generated.json";
 import REMINED_REFERENCE from "./remined-reference.generated.json";
 import { isReferencePosition, type TrainingAssessment } from "./human-quality";
@@ -551,9 +555,11 @@ const EXPLANATION_HARD_FAILURES = new Set([...EXPLANATION_ASSESSMENTS]
   .filter(([, assessment]) => assessment.hardNegatives.includes("variant_mismatch")
     || assessment.hardNegatives.includes("generic_concept_without_mechanism"))
   .map(([id]) => id));
-const EXERCISE_POOL = QUALITY_PREPARED_POOL.filter((exercise) => (
+const FINAL_VALIDATION_POOL = QUALITY_PREPARED_POOL.filter((exercise) => (
   !EXPLANATION_HARD_FAILURES.has(exercise.id) && shouldPublishTrainingLesson(exercise)
-));
+)).map(finalizeTrainingExerciseValidation);
+const FINAL_GATE = gateTrainingExercises(FINAL_VALIDATION_POOL, { requireFinalFingerprint: true });
+const EXERCISE_POOL = FINAL_GATE.active;
 
 const REFERENCE_POOL = RAW_EXERCISE_POOL.filter(isReferencePosition)
   .map((exercise) => normalizeNonTacticalTeaching({ ...exercise, ...patches[exercise.id], trainingAssessment: assessments[exercise.id] }));
@@ -579,6 +585,8 @@ export const TRAINING_BANK_GATE_REPORT = {
   needsVerificationIds: GATED_EXERCISE_POOL.needsVerification.map((exercise) => exercise.id),
   rejectedIds: GATED_EXERCISE_POOL.rejected.map((exercise) => exercise.id),
   explanationTrainingToReference: EXPLANATION_HARD_FAILURES.size,
+  finalValidationRejected: FINAL_GATE.rejected.length,
+  finalValidationNeedsVerification: FINAL_GATE.needsVerification.length,
   explanationQualityPassed: [...EXPLANATION_ASSESSMENTS.values()].filter((assessment) => assessment.passed).length,
   explanationQualityAverage: (() => {
     const values = [...EXPLANATION_ASSESSMENTS.values()];

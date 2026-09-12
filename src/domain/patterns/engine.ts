@@ -9,7 +9,11 @@ import {
   PILOT_RUNTIME_CONCEPTS,
   pilotCandidatesForPosition,
 } from "./pilot-engine";
-import { pilotPolicyDecision } from "./policy";
+import {
+  isPatternProductEligible,
+  LEGACY_PATTERN_PRODUCT_CONFIDENCE,
+  pilotPolicyDecision,
+} from "./policy";
 import {
   PAWN_STRUCTURES,
   recognizePawnStructure,
@@ -50,6 +54,11 @@ export type PatternOccurrence = {
   success: boolean;
   source: PatternSource;
   moveUci: string;
+  /** Persisted policy evidence. Without it an old occurrence is treated as a
+   * legacy detector result and uses LEGACY_PATTERN_PRODUCT_CONFIDENCE. */
+  pedagogicalPromotionScore?: number;
+  productDisplayThreshold?: number;
+  productEligible?: boolean;
 };
 
 export type DetectedMovePattern = {
@@ -285,7 +294,7 @@ export function patternCandidatesForPosition(
     const moveUci = `${move.from}${move.to}${move.promotion ?? ""}`;
     for (const pattern of detectMovePatterns(fen, moveUci, { includePilot: false })) {
       const eligible = pattern.pedagogicalPromotionScore === undefined
-        ? pattern.confidence >= (options.minConfidence ?? 0.84)
+        ? pattern.confidence >= (options.minConfidence ?? LEGACY_PATTERN_PRODUCT_CONFIDENCE)
         : pattern.productEligible === true
           && pattern.pedagogicalPromotionScore >= (options.pilotDisplayThreshold ?? pattern.productDisplayThreshold ?? 0.62);
       if (!eligible) continue;
@@ -322,7 +331,10 @@ export function patternCandidatesForPosition(
   ));
 }
 
-export function patternsForAnalyzedMove(move: AnalyzedMove, minConfidence = 0.8): PatternOccurrence[] {
+export function patternsForAnalyzedMove(
+  move: AnalyzedMove,
+  minConfidence = LEGACY_PATTERN_PRODUCT_CONFIDENCE,
+): PatternOccurrence[] {
   const engineMoves = new Set([
     move.before.bestMove,
     ...move.before.lines.map((line) => line.pv[0]),
@@ -335,7 +347,7 @@ export function patternsForAnalyzedMove(move: AnalyzedMove, minConfidence = 0.8)
   const playedPatterns = detectMovePatterns(move.fenBefore, move.uci)
     .filter((pattern) => pattern.pedagogicalPromotionScore === undefined
       ? pattern.confidence >= minConfidence
-      : pattern.productEligible === true);
+      : isPatternProductEligible(pattern));
   const playedConcepts = new Set(playedPatterns.map((pattern) => pattern.conceptSlug));
   const occurrences = new Map<ConceptSlug, PatternOccurrence>();
 
@@ -350,6 +362,9 @@ export function patternsForAnalyzedMove(move: AnalyzedMove, minConfidence = 0.8)
       success: move.lossCp <= 80 && playedConcepts.has(candidate.conceptSlug),
       source: "pattern_engine_stockfish_validated",
       moveUci: candidate.moveUci,
+      pedagogicalPromotionScore: candidate.pedagogicalPromotionScore,
+      productDisplayThreshold: candidate.productDisplayThreshold,
+      productEligible: candidate.productEligible,
     });
   }
 
@@ -368,6 +383,9 @@ export function patternsForAnalyzedMove(move: AnalyzedMove, minConfidence = 0.8)
         success: true,
         source: "pattern_engine",
         moveUci: move.uci,
+        pedagogicalPromotionScore: pattern.pedagogicalPromotionScore,
+        productDisplayThreshold: pattern.productDisplayThreshold,
+        productEligible: pattern.productEligible,
       });
     }
   }

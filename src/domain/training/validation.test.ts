@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { TrainingExercise } from "@/domain/chess/types";
 import { allConceptExercises } from "./library";
-import { gateTrainingExercises, validateTrainingExercise } from "./validation";
+import {
+  finalizeTrainingExerciseValidation,
+  gateTrainingExercises,
+  CRITICAL_STOCKFISH_BASELINE_HOLD,
+  trainingExerciseValidationFingerprint,
+  validateTrainingExercise,
+} from "./validation";
 
 describe("training bank gate", () => {
   const base = allConceptExercises()[0];
@@ -77,5 +83,32 @@ describe("training bank gate", () => {
     ]);
     expect(gated.active).toHaveLength(1);
     expect(gated.rejected).toHaveLength(1);
+  });
+
+  it("fingerprints only the final transformed exercise", () => {
+    const source = { ...base, validationFingerprint: undefined };
+    const transformed = { ...source, solutionLine: [source.bestMove], maxPlayerMoves: 1 };
+    const finalized = finalizeTrainingExerciseValidation(transformed);
+    expect(finalized.validationFingerprint).toBe(trainingExerciseValidationFingerprint(finalized));
+    expect(validateTrainingExercise(finalized, { requireFinalFingerprint: true }).status).toBe("active");
+  });
+
+  it("invalidates verification when relevant content changes after final validation", () => {
+    const finalized = finalizeTrainingExerciseValidation({ ...base, validationFingerprint: undefined });
+    const changed = { ...finalized, bestMove: "a1a8" };
+    const validation = validateTrainingExercise(changed, { requireFinalFingerprint: true });
+    expect(validation.status).not.toBe("active");
+    expect(validation.reasons).toContain("verified_content_changed");
+  });
+
+  it("cannot publish a verified exercise without final-state proof", () => {
+    const unstamped = { ...base, validationFingerprint: undefined };
+    expect(gateTrainingExercises([unstamped], { requireFinalFingerprint: true }).active).toEqual([]);
+  });
+
+  it("keeps the four non-reproducible Stockfish baselines out of active training", () => {
+    const activeIds = new Set(allConceptExercises().map((exercise) => exercise.id));
+    expect(CRITICAL_STOCKFISH_BASELINE_HOLD.size).toBe(4);
+    expect([...CRITICAL_STOCKFISH_BASELINE_HOLD].filter((id) => activeIds.has(id))).toEqual([]);
   });
 });

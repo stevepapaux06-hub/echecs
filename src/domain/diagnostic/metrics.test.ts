@@ -112,6 +112,25 @@ describe("calculateMetrics", () => {
     expect(metrics.primaryTheme).toMatchObject({ id: "fork", sampleSize: 2, successCount: 1, issueCount: 1 });
   });
 
+  it("does not reject a pilot occurrence accepted exactly at shared policy boundaries", () => {
+    const accepted = move("middlegame", 20, -120);
+    accepted.patterns = [{
+      conceptSlug: "open_file",
+      fen: accepted.fenBefore,
+      ply: accepted.ply,
+      confidence: 0.66,
+      pedagogicalPromotionScore: 0.62,
+      productDisplayThreshold: 0.62,
+      productEligible: true,
+      opportunity: true,
+      success: false,
+      source: "pattern_engine_stockfish_validated",
+      moveUci: "g1f3",
+    }];
+    expect(calculateMetrics([game("pilot-boundary", "loss", [accepted])]).conceptStats)
+      .toContainEqual(expect.objectContaining({ conceptSlug: "open_file", opportunities: 1 }));
+  });
+
   it("keeps exact patterns and conversion in the same diagnostic", () => {
     const first = move("middlegame", 300, 80);
     first.patterns = [{

@@ -10,9 +10,11 @@ import { evaluationForPlayer } from "../../infrastructure/engine/uci";
 import { conceptExercisesFor } from "./library-runtime";
 import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
 import { detectMovePatterns } from "../patterns/engine";
+import { isPatternProductEligible } from "../patterns/policy";
 import { buildExerciseTeaching } from "./explanation";
 import { withTrainingTaxonomy } from "./taxonomy";
 import { withPedagogicalContract } from "./contract";
+import { finalizeTrainingExerciseValidation } from "./validation";
 
 export const DEFAULT_TRAINING_FILTER_CONFIG = {
   lostPositionThresholdCp: 200,
@@ -55,7 +57,7 @@ export function isPedagogicallyEligiblePersonalMove(move: AnalyzedMove): boolean
   const reliableConcept = (move.patterns ?? []).some((pattern) => (
     pattern.opportunity
     && !pattern.success
-    && pattern.confidence >= 0.84
+    && isPatternProductEligible(pattern)
     && pattern.conceptSlug !== "forcing_moves"
   ));
   const stateBased = STATE_BASED_MOMENTS.has(assessment.kind);
@@ -275,7 +277,7 @@ export function generateExercises(
       )))
       .map((line) => line.pv[0]);
     const secondaryConceptSlugs = [...new Set((move.patterns ?? [])
-      .filter((pattern) => pattern.conceptSlug !== conceptSlug && pattern.confidence >= 0.84)
+      .filter((pattern) => pattern.conceptSlug !== conceptSlug && isPatternProductEligible(pattern))
       .map((pattern) => pattern.conceptSlug))];
     return withPedagogicalContract(withTrainingTaxonomy({
       // Stable across analyses: reordering the reserve cannot make a solved
@@ -339,11 +341,13 @@ export function generateExercises(
         ?? (detectedPattern ? Math.round(detectedPattern.confidence * 100) : undefined),
       isVerified: true,
       verificationStatus: "active",
+      patternPolicyAccepted: detectedPattern ? isPatternProductEligible(detectedPattern) : undefined,
     }));
   }).filter((exercise) => (
     Boolean(exercise.explanation)
-    && (exercise.classificationConfidence ?? 0) >= 0.8
-  ));
+    && ((exercise.classificationConfidence ?? 0) >= 0.8 || exercise.patternPolicyAccepted === true)
+  )).map(finalizeTrainingExerciseValidation)
+    .filter((exercise) => exercise.verificationStatus === "active");
 
   const concepts = conceptExercisesFor(
     metrics.primaryTheme.category,

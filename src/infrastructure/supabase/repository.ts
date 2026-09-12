@@ -14,6 +14,7 @@ import { normalizeAuthError } from "./auth-errors";
 import { getSupabaseClient } from "./client";
 import { addTrainingConceptAttempt, replaceGameConceptTotals, type ConceptStatCounters } from "../../domain/diagnostic/concept-stats";
 import { conceptDefinition, normalizeConceptSlug } from "../../domain/knowledge/concepts";
+import { isPatternProductEligible } from "../../domain/patterns/policy";
 
 export type AnalysisHistoryItem = {
   id: string;
@@ -83,7 +84,7 @@ export function summarizeAnalyzedGame(game: AnalyzedGame): GameAnalysisSummary {
   const concepts = new Map<string, { opportunities: number; successes: number }>();
   for (const move of game.analyzedMoves) {
     for (const pattern of move.patterns ?? []) {
-      if (!pattern.opportunity || pattern.confidence < 0.8) continue;
+      if (!pattern.opportunity || !isPatternProductEligible(pattern)) continue;
       const current = concepts.get(pattern.conceptSlug) ?? { opportunities: 0, successes: 0 };
       current.opportunities += 1;
       current.successes += Number(pattern.success);

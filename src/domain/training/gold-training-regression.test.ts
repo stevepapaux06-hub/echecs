@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { allConceptExercises, referenceBank } from "./library";
 import { GOLD_TRAINING_IDS, goldDecisionCount, TRAINING_REFERENCE_ONLY } from "./lesson-refinement";
+import { referenceMilestoneIndex } from "./milestones";
 
 const GOLD_IDS = [
   "master-improve_worst_piece-ceaed0f6c0bb7e",
@@ -52,6 +53,17 @@ describe("independent 20-position gold regression set", () => {
       return exercise.maxPlayerMoves === expected ? [] : [`${id}:${exercise.maxPlayerMoves}/${expected}`];
     });
     expect(mismatches).toEqual([]);
+  });
+
+  it("keeps the two corrected sequence contracts internally reachable", () => {
+    expect(training.get("master-pawn_break-09953be549f251")).toMatchObject({
+      pedagogicalUnit: "single_move",
+      maxPlayerMoves: 1,
+      sequenceStopCondition: "first_decision",
+    });
+    const rookEnding = training.get("contrast-mine-rook_endgame-d72e2f4a3d4f7aac48")!;
+    expect(rookEnding.maxPlayerMoves).toBe(4);
+    expect(referenceMilestoneIndex(rookEnding)).toBe(6);
   });
 
   it("contains no generic alternative justification in active non-tactical lessons", () => {

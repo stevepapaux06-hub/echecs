@@ -27,8 +27,10 @@ describe("curated training library", () => {
     const exercises = allConceptExercises();
     expect(new Set(exercises.map((exercise) => exercise.fen)).size).toBe(exercises.length);
     expect(exercises.some((exercise) => exercise.category === "tactic" && exercise.mode === "line")).toBe(true);
-    expect(exercises.some((exercise) => exercise.category === "endgame" && exercise.mode === "playout")).toBe(true);
-    expect(exercises.some((exercise) => exercise.category === "conversion" && exercise.mode === "playout")).toBe(true);
+    expect(exercises.some((exercise) => exercise.category === "endgame"
+      && exercise.pedagogicalUnit === "theoretical_method" && exercise.maxPlayerMoves > 1)).toBe(true);
+    expect(exercises.some((exercise) => exercise.category === "conversion"
+      && exercise.pedagogicalUnit !== "single_move" && exercise.maxPlayerMoves > 1)).toBe(true);
     expect(exercises.filter((exercise) => exercise.category === "tactic").length).toBeGreaterThanOrEqual(2);
     expect(exercises.filter((exercise) => exercise.category === "endgame").length).toBeGreaterThanOrEqual(2);
     expect(exercises.filter((exercise) => exercise.category === "conversion").length).toBeGreaterThanOrEqual(2);
@@ -47,7 +49,8 @@ describe("curated training library", () => {
   it("ships a varied verified offline Lichess bank", () => {
     const lichess = allConceptExercises().filter((exercise) => exercise.source === "lichess");
     expect(LICHESS_LIBRARY_METADATA.positions).toBe(2_747);
-    expect(lichess.filter((exercise) => exercise.category === "tactic")).toHaveLength(2_194);
+    // Four non-reproducible imported baselines are deliberately quarantined.
+    expect(lichess.filter((exercise) => exercise.category === "tactic")).toHaveLength(2_190);
     const concepts = new Set(lichess.map((exercise) => exercise.conceptSlug));
     for (const concept of ["fork", "pin", "skewer", "loose_piece", "remove_defender", "opponent_threat"]) {
       expect(concepts.has(concept)).toBe(true);

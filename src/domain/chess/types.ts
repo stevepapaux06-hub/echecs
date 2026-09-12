@@ -350,6 +350,8 @@ export type TrainingExercise = {
   secondaryConceptSlugs?: import("@/domain/knowledge/concepts").ConceptSlug[];
   secondaryConcepts?: import("@/domain/knowledge/concepts").ConceptSlug[];
   classificationConfidence?: number;
+  /** The shared Pattern Engine policy accepted the originating occurrence. */
+  patternPolicyAccepted?: boolean;
   /** Kept for persisted V2 exercises; new exercises use secondaryConceptSlugs. */
   secondaryConceptSlug?: import("@/domain/knowledge/concepts").ConceptSlug;
   difficulty?: number;
@@ -382,6 +384,8 @@ export type TrainingExercise = {
   tablebaseWdl?: "win" | "draw" | "loss" | "cursed-win" | "blessed-loss" | "unknown";
   qualityScore?: number;
   isVerified?: boolean;
+  /** Fingerprint of the final user-visible and chess-relevant exercise state. */
+  validationFingerprint?: string;
 };
 
 export type TrainingAttemptRecord = {

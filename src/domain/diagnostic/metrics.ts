@@ -6,6 +6,7 @@ import type {
   PhaseMetric,
 } from "@/domain/chess/types";
 import type { ConceptSlug } from "@/domain/knowledge/concepts";
+import { isPatternProductEligible } from "../patterns/policy";
 import { detectDiagnosticThemes } from "./themes";
 
 const PHASE_LABELS: Record<GamePhase, string> = {
@@ -131,7 +132,7 @@ export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
   const conceptAggregates = new Map<ConceptSlug, { opportunities: number; successes: number; confidenceTotal: number }>();
   for (const move of allMoves) {
     for (const pattern of move.patterns ?? []) {
-      if (!pattern.opportunity || pattern.confidence < 0.8) continue;
+      if (!pattern.opportunity || !isPatternProductEligible(pattern)) continue;
       const aggregate = conceptAggregates.get(pattern.conceptSlug) ?? { opportunities: 0, successes: 0, confidenceTotal: 0 };
       aggregate.opportunities += 1;
       aggregate.successes += Number(pattern.success);
@@ -214,6 +215,8 @@ export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
 }
 
 function confidenceForConcept(opportunities: number, averageDetectionConfidence: number): "low" | "medium" | "high" {
+  // Aggregate evidence label only; this is not an admission gate for a single
+  // pattern and therefore remains intentionally stricter than product policy.
   if (opportunities >= 8 && averageDetectionConfidence >= 0.9) return "high";
   if (opportunities >= 3 && averageDetectionConfidence >= 0.84) return "medium";
   return "low";

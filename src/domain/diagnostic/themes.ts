@@ -7,6 +7,7 @@ import type {
   DiagnosticTheme,
 } from "@/domain/chess/types";
 import { conceptDefinition } from "../knowledge/concepts";
+import { isPatternProductEligible } from "../patterns/policy";
 
 type MoveEvidence = { game: AnalyzedGame; move: AnalyzedMove };
 
@@ -92,7 +93,7 @@ function patternThemes(all: MoveEvidence[]): DiagnosticTheme[] {
   const grouped = new Map<string, Array<{ item: MoveEvidence; success: boolean; confidence: number }>>();
   for (const item of all) {
     for (const pattern of item.move.patterns ?? []) {
-      if (!pattern.opportunity || pattern.confidence < 0.8) continue;
+      if (!pattern.opportunity || !isPatternProductEligible(pattern)) continue;
       const values = grouped.get(pattern.conceptSlug) ?? [];
       values.push({ item, success: pattern.success, confidence: pattern.confidence });
       grouped.set(pattern.conceptSlug, values);

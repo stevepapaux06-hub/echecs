@@ -16,6 +16,27 @@ export const PILOT_PRODUCT_POLICY = {
   } satisfies Record<PilotRuntimeConcept, number>,
 } as const;
 
+/** Legacy heuristics expose only a confidence value. This is deliberately not
+ * the pilot policy: it is the compatibility gate for concepts that have not
+ * yet migrated to the hierarchical detector. Keeping it here prevents every
+ * downstream consumer from inventing its own 0.80/0.84 cut-off. */
+export const LEGACY_PATTERN_PRODUCT_CONFIDENCE = 0.8;
+
+export type ProductPatternEvidence = {
+  conceptSlug?: string;
+  confidence: number;
+  pedagogicalPromotionScore?: number;
+  productDisplayThreshold?: number;
+  productEligible?: boolean;
+};
+
+const MIGRATED_PILOT_CONCEPTS = new Set<string>([
+  "open_file",
+  "outpost",
+  "improve_worst_piece",
+  "opposition",
+]);
+
 export type PilotPolicyDecision = {
   conceptConfidence: number;
   pedagogicalPromotionScore: number;
@@ -55,3 +76,23 @@ export function pilotPolicyDecision(
   };
 }
 
+/** Single product eligibility contract used after detection (diagnostic,
+ * persistence and training). Pilot decisions retain their policy verdict;
+ * legacy detections use the one documented compatibility threshold above. */
+export function isPatternProductEligible(pattern: ProductPatternEvidence): boolean {
+  const isPilotVerdict = pattern.pedagogicalPromotionScore !== undefined
+    || pattern.productDisplayThreshold !== undefined
+    || pattern.productEligible !== undefined;
+  if (!isPilotVerdict && pattern.conceptSlug && MIGRATED_PILOT_CONCEPTS.has(pattern.conceptSlug)) {
+    // Occurrences persisted by the first pilot release lost the score fields
+    // after detection. Those four slugs could only have entered the occurrence
+    // stream after passing policy, so confidence is sufficient for migration.
+    return pattern.confidence >= PILOT_PRODUCT_POLICY.minimumConceptConfidence;
+  }
+  if (!isPilotVerdict) return pattern.confidence >= LEGACY_PATTERN_PRODUCT_CONFIDENCE;
+  return pattern.productEligible === true
+    && pattern.confidence >= PILOT_PRODUCT_POLICY.minimumConceptConfidence
+    && (pattern.pedagogicalPromotionScore ?? 0) >= (
+      pattern.productDisplayThreshold ?? PILOT_PRODUCT_POLICY.defaultDisplayThreshold
+    );
+}

@@ -4,14 +4,87 @@ import type {
   TrainingExercise,
 } from "@/domain/chess/types";
 import { trainingTaxonomy } from "./taxonomy";
+import { referenceMilestoneIndex } from "./milestones";
 
 export type ExerciseValidation = {
   status: ExerciseVerificationStatus;
   reasons: string[];
 };
 
-/** Positions that failed the latest deterministic Stockfish regression pass. */
+export type ExerciseValidationOptions = {
+  /** Publication requires proof that validation covered the final transformed
+   * object, not merely its pre-refinement source. */
+  requireFinalFingerprint?: boolean;
+};
+
+const MINIMUM_TAXONOMY_CONFIDENCE = 0.8;
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  return `{${Object.entries(value as Record<string, unknown>)
+    .filter(([, nested]) => nested !== undefined)
+    .toSorted(([first], [second]) => first.localeCompare(second))
+    .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`)
+    .join(",")}}`;
+}
+
+/** Hashes every field that can change the chess task or its teaching. Metadata
+ * proving who validated it is excluded; changing the task invalidates the hash. */
+export function trainingExerciseValidationFingerprint(exercise: TrainingExercise): string {
+  const serialized = stableStringify({
+    acceptedConceptMoveUcis: exercise.acceptedConceptMoveUcis,
+    baselinePlayerCp: exercise.baselinePlayerCp,
+    bestMove: exercise.bestMove,
+    category: exercise.category,
+    concept: exercise.concept,
+    conceptSlug: exercise.conceptSlug,
+    domain: exercise.domain,
+    engineCandidates: exercise.engineCandidates,
+    explanation: exercise.explanation,
+    fen: exercise.fen,
+    maxPlayerMoves: exercise.maxPlayerMoves,
+    mode: exercise.mode,
+    patternPolicyAccepted: exercise.patternPolicyAccepted,
+    pedagogicalMilestone: exercise.pedagogicalMilestone,
+    pedagogicalUnit: exercise.pedagogicalUnit,
+    phase: exercise.phase,
+    planArrows: exercise.planArrows,
+    planSquares: exercise.planSquares,
+    playerColor: exercise.playerColor,
+    primaryConcept: exercise.primaryConcept,
+    prompt: exercise.prompt,
+    requiredSteps: exercise.requiredSteps,
+    secondaryConceptSlugs: exercise.secondaryConceptSlugs,
+    sequenceGoal: exercise.sequenceGoal,
+    sequenceStopCondition: exercise.sequenceStopCondition,
+    solutionLine: exercise.solutionLine,
+    successThresholdCp: exercise.successThresholdCp,
+    tablebaseWdl: exercise.tablebaseWdl,
+    title: exercise.title,
+  });
+  let hashA = 0x811c9dc5;
+  let hashB = 0x9e3779b9;
+  for (let index = 0; index < serialized.length; index += 1) {
+    const code = serialized.charCodeAt(index);
+    hashA = Math.imul(hashA ^ code, 0x01000193);
+    hashB = Math.imul(hashB ^ code, 0x85ebca6b);
+  }
+  return `v1-${serialized.length.toString(16)}-${(hashA >>> 0).toString(16).padStart(8, "0")}${(hashB >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+/** Four active imports whose placeholder baseline did not reproduce within the
+ * accepted tolerance. They stay quarantined until individually re-adjudicated. */
+export const CRITICAL_STOCKFISH_BASELINE_HOLD = new Set([
+  "lichess-06guq",
+  "lichess-02U27",
+  "lichess-0Ahyx",
+  "lichess-09iFa",
+]);
+
+/** Positions that failed a deterministic Stockfish regression pass. */
 const ENGINE_REVIEW_HOLD = new Set([
+  ...CRITICAL_STOCKFISH_BASELINE_HOLD,
   "master-passed_pawn-3d7a79b94cba46",
   "master-preserve_activity-751e6163386c5c",
   "master-king_activity-1ca87e1cf058b3",
@@ -177,13 +250,28 @@ function hasTrustedVerification(exercise: TrainingExercise): boolean {
   return Boolean(exercise.verificationSource);
 }
 
-export function validateTrainingExercise(exercise: TrainingExercise): ExerciseValidation {
+export function validateTrainingExercise(
+  exercise: TrainingExercise,
+  options: ExerciseValidationOptions = {},
+): ExerciseValidation {
   const reasons: string[] = [];
   const taxonomy = trainingTaxonomy(exercise);
   if (!legalLine(exercise)) reasons.push("fen_or_solution_line_illegal");
   if (!acceptedMovesAreLegal(exercise)) reasons.push("accepted_move_illegal");
-  if (taxonomy.confidence < 0.8) reasons.push("classification_confidence_below_0_8");
+  // Taxonomy confidence is a separate semantic check. A hierarchical Pattern
+  // Engine occurrence already admitted by shared product policy must not be
+  // vetoed here by the legacy taxonomy threshold.
+  if (taxonomy.confidence < MINIMUM_TAXONOMY_CONFIDENCE && exercise.patternPolicyAccepted !== true) {
+    reasons.push("classification_confidence_below_taxonomy_threshold");
+  }
   if (taxonomy.domain === "endgame" && taxonomy.phase !== "endgame") reasons.push("endgame_phase_mismatch");
+  if (exercise.pedagogicalMilestone && referenceMilestoneIndex(exercise) === null) {
+    reasons.push("pedagogical_milestone_unreachable");
+  }
+  if (taxonomy.domain === "endgame" && (
+    !exercise.pedagogicalMilestone
+    || exercise.sequenceStopCondition !== "pedagogical_milestone"
+  )) reasons.push("endgame_method_without_reachable_milestone");
   if (taxonomy.domain === "opening" && taxonomy.phase !== "opening") reasons.push("opening_phase_mismatch");
   if (exercise.category === "conversion" && Math.abs(exercise.baselinePlayerCp) > 700) {
     reasons.push("conversion_already_overwhelming");
@@ -195,12 +283,20 @@ export function validateTrainingExercise(exercise: TrainingExercise): ExerciseVa
     reasons.push("defense_outcome_not_verified");
   }
   if (!hasTrustedVerification(exercise)) reasons.push("verification_metadata_missing");
+  const currentFingerprint = trainingExerciseValidationFingerprint(exercise);
+  if (exercise.validationFingerprint && exercise.validationFingerprint !== currentFingerprint) {
+    reasons.push("verified_content_changed");
+  } else if (options.requireFinalFingerprint && !exercise.validationFingerprint) {
+    reasons.push("final_validation_fingerprint_missing");
+  }
   if (ENGINE_REVIEW_HOLD.has(exercise.id)) reasons.push("stockfish_regression_review_required");
 
   const rejected = reasons.some((reason) => [
     "fen_or_solution_line_illegal",
     "accepted_move_illegal",
     "endgame_phase_mismatch",
+    "pedagogical_milestone_unreachable",
+    "endgame_method_without_reachable_milestone",
     "opening_phase_mismatch",
     "conversion_already_overwhelming",
     "defense_outcome_not_verified",
@@ -208,6 +304,18 @@ export function validateTrainingExercise(exercise: TrainingExercise): ExerciseVa
   return {
     status: rejected ? "rejected" : reasons.length ? "needs_verification" : "active",
     reasons,
+  };
+}
+
+/** Called only after every transformation. A stale fingerprint is never
+ * silently refreshed: it must first be revalidated from unverified source. */
+export function finalizeTrainingExerciseValidation(exercise: TrainingExercise): TrainingExercise {
+  const validation = validateTrainingExercise(exercise);
+  if (validation.status !== "active") return { ...exercise, verificationStatus: validation.status };
+  return {
+    ...exercise,
+    validationFingerprint: trainingExerciseValidationFingerprint(exercise),
+    verificationStatus: "active",
   };
 }
 
@@ -219,7 +327,10 @@ export function canonicalExerciseKey(exercise: TrainingExercise): string {
   ].join("|");
 }
 
-export function gateTrainingExercises(exercises: TrainingExercise[]): {
+export function gateTrainingExercises(
+  exercises: TrainingExercise[],
+  options: ExerciseValidationOptions = {},
+): {
   active: TrainingExercise[];
   needsVerification: TrainingExercise[];
   rejected: TrainingExercise[];
@@ -253,7 +364,7 @@ export function gateTrainingExercises(exercises: TrainingExercise[]): {
       neighbouringPlies.push(positionPly!);
       sourceMoments.set(momentKey, neighbouringPlies);
     }
-    const validation = validateTrainingExercise(exercise);
+    const validation = validateTrainingExercise(exercise, options);
     const candidate = { ...exercise, verificationStatus: validation.status };
     if (validation.status === "active") active.push(candidate);
     else if (validation.status === "needs_verification") needsVerification.push(candidate);

@@ -17,13 +17,15 @@ const GOLD_PLAYER_DECISIONS: Record<string, number> = {
   "master-improve_worst_piece-ceaed0f6c0bb7e": 1,
   "contrast-mine-outpost-b0b0d5d159ffdfb8b6": 2,
   "contrast-mine-open_file-673d0f89da8656ec2c": 2,
-  "master-pawn_break-09953be549f251": 3,
   "contrast-mine-weak_square-222bfde2c12e897356": 1,
   "contrast-mine-favorable_exchange-fe61049767b389fa1b": 2,
   "contrast-mine-opposition-865f5d5ce49ed89693": 2,
   "contrast-mine-king_and_pawn-7e8c7e2928e07f38ab": 5,
   "contrast-mine-king_activity-ef0775a578eef98ee6": 3,
-  "contrast-mine-rook_endgame-d72e2f4a3d4f7aac48": 2,
+  // The verified rook-method signal is reached on White's fourth decision
+  // (Re8-d8), not on the second one. Truncating earlier made the milestone
+  // structurally impossible in the published lesson.
+  "contrast-mine-rook_endgame-d72e2f4a3d4f7aac48": 4,
   "lichess-0BFjc": 4,
   "contrast-mine-simplify_when_ahead-0a0f72e07ab19368e5": 2,
   "contrast-mine-use_material_advantage-540b14a180975e7dbc": 2,

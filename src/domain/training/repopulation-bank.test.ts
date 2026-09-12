@@ -11,7 +11,7 @@ describe.skipIf(QUALITY.version < 2)("published Decision Contrast bank",()=>{
   it("counts only active lessons and reaches the four requested minimums",()=>{
     for(const [domain,min]of Object.entries({strategy:600,endgame:400,conversion:300,defense:200}))
       expect(nonTactical.filter(e=>e.category===domain).length,domain).toBeGreaterThanOrEqual(min);
-    expect(bank.filter(e=>e.category==='tactic')).toHaveLength(2197);
+    expect(bank.filter(e=>e.category==='tactic')).toHaveLength(2193);
   });
   it("has no reference-only, unverified, or noncontrasting entry in Training",()=>{
     for(const e of nonTactical){

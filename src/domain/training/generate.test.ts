@@ -1,6 +1,6 @@
 import { Chess } from "chess.js";
 import { describe, expect, it } from "vitest";
-import type { AnalyzedGame, DiagnosticMetrics, EngineEvaluation } from "@/domain/chess/types";
+import type { AnalyzedGame, AnalyzedMove, DiagnosticMetrics, EngineEvaluation } from "@/domain/chess/types";
 import {
   filterLostPositionCascade,
   generateExercises,
@@ -56,6 +56,31 @@ function evaluation(fen: string, whiteCp: number, pv: string[]): EngineEvaluatio
 }
 
 describe("personal exercise generation", () => {
+  it("keeps a personal pilot concept accepted at the shared policy boundary", () => {
+    const fen = "4k3/8/8/8/8/8/3q4/3QK3 w - - 0 1";
+    const afterFen = "4k3/8/8/8/8/8/3q4/3Q1K2 b - - 1 1";
+    const candidate = {
+      ply: 17, san: "Kf1", uci: "e1f1", from: "e1", to: "f1", color: "w",
+      fenBefore: fen, fenAfter: afterFen, phase: "middlegame",
+      before: evaluation(fen, 0, ["d1d2"]), after: evaluation(afterFen, -300, ["d2d1"]),
+      playerCpBefore: 0, playerCpAfter: -300, lossCp: 300,
+      patterns: [{
+        conceptSlug: "open_file", fen, ply: 17, confidence: 0.66,
+        pedagogicalPromotionScore: 0.62, productDisplayThreshold: 0.62, productEligible: true,
+        opportunity: true, success: false, source: "pattern_engine_stockfish_validated", moveUci: "d1d2",
+      }],
+      pedagogical: {
+        beforeState: "equal", afterState: "losing", score: 90, kind: "stable_pattern",
+        reliablePatternConfidence: 0.66, worthy: true,
+      },
+    } as AnalyzedMove;
+    expect(isPedagogicallyEligiblePersonalMove(candidate)).toBe(true);
+    expect(isPedagogicallyEligiblePersonalMove({
+      ...candidate,
+      patterns: candidate.patterns?.map((pattern) => ({ ...pattern, productEligible: false })),
+    })).toBe(false);
+  });
+
   it("rejects a personal position that was already clearly lost", () => {
     const fen = "4k3/8/8/8/8/8/3q4/3QK3 w - - 0 1";
     const afterFen = "4k3/8/8/8/8/8/3q4/3Q1K2 b - - 1 1";

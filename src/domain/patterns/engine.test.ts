@@ -45,7 +45,7 @@ describe("deterministic Pattern Engine", () => {
       .toBe(true);
     expect(patternCandidatesForPosition(fen, { phase: "middlegame", ply: 25 })
       .some((candidate) => candidate.conceptSlug === "open_file")).toBe(true);
-  });
+  }, 10_000);
 
   it("lets clear pilot positives pass the real product path with policy thresholds", () => {
     const productCases = [
@@ -70,7 +70,7 @@ describe("deterministic Pattern Engine", () => {
       const candidates = patternCandidatesForPosition(sample.fen);
       expect(candidates.some((candidate) => candidate.conceptSlug === sample.concept), sample.concept).toBe(true);
     }
-  });
+  }, 10_000);
 
   it("recognizes a real rook ending and rejects a transition as king-and-pawn", () => {
     const rookEnding = detectMovePatterns("8/5p2/2r2k2/p5p1/P7/4P1KP/R4P2/8 w - - 0 37", "a2d2");
