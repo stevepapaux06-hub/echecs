@@ -78,7 +78,7 @@ function mentionsPosition(text: string, exercise: TrainingExercise): boolean {
 
 function featureFor(exercise: TrainingExercise, uci = exercise.bestMove) {
   const domain = exercise.domain ?? exercise.category;
-  return domain === "strategy"
+  return domain === "strategy" || (domain === "conversion" && exercise.conceptRelabelLocked && uci === exercise.bestMove)
     ? causalPlanFeatures(exercise.fen, uci === exercise.bestMove ? exercise.solutionLine ?? [uci] : [uci], exercise.conceptSlug)
     : domain === "defense" && uci === exercise.bestMove
       ? causalLineFeatures(exercise.fen, exercise.solutionLine ?? [uci])

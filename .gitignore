@@ -46,6 +46,6 @@ next-env.d.ts
 # local corpora used by reproducible bank-mining scripts
 .tmp-corpus/
 
-# Built from the unchanged source banks before dev/build.
+# Legacy JSON artifact remains local. The TypeScript runtime snapshot is
+# intentionally committed so CI can reject source/snapshot drift.
 /src/domain/training/runtime-bank.generated.json
-/src/domain/training/runtime-bank.generated.ts

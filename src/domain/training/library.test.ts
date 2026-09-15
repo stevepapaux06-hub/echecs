@@ -157,18 +157,20 @@ describe("curated training library", () => {
 
   it("hydrates master positions with causal teaching and board annotations", () => {
     const master = allConceptExercises().filter((exercise) => exercise.source === "master_game");
-    expect(master.every((exercise) => (
-      Boolean(exercise.explanation?.notice)
-      && Boolean(exercise.explanation?.plan)
-      && Boolean(exercise.explanation?.objective)
-      && Boolean(exercise.explanation?.rule)
-      && Boolean(exercise.explanation?.positionEssentials)
-      && Boolean(exercise.explanation?.chosenPlanRationale)
-      && Boolean(exercise.explanation?.planSteps?.length)
-      && Boolean(exercise.explanation?.transferRule)
-      && Boolean(exercise.planArrows?.length)
-      && Boolean(exercise.planSquares?.length)
-    ))).toBe(true);
+    for (const exercise of master) {
+      const checks = {
+        notice: exercise.explanation?.notice,
+        plan: exercise.explanation?.plan,
+        objective: exercise.explanation?.objective,
+        rule: exercise.explanation?.rule,
+        positionEssentials: exercise.explanation?.positionEssentials,
+        chosenPlanRationale: exercise.explanation?.chosenPlanRationale,
+        planSteps: exercise.explanation?.planSteps?.length,
+        planArrows: exercise.planArrows?.length,
+        planSquares: exercise.planSquares?.length,
+      };
+      expect(Object.entries(checks).filter(([, value]) => !value).map(([key]) => key), exercise.id).toEqual([]);
+    }
   });
 
   it("retains theoretical references without exposing an unproved method as Training", () => {

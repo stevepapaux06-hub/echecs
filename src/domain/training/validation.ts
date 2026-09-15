@@ -5,6 +5,7 @@ import type {
 } from "@/domain/chess/types";
 import { trainingTaxonomy } from "./taxonomy";
 import { referenceMilestoneIndex } from "./milestones";
+import { teachingContractReasons } from "./teaching-facts";
 
 export type ExerciseValidation = {
   status: ExerciseVerificationStatus;
@@ -15,6 +16,9 @@ export type ExerciseValidationOptions = {
   /** Publication requires proof that validation covered the final transformed
    * object, not merely its pre-refinement source. */
   requireFinalFingerprint?: boolean;
+  /** Final publication also requires board-derived teaching facts for the
+   * priority families. Earlier source gates run before enrichment. */
+  requireTeachingFacts?: boolean;
 };
 
 const MINIMUM_TAXONOMY_CONFIDENCE = 0.8;
@@ -38,6 +42,7 @@ export function trainingExerciseValidationFingerprint(exercise: TrainingExercise
     bestMove: exercise.bestMove,
     category: exercise.category,
     concept: exercise.concept,
+    conceptRelabelLocked: exercise.conceptRelabelLocked,
     conceptSlug: exercise.conceptSlug,
     domain: exercise.domain,
     engineCandidates: exercise.engineCandidates,
@@ -290,6 +295,9 @@ export function validateTrainingExercise(
     reasons.push("final_validation_fingerprint_missing");
   }
   if (ENGINE_REVIEW_HOLD.has(exercise.id)) reasons.push("stockfish_regression_review_required");
+  if (options.requireTeachingFacts || exercise.explanation?.teachingFacts) {
+    reasons.push(...teachingContractReasons(exercise));
+  }
 
   const rejected = reasons.some((reason) => [
     "fen_or_solution_line_illegal",
@@ -300,6 +308,13 @@ export function validateTrainingExercise(
     "opening_phase_mismatch",
     "conversion_already_overwhelming",
     "defense_outcome_not_verified",
+    "teaching_mechanism_not_demonstrated",
+    "structured_teaching_facts_missing",
+    "structured_teaching_facts_stale",
+    "king_activity_not_a_true_endgame",
+    "favorable_exchange_without_exchange",
+    "primary_annotation_move_mismatch",
+    "teaching_destination_not_annotated",
   ].includes(reason));
   return {
     status: rejected ? "rejected" : reasons.length ? "needs_verification" : "active",
@@ -310,7 +325,7 @@ export function validateTrainingExercise(
 /** Called only after every transformation. A stale fingerprint is never
  * silently refreshed: it must first be revalidated from unverified source. */
 export function finalizeTrainingExerciseValidation(exercise: TrainingExercise): TrainingExercise {
-  const validation = validateTrainingExercise(exercise);
+  const validation = validateTrainingExercise(exercise, { requireTeachingFacts: true });
   if (validation.status !== "active") return { ...exercise, verificationStatus: validation.status };
   return {
     ...exercise,

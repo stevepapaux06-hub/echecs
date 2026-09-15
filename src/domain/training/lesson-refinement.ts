@@ -11,14 +11,22 @@ export const TRAINING_REFERENCE_ONLY = new Set([
   "quality-mine-convert_small_advantage-bb8cedb67c2f2f",
   "contrast-mine-restrict_counterplay-dcf7ec5be80f75aa1d",
   "contrast-mine-defensive_resource-354a5e95b007199406",
+  // Audited board/prose contradictions. They remain available to offline
+  // reference work, but no interpretation was objective enough to rewrite
+  // their lesson safely in this sprint.
+  "contrast-mine-open_file-4125d1b7f568423bf8",
+  "contrast-mine-open_file-094051d95da9003225",
+  "contrast-mine-outpost-b0b0d5d159ffdfb8b6",
+  "contrast-mine-weak_pawn-825be1dd72b0f304dc",
+  "contrast-mine-favorable_exchange-fe61049767b389fa1b",
+  "contrast-mine-piece_activity-9950c6fa6b03597a21",
+  "contrast-mine-king_activity-251f6a1b8905bcfed1",
 ]);
 
 const GOLD_PLAYER_DECISIONS: Record<string, number> = {
   "master-improve_worst_piece-ceaed0f6c0bb7e": 1,
-  "contrast-mine-outpost-b0b0d5d159ffdfb8b6": 2,
   "contrast-mine-open_file-673d0f89da8656ec2c": 2,
   "contrast-mine-weak_square-222bfde2c12e897356": 1,
-  "contrast-mine-favorable_exchange-fe61049767b389fa1b": 2,
   "contrast-mine-opposition-865f5d5ce49ed89693": 2,
   "contrast-mine-king_and_pawn-7e8c7e2928e07f38ab": 5,
   "contrast-mine-king_activity-ef0775a578eef98ee6": 3,
@@ -119,7 +127,11 @@ function stepLabel(exercise: TrainingExercise, index: number, uci: string): stri
 export function refineTrainingLesson(exercise: TrainingExercise): TrainingExercise {
   if (["tactic", "opening"].includes(exercise.category)) return exercise;
   const lineFeatures = causalLineFeatures(exercise.fen, exercise.solutionLine ?? [exercise.bestMove]);
-  const conceptSlug = preciseConcept(exercise, lineFeatures?.signals ?? []);
+  const proposedConcept = preciseConcept(exercise, lineFeatures?.signals ?? []);
+  // A source-audited pilot keeps its demonstrated primary concept. The broad
+  // legacy bank retains its previous relabelling behavior and therefore does
+  // not gain unreviewed active positions as a side effect of this sprint.
+  const conceptSlug = exercise.conceptRelabelLocked ? exercise.conceptSlug : proposedConcept;
   const reclassified = conceptSlug === exercise.conceptSlug ? exercise : {
     ...exercise,
     conceptSlug,

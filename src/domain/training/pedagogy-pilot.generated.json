@@ -1,0 +1,3280 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-15T06:22:00.864Z",
+  "policy": "No quota promotion: only current causal, engine, outcome, contrast and explanation gates may publish.",
+  "activeTraining": [
+    {
+      "id": "master-convert_small_advantage-1950b775762cdd",
+      "type": "conversion",
+      "origin": "concept",
+      "mode": "playout",
+      "theme": "convert_small_advantage",
+      "conceptSlug": "convert_small_advantage",
+      "domain": "conversion",
+      "primaryConcept": "convert_small_advantage",
+      "secondaryConcepts": [
+        "favorable_exchange"
+      ],
+      "secondaryConceptSlugs": [
+        "favorable_exchange"
+      ],
+      "category": "conversion",
+      "title": "Consolide ton avantage",
+      "prompt": "Choisis le plan qui progresse sans rendre de contre-jeu inutile.",
+      "sourceLabel": "Partie de maître · 6WX – adamsrj · ????.??.??",
+      "fen": "r2qr1k1/pppbbpp1/3p1n1p/3N4/2BQP2B/8/PPP2PPP/2KRR3 b - - 7 12",
+      "playerColor": "black",
+      "bestMove": "f6d5",
+      "baselinePlayerCp": 241,
+      "acceptedConceptMoveUcis": [
+        "f6d5"
+      ],
+      "phase": "middlegame",
+      "gameUrl": "https://lichess.org/ufcqmfxx",
+      "concept": "Quel plan fait progresser l’avantage sans forcer trop tôt ?",
+      "maxPlayerMoves": 1,
+      "solutionLine": [
+        "f6d5",
+        "d4d5",
+        "e7h4",
+        "d5f7",
+        "g8h8",
+        "e4e5",
+        "d8g5",
+        "f2f4",
+        "g5e7",
+        "f7e7",
+        "e8e7"
+      ],
+      "successThresholdCp": 151,
+      "classificationConfidence": 0.9,
+      "difficulty": 1525,
+      "source": "lichess_standard",
+      "sourceId": "ufcqmfxx-24",
+      "sourceGameId": "ufcqmfxx",
+      "sourcePlayers": [
+        "6WX",
+        "adamsrj"
+      ],
+      "positionPly": 24,
+      "sourceRole": "human_practice",
+      "pedagogicalMechanism": "convert_small_advantage",
+      "planSignature": "convert_small_advantage|b|q2r4b4n2|ba7.bb7.bc7.bd6.bf7.bg7.bh6.wa2.wb2.wc2.we4.wf2.wg2.wh2|n|22-12",
+      "materialSignature": "w:q1r2b2n1p7|b:q1r2b2n1p7",
+      "pawnStructureSignature": "ba7.bb7.bc7.bd6.bf7.bg7.bh6.wa2.wb2.wc2.we4.wf2.wg2.wh2",
+      "keyPieces": [
+        "f6"
+      ],
+      "keySquares": [
+        "d5"
+      ],
+      "qualityScore": 98,
+      "isVerified": true,
+      "verificationSource": "Stockfish 18 depth 10; human alternatives + causal contrast + milestone",
+      "explanation": {
+        "notice": "L’avantage est réel mais encore modeste : il peut disparaître après un plan imprécis.",
+        "focus": "Amélioration progressive f6–d5.",
+        "plan": "Jouer f6–d5, améliorer la pièce concernée et ne créer une nouvelle faiblesse qu’après avoir limité les réponses actives.",
+        "objective": "Transformer un petit plus durable en avantage concret sans chercher un gain forcé inexistant.",
+        "rule": "Un petit avantage se convertit par accumulation : meilleure pièce, cible fixée, puis second front.",
+        "opponentIdea": "La ligne de référence teste le plan par h4–e7.",
+        "positionEssentials": "L’avantage est réel mais encore modeste : il peut disparaître après un plan imprécis.",
+        "reasonablePlans": [
+          "Jouer f6–d5, améliorer la pièce concernée et ne créer une nouvelle faiblesse qu’après avoir limité les réponses actives."
+        ],
+        "chosenPlanRationale": "Transformer un petit plus durable en avantage concret sans chercher un gain forcé inexistant.",
+        "planSteps": [
+          "f6–d5",
+          "d5–e7"
+        ],
+        "resultingPositionChange": "Transformer un petit plus durable en avantage concret sans chercher un gain forcé inexistant.",
+        "transferRule": "Un petit avantage se convertit par accumulation : meilleure pièce, cible fixée, puis second front.",
+        "primaryConceptRationale": "Amélioration progressive f6–d5."
+      },
+      "planArrows": [
+        {
+          "from": "f6",
+          "to": "d5",
+          "color": "primary",
+          "label": "plan principal"
+        },
+        {
+          "from": "d5",
+          "to": "e7",
+          "color": "secondary",
+          "label": "suite du plan"
+        },
+        {
+          "from": "h4",
+          "to": "e7",
+          "color": "warning",
+          "label": "meilleure réaction"
+        }
+      ],
+      "planSquares": [
+        {
+          "square": "d5",
+          "color": "primary"
+        }
+      ],
+      "verification": {
+        "engine": "Stockfish",
+        "version": "18 lite",
+        "depth": 10,
+        "multiPv": 4
+      },
+      "pedagogicalUnit": "single_move",
+      "sequenceGoal": "Exécuter le plan tout en conservant la qualité de la position.",
+      "sequenceStopCondition": "first_decision",
+      "trainingAssessment": {
+        "version": 2,
+        "referenceQuality": "high",
+        "exerciseability": true,
+        "failedGates": [],
+        "reasons": [],
+        "signals": [
+          "useful_exchange",
+          "advantage_transformed"
+        ],
+        "value": {
+          "decision_contrast": 2,
+          "natural_mistake": 2,
+          "transferability": 2,
+          "state_change": 2,
+          "human_difficulty": 2,
+          "mechanism_clarity": 2
+        },
+        "score": 12,
+        "alternative": "d7e6",
+        "naturalMistake": "d7e6",
+        "outcome": {
+          "source": "stockfish_wdl",
+          "root": "tenable",
+          "after": "tenable",
+          "lossPermille": 0
+        },
+        "contrast": {
+          "passed": true,
+          "reason": "contrasting_human_decisions",
+          "plausible": [
+            "f6d5",
+            "d7e6",
+            "a8c8",
+            "b7b5",
+            "a8b8",
+            "g8h8",
+            "e8f8",
+            "c7c6",
+            "d8c8"
+          ],
+          "mechanisms": 8,
+          "goodMoves": [
+            "f6d5"
+          ],
+          "naturalMistake": "d7e6",
+          "consequence": "advantage_or_holding_resource_lost"
+        }
+      },
+      "engineCandidates": [
+        {
+          "uci": "f6d5",
+          "playerCp": 241,
+          "pv": [
+            "f6d5",
+            "d4d5",
+            "e7h4",
+            "d5f7",
+            "g8h8",
+            "e4e5",
+            "d8g5",
+            "f2f4",
+            "g5e7",
+            "f7e7",
+            "e8e7"
+          ]
+        },
+        {
+          "uci": "d7e6",
+          "playerCp": -80,
+          "pv": [
+            "d7e6",
+            "d5e7",
+            "d8e7",
+            "c4e6",
+            "e7e6",
+            "h4f6",
+            "e6f6",
+            "d4f6"
+          ]
+        },
+        {
+          "uci": "a8c8",
+          "playerCp": -94,
+          "pv": [
+            "a8c8",
+            "d5e7",
+            "d8e7",
+            "f2f4",
+            "b7b5",
+            "e4e5",
+            "c7c5",
+            "e5f6",
+            "c5d4",
+            "e1e7"
+          ]
+        },
+        {
+          "uci": "b7b5",
+          "playerCp": -103,
+          "pv": [
+            "b7b5",
+            "d5e7",
+            "d8e7",
+            "c4d3"
+          ]
+        },
+        {
+          "uci": "a8b8",
+          "playerCp": -128,
+          "pv": [
+            "a8b8",
+            "d5e7",
+            "d8e7",
+            "f2f4",
+            "d7g4",
+            "e4e5",
+            "g4d1",
+            "e5f6",
+            "e7e1",
+            "h4e1",
+            "e8e1"
+          ]
+        },
+        {
+          "uci": "g8h8",
+          "playerCp": -183,
+          "pv": [
+            "g8h8",
+            "h4f6",
+            "e7f6",
+            "d5f6",
+            "d8f6",
+            "d4f6",
+            "g7f6",
+            "c4f7",
+            "e8e5",
+            "f7c4"
+          ]
+        },
+        {
+          "uci": "e8f8",
+          "playerCp": -231,
+          "pv": [
+            "e8f8",
+            "d5e7",
+            "d8e7",
+            "e4e5",
+            "d6e5",
+            "e1e5",
+            "e7d6",
+            "d4d6",
+            "c7d6",
+            "d1d6",
+            "d7c6"
+          ]
+        },
+        {
+          "uci": "c7c6",
+          "playerCp": -271,
+          "pv": [
+            "c7c6",
+            "d5e7",
+            "d8e7",
+            "h4f6",
+            "g7f6",
+            "d4d6",
+            "d7e6",
+            "c4e6",
+            "e7e6",
+            "d6e6",
+            "e8e6",
+            "d1d7"
+          ]
+        },
+        {
+          "uci": "d8c8",
+          "playerCp": -302,
+          "pv": [
+            "d8c8",
+            "d5e7",
+            "e8e7",
+            "h4f6",
+            "g7f6",
+            "d4f6",
+            "c8f8",
+            "e1e3",
+            "a8e8",
+            "e3g3",
+            "g8h7"
+          ]
+        }
+      ],
+      "sourcePlayerRatings": [
+        1463,
+        1504
+      ],
+      "sourceAverageRating": 1484,
+      "sourceDate": "2012.12.31",
+      "sourceTimeControl": "1560+30",
+      "sourceCorpus": "lichess_db_standard_rated_2013-01",
+      "sourceCorpusUrl": "https://database.lichess.org/standard/",
+      "sourceLicense": "CC0",
+      "conceptRelabelLocked": true
+    },
+    {
+      "id": "master-convert_small_advantage-785b1cea1ab4d4",
+      "type": "conversion",
+      "origin": "concept",
+      "mode": "playout",
+      "theme": "convert_small_advantage",
+      "conceptSlug": "convert_small_advantage",
+      "domain": "conversion",
+      "primaryConcept": "convert_small_advantage",
+      "secondaryConcepts": [
+        "pawn_break"
+      ],
+      "secondaryConceptSlugs": [
+        "pawn_break"
+      ],
+      "category": "conversion",
+      "title": "Consolide ton avantage",
+      "prompt": "Choisis le plan qui progresse sans rendre de contre-jeu inutile.",
+      "sourceLabel": "Partie de maître · jorespi – Marzinkus · ????.??.??",
+      "fen": "r2qk2r/pp1bbppp/4p1n1/3pP3/3P1PP1/P1NQ1N2/1P5P/R1B2RK1 w kq - 1 14",
+      "playerColor": "white",
+      "bestMove": "f4f5",
+      "baselinePlayerCp": 93,
+      "acceptedConceptMoveUcis": [
+        "f4f5"
+      ],
+      "phase": "middlegame",
+      "gameUrl": "https://lichess.org/m45sueue",
+      "concept": "Quel plan fait progresser l’avantage sans forcer trop tôt ?",
+      "maxPlayerMoves": 1,
+      "solutionLine": [
+        "f4f5",
+        "g6f8",
+        "c1d2",
+        "h7h5",
+        "g4g5",
+        "e6f5",
+        "f3h4",
+        "g7g6",
+        "c3d5"
+      ],
+      "successThresholdCp": 60,
+      "classificationConfidence": 0.9,
+      "difficulty": 1525,
+      "source": "lichess_standard",
+      "sourceId": "m45sueue-27",
+      "sourceGameId": "m45sueue",
+      "sourcePlayers": [
+        "jorespi",
+        "Marzinkus"
+      ],
+      "positionPly": 27,
+      "sourceRole": "human_practice",
+      "pedagogicalMechanism": "convert_small_advantage",
+      "planSignature": "convert_small_advantage|w|q2r4b3n3|ba7.bb7.bd5.be6.bf7.bg7.bh7.wa3.wb2.wd4.we5.wf4.wg4.wh2|p|21-22",
+      "materialSignature": "w:q1r2b1n2p7|b:q1r2b2n1p7",
+      "pawnStructureSignature": "ba7.bb7.bd5.be6.bf7.bg7.bh7.wa3.wb2.wd4.we5.wf4.wg4.wh2",
+      "keyPieces": [
+        "f4"
+      ],
+      "keySquares": [
+        "f5"
+      ],
+      "qualityScore": 86,
+      "isVerified": true,
+      "verificationSource": "Stockfish 18 depth 10; human alternatives + causal contrast + milestone",
+      "explanation": {
+        "notice": "L’avantage est réel mais encore modeste : il peut disparaître après un plan imprécis.",
+        "focus": "Amélioration progressive f4–f5.",
+        "plan": "Jouer f4–f5, améliorer la pièce concernée et ne créer une nouvelle faiblesse qu’après avoir limité les réponses actives.",
+        "objective": "Transformer un petit plus durable en avantage concret sans chercher un gain forcé inexistant.",
+        "rule": "Un petit avantage se convertit par accumulation : meilleure pièce, cible fixée, puis second front.",
+        "opponentIdea": "La ligne de référence teste le plan par g6–h4.",
+        "positionEssentials": "L’avantage est réel mais encore modeste : il peut disparaître après un plan imprécis.",
+        "reasonablePlans": [
+          "Jouer f4–f5, améliorer la pièce concernée et ne créer une nouvelle faiblesse qu’après avoir limité les réponses actives."
+        ],
+        "chosenPlanRationale": "Transformer un petit plus durable en avantage concret sans chercher un gain forcé inexistant.",
+        "planSteps": [
+          "f4–f5",
+          "f3–h4"
+        ],
+        "resultingPositionChange": "Transformer un petit plus durable en avantage concret sans chercher un gain forcé inexistant.",
+        "transferRule": "Un petit avantage se convertit par accumulation : meilleure pièce, cible fixée, puis second front.",
+        "primaryConceptRationale": "Amélioration progressive f4–f5."
+      },
+      "planArrows": [
+        {
+          "from": "f4",
+          "to": "f5",
+          "color": "primary",
+          "label": "plan principal"
+        },
+        {
+          "from": "f3",
+          "to": "h4",
+          "color": "secondary",
+          "label": "suite du plan"
+        },
+        {
+          "from": "g6",
+          "to": "h4",
+          "color": "warning",
+          "label": "meilleure réaction"
+        }
+      ],
+      "planSquares": [
+        {
+          "square": "f5",
+          "color": "primary"
+        }
+      ],
+      "verification": {
+        "engine": "Stockfish",
+        "version": "18 lite",
+        "depth": 10,
+        "multiPv": 4
+      },
+      "pedagogicalUnit": "single_move",
+      "sequenceGoal": "Exécuter le plan tout en conservant la qualité de la position.",
+      "sequenceStopCondition": "first_decision",
+      "trainingAssessment": {
+        "version": 2,
+        "referenceQuality": "high",
+        "exerciseability": true,
+        "failedGates": [],
+        "reasons": [],
+        "signals": [
+          "pawn_contact_created",
+          "advantage_transformed"
+        ],
+        "value": {
+          "decision_contrast": 2,
+          "natural_mistake": 2,
+          "transferability": 2,
+          "state_change": 2,
+          "human_difficulty": 2,
+          "mechanism_clarity": 2
+        },
+        "score": 12,
+        "alternative": "c1d2",
+        "naturalMistake": "c3b5",
+        "outcome": {
+          "source": "stockfish_wdl",
+          "root": "tenable",
+          "after": "tenable",
+          "lossPermille": 0
+        },
+        "contrast": {
+          "passed": true,
+          "reason": "contrasting_human_decisions",
+          "plausible": [
+            "f4f5",
+            "c1d2",
+            "c1e3",
+            "a3a4",
+            "h2h3",
+            "d3e3",
+            "c3b5",
+            "g4g5",
+            "f3g5"
+          ],
+          "mechanisms": 8,
+          "goodMoves": [
+            "f4f5"
+          ],
+          "naturalMistake": "c3b5",
+          "consequence": "advantage_or_holding_resource_lost"
+        }
+      },
+      "engineCandidates": [
+        {
+          "uci": "f4f5",
+          "playerCp": 93,
+          "pv": [
+            "f4f5",
+            "g6f8",
+            "c1d2",
+            "h7h5",
+            "g4g5",
+            "e6f5",
+            "f3h4",
+            "g7g6",
+            "c3d5"
+          ]
+        },
+        {
+          "uci": "c1d2",
+          "playerCp": 71,
+          "pv": [
+            "c1d2",
+            "d8c8",
+            "f4f5",
+            "e6f5",
+            "c3d5",
+            "f5g4"
+          ]
+        },
+        {
+          "uci": "c1e3",
+          "playerCp": 68,
+          "pv": [
+            "c1e3",
+            "h7h5",
+            "f4f5",
+            "g6f8",
+            "h2h3",
+            "h5g4",
+            "h3g4",
+            "e6f5",
+            "g4f5",
+            "h8h3",
+            "f1f2"
+          ]
+        },
+        {
+          "uci": "a3a4",
+          "playerCp": 59,
+          "pv": [
+            "a3a4",
+            "h7h5",
+            "f4f5",
+            "h5g4",
+            "f5g6",
+            "g4f3",
+            "g6f7",
+            "e8f7",
+            "d3f3",
+            "f7g8"
+          ]
+        },
+        {
+          "uci": "h2h3",
+          "playerCp": 57,
+          "pv": [
+            "h2h3",
+            "h7h5",
+            "f4f5",
+            "g6h4",
+            "f5f6",
+            "h4f3",
+            "d3f3",
+            "g7f6",
+            "e5f6",
+            "e7d6",
+            "g4h5",
+            "h8g8",
+            "g1h1"
+          ]
+        },
+        {
+          "uci": "d3e3",
+          "playerCp": 36,
+          "pv": [
+            "d3e3",
+            "h7h5",
+            "g4g5"
+          ]
+        },
+        {
+          "uci": "c3b5",
+          "playerCp": -8,
+          "pv": [
+            "c3b5",
+            "d7b5",
+            "d3b5",
+            "d8d7",
+            "b5d7",
+            "e8d7"
+          ]
+        },
+        {
+          "uci": "g4g5",
+          "playerCp": -33,
+          "pv": [
+            "g4g5",
+            "d8b6",
+            "c1d2",
+            "a8c8",
+            "h2h4",
+            "e7d8",
+            "h4h5",
+            "g6e7",
+            "a1c1"
+          ]
+        },
+        {
+          "uci": "f3g5",
+          "playerCp": -84,
+          "pv": [
+            "f3g5",
+            "g6f4",
+            "f1f4",
+            "e7g5",
+            "f4f3",
+            "e8g8",
+            "c1d2",
+            "a8c8"
+          ]
+        }
+      ],
+      "sourcePlayerRatings": [
+        1711,
+        1800
+      ],
+      "sourceAverageRating": 1756,
+      "sourceDate": "2012.12.31",
+      "sourceTimeControl": "360+6",
+      "sourceCorpus": "lichess_db_standard_rated_2013-01",
+      "sourceCorpusUrl": "https://database.lichess.org/standard/",
+      "sourceLicense": "CC0",
+      "conceptRelabelLocked": true
+    },
+    {
+      "id": "master-preserve_activity-127a510bb797e6",
+      "type": "conversion",
+      "origin": "concept",
+      "mode": "line",
+      "theme": "preserve_activity",
+      "conceptSlug": "preserve_activity",
+      "domain": "conversion",
+      "primaryConcept": "preserve_activity",
+      "secondaryConcepts": [
+        "piece_activity"
+      ],
+      "secondaryConceptSlugs": [
+        "piece_activity"
+      ],
+      "category": "conversion",
+      "title": "Consolide ton avantage",
+      "prompt": "Choisis le plan qui progresse sans rendre de contre-jeu inutile.",
+      "sourceLabel": "Partie de maître · Delaza62 – crazy2013 · ????.??.??",
+      "fen": "r1b2rk1/pp3ppp/8/1PnQP1q1/P3n3/4PB2/RB3PPP/1N3RK1 b - - 0 16",
+      "playerColor": "black",
+      "bestMove": "c8e6",
+      "baselinePlayerCp": 174,
+      "acceptedConceptMoveUcis": [
+        "c8e6"
+      ],
+      "phase": "middlegame",
+      "gameUrl": "https://lichess.org/7rrigtow",
+      "concept": "Comment convertir sans condamner une pièce à la passivité ?",
+      "maxPlayerMoves": 24,
+      "solutionLine": [
+        "c8e6",
+        "f3e4",
+        "e6d5"
+      ],
+      "successThresholdCp": 61,
+      "classificationConfidence": 0.9,
+      "difficulty": 1400,
+      "source": "lichess_standard",
+      "sourceId": "7rrigtow-32",
+      "sourceGameId": "7rrigtow",
+      "sourcePlayers": [
+        "Delaza62",
+        "crazy2013"
+      ],
+      "positionPly": 32,
+      "sourceRole": "human_practice",
+      "pedagogicalMechanism": "preserve_activity",
+      "planSignature": "preserve_activity|b|q2r4b3n3|ba7.bb7.bf7.bg7.bh7.wa4.wb5.we3.we5.wf2.wg2.wh2|b|13-22",
+      "materialSignature": "w:q1r2b2n1p7|b:q1r2b1n2p5",
+      "pawnStructureSignature": "ba7.bb7.bf7.bg7.bh7.wa4.wb5.we3.we5.wf2.wg2.wh2",
+      "keyPieces": [
+        "c8"
+      ],
+      "keySquares": [
+        "e6"
+      ],
+      "qualityScore": 98,
+      "isVerified": true,
+      "verificationSource": "Stockfish 18 depth 10; human alternatives + causal contrast + milestone",
+      "explanation": {
+        "notice": "Le fou doit rester actif pendant la conversion au lieu de protéger passivement l’avantage.",
+        "focus": "Activité conservée par c8–e6.",
+        "plan": "Jouer c8–e6, puis poursuivre vers d8 tout en gardant les menaces adverses sous contrôle.",
+        "objective": "Faire progresser l’avantage sans laisser l’adversaire reprendre l’initiative.",
+        "rule": "Convertir ne signifie pas reculer : garde au moins une pièce active qui crée des problèmes.",
+        "opponentIdea": "La ligne de référence teste le plan par d5–d4.",
+        "positionEssentials": "Le fou doit rester actif pendant la conversion au lieu de protéger passivement l’avantage.",
+        "reasonablePlans": [
+          "Jouer c8–e6, puis poursuivre vers d8 tout en gardant les menaces adverses sous contrôle."
+        ],
+        "chosenPlanRationale": "Faire progresser l’avantage sans laisser l’adversaire reprendre l’initiative.",
+        "planSteps": [
+          "c8–e6",
+          "f8–d8"
+        ],
+        "resultingPositionChange": "Faire progresser l’avantage sans laisser l’adversaire reprendre l’initiative.",
+        "transferRule": "Convertir ne signifie pas reculer : garde au moins une pièce active qui crée des problèmes.",
+        "primaryConceptRationale": "Activité conservée par c8–e6."
+      },
+      "planArrows": [
+        {
+          "from": "c8",
+          "to": "e6",
+          "color": "primary",
+          "label": "plan principal"
+        },
+        {
+          "from": "f8",
+          "to": "d8",
+          "color": "secondary",
+          "label": "suite du plan"
+        },
+        {
+          "from": "d5",
+          "to": "d4",
+          "color": "warning",
+          "label": "meilleure réaction"
+        }
+      ],
+      "planSquares": [
+        {
+          "square": "e6",
+          "color": "primary"
+        }
+      ],
+      "verification": {
+        "engine": "Stockfish",
+        "version": "18 lite",
+        "depth": 10,
+        "multiPv": 4
+      },
+      "pedagogicalUnit": "decision_then_continuation",
+      "sequenceGoal": "Exécuter le plan tout en conservant la qualité de la position.",
+      "sequenceStopCondition": "pedagogical_milestone",
+      "trainingAssessment": {
+        "version": 2,
+        "referenceQuality": "high",
+        "exerciseability": true,
+        "failedGates": [],
+        "reasons": [],
+        "signals": [
+          "safe_destination",
+          "useful_activity_gain",
+          "advantage_transformed"
+        ],
+        "value": {
+          "decision_contrast": 2,
+          "natural_mistake": 2,
+          "transferability": 2,
+          "state_change": 2,
+          "human_difficulty": 2,
+          "mechanism_clarity": 2
+        },
+        "score": 12,
+        "alternative": "f8d8",
+        "naturalMistake": "f8d8",
+        "outcome": {
+          "source": "stockfish_wdl",
+          "root": "tenable",
+          "after": "tenable",
+          "lossPermille": 0
+        },
+        "contrast": {
+          "passed": true,
+          "reason": "contrasting_human_decisions",
+          "plausible": [
+            "c8e6",
+            "f8d8",
+            "g5g6",
+            "c8f5",
+            "c8d7",
+            "a7a6",
+            "f8e8",
+            "a8b8",
+            "g8h8"
+          ],
+          "mechanisms": 8,
+          "goodMoves": [
+            "c8e6"
+          ],
+          "naturalMistake": "f8d8",
+          "consequence": "advantage_or_holding_resource_lost"
+        }
+      },
+      "engineCandidates": [
+        {
+          "uci": "c8e6",
+          "playerCp": 174,
+          "pv": [
+            "c8e6",
+            "f3e4",
+            "e6d5",
+            "e4d5",
+            "a8d8",
+            "b2d4",
+            "d8d5",
+            "b1c3",
+            "d5d7",
+            "d4c5",
+            "g5e5",
+            "c5f8",
+            "e5c3"
+          ]
+        },
+        {
+          "uci": "f8d8",
+          "playerCp": 23,
+          "pv": [
+            "f8d8",
+            "f3e4",
+            "d8d5",
+            "e4d5",
+            "c8e6",
+            "d5e6",
+            "f7e6",
+            "b2d4",
+            "c5d3",
+            "b1d2"
+          ]
+        },
+        {
+          "uci": "g5g6",
+          "playerCp": -73,
+          "pv": [
+            "g5g6",
+            "a2a1",
+            "c8e6",
+            "d5d1",
+            "a8d8",
+            "d1e2"
+          ]
+        },
+        {
+          "uci": "c8f5",
+          "playerCp": -77,
+          "pv": [
+            "c8f5",
+            "d5d1",
+            "a8d8",
+            "b2d4",
+            "c5e6",
+            "b1d2",
+            "d8d4",
+            "e3d4",
+            "e4c3",
+            "d1a1",
+            "c3a2",
+            "a1a2",
+            "e6d4",
+            "f3b7"
+          ]
+        },
+        {
+          "uci": "c8d7",
+          "playerCp": -346,
+          "pv": [
+            "c8d7",
+            "f3e4",
+            "a8c8",
+            "f2f4",
+            "g5h6",
+            "d5d4",
+            "d7e6",
+            "a2a3",
+            "h6h4"
+          ]
+        },
+        {
+          "uci": "a7a6",
+          "playerCp": -368,
+          "pv": [
+            "a7a6",
+            "f3e4",
+            "c5e4",
+            "d5e4",
+            "c8f5",
+            "e4f3",
+            "f8c8",
+            "b2d4",
+            "f5d3",
+            "f1d1",
+            "d3c2",
+            "d1d2"
+          ]
+        },
+        {
+          "uci": "f8e8",
+          "playerCp": -388,
+          "pv": [
+            "f8e8",
+            "f3e4",
+            "g5e7",
+            "b2d4",
+            "c8e6",
+            "d5c5",
+            "e7c5",
+            "d4c5",
+            "e6a2",
+            "e4b7",
+            "a8d8"
+          ]
+        },
+        {
+          "uci": "a8b8",
+          "playerCp": -404,
+          "pv": [
+            "a8b8",
+            "f3e4",
+            "b7b6",
+            "f2f4",
+            "g5h4",
+            "g2g3",
+            "h4h6",
+            "d5c6",
+            "c8e6",
+            "e4d5",
+            "b8d8",
+            "d5e6",
+            "f7e6"
+          ]
+        },
+        {
+          "uci": "g8h8",
+          "playerCp": -492,
+          "pv": [
+            "g8h8",
+            "f3e4",
+            "c5e4",
+            "d5e4",
+            "c8f5",
+            "e4f3",
+            "f5d3",
+            "f1d1",
+            "d3c2",
+            "d1c1",
+            "a8c8",
+            "h2h3",
+            "c2b1",
+            "c1b1"
+          ]
+        }
+      ],
+      "pedagogicalMilestone": {
+        "kind": "concept_state",
+        "proof": "structural",
+        "minimumPlayerMoves": 2,
+        "signal": "useful_exchange"
+      },
+      "requiredSteps": [
+        {
+          "label": "activité avant récolte",
+          "acceptedMoveUcis": [
+            "c8e6"
+          ]
+        },
+        {
+          "label": "activité avant récolte",
+          "acceptedMoveUcis": [
+            "e6d5"
+          ]
+        }
+      ],
+      "sourcePlayerRatings": [
+        1604,
+        1734
+      ],
+      "sourceAverageRating": 1669,
+      "sourceDate": "2013.01.01",
+      "sourceTimeControl": "480+5",
+      "sourceCorpus": "lichess_db_standard_rated_2013-01",
+      "sourceCorpusUrl": "https://database.lichess.org/standard/",
+      "sourceLicense": "CC0",
+      "conceptRelabelLocked": true
+    },
+    {
+      "id": "master-simplify_when_ahead-a6ea4df0000c4d",
+      "type": "conversion",
+      "origin": "concept",
+      "mode": "line",
+      "theme": "simplify_when_ahead",
+      "conceptSlug": "simplify_when_ahead",
+      "domain": "conversion",
+      "primaryConcept": "simplify_when_ahead",
+      "secondaryConcepts": [
+        "favorable_exchange"
+      ],
+      "secondaryConceptSlugs": [
+        "favorable_exchange"
+      ],
+      "category": "conversion",
+      "title": "Consolide ton avantage",
+      "prompt": "Choisis le plan qui progresse sans rendre de contre-jeu inutile.",
+      "sourceLabel": "Partie de maître · driverblag – blizz · ????.??.??",
+      "fen": "1r6/5pk1/2b1pbp1/1pp1n3/p2PP3/P1N2PN1/BP4P1/2KR4 b - - 0 26",
+      "playerColor": "black",
+      "bestMove": "c5d4",
+      "baselinePlayerCp": 226,
+      "acceptedConceptMoveUcis": [
+        "c5d4"
+      ],
+      "phase": "middlegame",
+      "gameUrl": "https://lichess.org/g0cm4yme",
+      "concept": "Quel échange réduit le contre-jeu sans rendre l’avantage ?",
+      "maxPlayerMoves": 24,
+      "solutionLine": [
+        "c5d4",
+        "c3e2",
+        "d4d3"
+      ],
+      "successThresholdCp": 45,
+      "classificationConfidence": 0.9,
+      "difficulty": 1400,
+      "source": "lichess_standard",
+      "sourceId": "g0cm4yme-52",
+      "sourceGameId": "g0cm4yme",
+      "sourcePlayers": [
+        "driverblag",
+        "blizz"
+      ],
+      "positionPly": 52,
+      "sourceRole": "human_practice",
+      "pedagogicalMechanism": "simplify_when_ahead",
+      "planSignature": "simplify_when_ahead|b|q0r2b3n3|ba4.bb5.bc5.be6.bf7.bg6.wa3.wb2.wd4.we4.wf3.wg2|p|12-11",
+      "materialSignature": "w:q0r1b1n2p6|b:q0r1b2n1p6",
+      "pawnStructureSignature": "ba4.bb5.bc5.be6.bf7.bg6.wa3.wb2.wd4.we4.wf3.wg2",
+      "keyPieces": [
+        "c5"
+      ],
+      "keySquares": [
+        "d4"
+      ],
+      "qualityScore": 98,
+      "isVerified": true,
+      "verificationSource": "Stockfish 18 depth 10; human alternatives + causal contrast + milestone",
+      "explanation": {
+        "notice": "L’échange proposé réduit les ressources adverses sans rendre l’avantage essentiel.",
+        "focus": "La simplification déclenchée par c5–d4.",
+        "plan": "Échanger par c5–d4, puis entrer dans une position plus simple où l’avantage reste durable.",
+        "objective": "Diminuer le contre-jeu et faciliter la conversion de l’avantage.",
+        "rule": "Simplifie les menaces adverses, pas automatiquement toutes les pièces : vérifie que la finale obtenue reste favorable.",
+        "opponentIdea": "La ligne de référence teste le plan par d1–d4.",
+        "positionEssentials": "L’échange proposé réduit les ressources adverses sans rendre l’avantage essentiel.",
+        "reasonablePlans": [
+          "Échanger par c5–d4, puis entrer dans une position plus simple où l’avantage reste durable."
+        ],
+        "chosenPlanRationale": "Diminuer le contre-jeu et faciliter la conversion de l’avantage.",
+        "planSteps": [
+          "c5–d4",
+          "f6–g5"
+        ],
+        "resultingPositionChange": "Diminuer le contre-jeu et faciliter la conversion de l’avantage.",
+        "transferRule": "Simplifie les menaces adverses, pas automatiquement toutes les pièces : vérifie que la finale obtenue reste favorable.",
+        "primaryConceptRationale": "La simplification déclenchée par c5–d4."
+      },
+      "planArrows": [
+        {
+          "from": "c5",
+          "to": "d4",
+          "color": "primary",
+          "label": "plan principal"
+        },
+        {
+          "from": "f6",
+          "to": "g5",
+          "color": "secondary",
+          "label": "suite du plan"
+        },
+        {
+          "from": "d1",
+          "to": "d4",
+          "color": "warning",
+          "label": "meilleure réaction"
+        }
+      ],
+      "planSquares": [
+        {
+          "square": "d4",
+          "color": "primary"
+        }
+      ],
+      "verification": {
+        "engine": "Stockfish",
+        "version": "18 lite",
+        "depth": 10,
+        "multiPv": 4
+      },
+      "pedagogicalUnit": "decision_then_continuation",
+      "sequenceGoal": "Exécuter le plan tout en conservant la qualité de la position.",
+      "sequenceStopCondition": "pedagogical_milestone",
+      "trainingAssessment": {
+        "version": 2,
+        "referenceQuality": "high",
+        "exerciseability": true,
+        "failedGates": [],
+        "reasons": [],
+        "signals": [
+          "useful_exchange",
+          "attacker_removed",
+          "advantage_transformed"
+        ],
+        "value": {
+          "decision_contrast": 2,
+          "natural_mistake": 2,
+          "transferability": 2,
+          "state_change": 2,
+          "human_difficulty": 2,
+          "mechanism_clarity": 2
+        },
+        "score": 12,
+        "alternative": "f6g5",
+        "naturalMistake": "f6h4",
+        "outcome": {
+          "source": "stockfish_wdl",
+          "root": "tenable",
+          "after": "tenable",
+          "lossPermille": 0
+        },
+        "contrast": {
+          "passed": true,
+          "reason": "contrasting_human_decisions",
+          "plausible": [
+            "c5d4",
+            "f6g5",
+            "f6h4",
+            "b5b4",
+            "e5d7",
+            "g7f8",
+            "c6b7",
+            "c5c4",
+            "b8d8"
+          ],
+          "mechanisms": 9,
+          "goodMoves": [
+            "c5d4"
+          ],
+          "naturalMistake": "f6h4",
+          "consequence": "advantage_or_holding_resource_lost"
+        }
+      },
+      "engineCandidates": [
+        {
+          "uci": "c5d4",
+          "playerCp": 226,
+          "pv": [
+            "c5d4",
+            "c3e2",
+            "d4d3",
+            "e2d4",
+            "f6g5",
+            "c1b1",
+            "d3d2",
+            "d4c6",
+            "e5c6"
+          ]
+        },
+        {
+          "uci": "f6g5",
+          "playerCp": 141,
+          "pv": [
+            "f6g5",
+            "c1c2",
+            "c5d4",
+            "d1d4",
+            "b8h8",
+            "g3e2",
+            "g5e3",
+            "d4d1"
+          ]
+        },
+        {
+          "uci": "f6h4",
+          "playerCp": 77,
+          "pv": [
+            "f6h4",
+            "g3e2",
+            "c5d4",
+            "e2d4",
+            "c6e8",
+            "d4c2",
+            "h4d8",
+            "f3f4",
+            "e5g4",
+            "c2b4"
+          ]
+        },
+        {
+          "uci": "b5b4",
+          "playerCp": 55,
+          "pv": [
+            "b5b4",
+            "d4e5",
+            "f6g5",
+            "c1c2",
+            "b4c3",
+            "b2c3",
+            "g5f4",
+            "g3e2",
+            "f4e5",
+            "d1b1"
+          ]
+        },
+        {
+          "uci": "e5d7",
+          "playerCp": 8,
+          "pv": [
+            "e5d7",
+            "d4d5",
+            "e6d5",
+            "a2d5",
+            "f6c3",
+            "b2c3",
+            "d7e5",
+            "d5c6",
+            "e5c6",
+            "d1d5"
+          ]
+        },
+        {
+          "uci": "g7f8",
+          "playerCp": -143,
+          "pv": [
+            "g7f8",
+            "d4e5",
+            "f6e5",
+            "c3e2",
+            "b5b4",
+            "f3f4",
+            "e5c7",
+            "a2c4",
+            "b4a3",
+            "b2a3"
+          ]
+        },
+        {
+          "uci": "c6b7",
+          "playerCp": -229,
+          "pv": [
+            "c6b7",
+            "d4e5",
+            "f6e5",
+            "g3e2",
+            "b7c6",
+            "c3b1",
+            "b5b4",
+            "b1d2",
+            "b4a3",
+            "b2a3"
+          ]
+        },
+        {
+          "uci": "c5c4",
+          "playerCp": -230,
+          "pv": [
+            "c5c4",
+            "d4e5",
+            "f6e5",
+            "g3e2",
+            "b5b4",
+            "a3b4",
+            "b8b4",
+            "f3f4",
+            "e5f6",
+            "a2b1",
+            "b4b3",
+            "b1c2",
+            "a4a3",
+            "c2b3"
+          ]
+        },
+        {
+          "uci": "b8d8",
+          "playerCp": -267,
+          "pv": [
+            "b8d8",
+            "d4e5",
+            "d8d1",
+            "c3d1",
+            "f6e5",
+            "g3e2",
+            "c5c4",
+            "f3f4",
+            "e5c7",
+            "a2b1",
+            "c7b6",
+            "b1c2"
+          ]
+        }
+      ],
+      "pedagogicalMilestone": {
+        "kind": "concept_state",
+        "proof": "structural",
+        "minimumPlayerMoves": 2,
+        "signal": "threat_reduced"
+      },
+      "requiredSteps": [
+        {
+          "label": "simplifier en supprimant une ressource",
+          "acceptedMoveUcis": [
+            "c5d4"
+          ]
+        },
+        {
+          "label": "simplifier en supprimant une ressource",
+          "acceptedMoveUcis": [
+            "d4d3"
+          ]
+        }
+      ],
+      "sourcePlayerRatings": [
+        1482,
+        1336
+      ],
+      "sourceAverageRating": 1409,
+      "sourceDate": "2013.01.01",
+      "sourceTimeControl": "300+0",
+      "sourceCorpus": "lichess_db_standard_rated_2013-01",
+      "sourceCorpusUrl": "https://database.lichess.org/standard/",
+      "sourceLicense": "CC0",
+      "conceptRelabelLocked": true
+    },
+    {
+      "id": "master-preserve_activity-414ac68db26bdc",
+      "type": "conversion",
+      "origin": "concept",
+      "mode": "line",
+      "theme": "preserve_activity",
+      "conceptSlug": "preserve_activity",
+      "domain": "conversion",
+      "primaryConcept": "preserve_activity",
+      "secondaryConcepts": [
+        "piece_activity"
+      ],
+      "secondaryConceptSlugs": [
+        "piece_activity"
+      ],
+      "category": "conversion",
+      "title": "Consolide ton avantage",
+      "prompt": "Choisis le plan qui progresse sans rendre de contre-jeu inutile.",
+      "sourceLabel": "Partie de maître · FashionBoy – Quentono · ????.??.??",
+      "fen": "r7/1r2bkp1/3p1p1n/3Pp2b/4N2P/2N1B3/P4P2/R3K2R b KQ - 1 23",
+      "playerColor": "black",
+      "bestMove": "h5f3",
+      "baselinePlayerCp": 234,
+      "acceptedConceptMoveUcis": [
+        "h5f3",
+        "b7b4",
+        "h6f5",
+        "h6g4"
+      ],
+      "phase": "middlegame",
+      "gameUrl": "https://lichess.org/ij09g35z",
+      "concept": "Comment convertir sans condamner une pièce à la passivité ?",
+      "maxPlayerMoves": 24,
+      "solutionLine": [
+        "h5f3",
+        "h1h3",
+        "f3g4"
+      ],
+      "successThresholdCp": 134,
+      "classificationConfidence": 0.9,
+      "difficulty": 1400,
+      "source": "lichess_standard",
+      "sourceId": "ij09g35z-46",
+      "sourceGameId": "ij09g35z",
+      "sourcePlayers": [
+        "FashionBoy",
+        "Quentono"
+      ],
+      "positionPly": 46,
+      "sourceRole": "human_practice",
+      "pedagogicalMechanism": "preserve_activity",
+      "planSignature": "preserve_activity|b|q0r4b3n3|bd6.be5.bf6.bg7.wa2.wd5.wf2.wh4|b|32-21",
+      "materialSignature": "w:q0r2b1n2p4|b:q0r2b2n1p4",
+      "pawnStructureSignature": "bd6.be5.bf6.bg7.wa2.wd5.wf2.wh4",
+      "keyPieces": [
+        "h5"
+      ],
+      "keySquares": [
+        "f3"
+      ],
+      "qualityScore": 89,
+      "isVerified": true,
+      "verificationSource": "Stockfish 18 depth 10; human alternatives + causal contrast + milestone",
+      "explanation": {
+        "notice": "Le fou doit rester actif pendant la conversion au lieu de protéger passivement l’avantage.",
+        "focus": "Activité conservée par h5–f3.",
+        "plan": "Jouer h5–f3, puis poursuivre vers e4 tout en gardant les menaces adverses sous contrôle.",
+        "objective": "Faire progresser l’avantage sans laisser l’adversaire reprendre l’initiative.",
+        "rule": "Convertir ne signifie pas reculer : garde au moins une pièce active qui crée des problèmes.",
+        "opponentIdea": "La ligne de référence teste le plan par h1–h3.",
+        "positionEssentials": "Le fou doit rester actif pendant la conversion au lieu de protéger passivement l’avantage.",
+        "reasonablePlans": [
+          "Jouer h5–f3, puis poursuivre vers e4 tout en gardant les menaces adverses sous contrôle."
+        ],
+        "chosenPlanRationale": "Faire progresser l’avantage sans laisser l’adversaire reprendre l’initiative.",
+        "planSteps": [
+          "h5–f3",
+          "f3–e4"
+        ],
+        "resultingPositionChange": "Faire progresser l’avantage sans laisser l’adversaire reprendre l’initiative.",
+        "transferRule": "Convertir ne signifie pas reculer : garde au moins une pièce active qui crée des problèmes.",
+        "primaryConceptRationale": "Activité conservée par h5–f3."
+      },
+      "planArrows": [
+        {
+          "from": "h5",
+          "to": "f3",
+          "color": "primary",
+          "label": "plan principal"
+        },
+        {
+          "from": "f3",
+          "to": "e4",
+          "color": "secondary",
+          "label": "suite du plan"
+        },
+        {
+          "from": "h1",
+          "to": "h3",
+          "color": "warning",
+          "label": "meilleure réaction"
+        }
+      ],
+      "planSquares": [
+        {
+          "square": "f3",
+          "color": "primary"
+        }
+      ],
+      "verification": {
+        "engine": "Stockfish",
+        "version": "18 lite",
+        "depth": 10,
+        "multiPv": 4
+      },
+      "pedagogicalUnit": "decision_then_continuation",
+      "sequenceGoal": "Exécuter le plan tout en conservant la qualité de la position.",
+      "sequenceStopCondition": "pedagogical_milestone",
+      "trainingAssessment": {
+        "version": 2,
+        "referenceQuality": "high",
+        "exerciseability": true,
+        "failedGates": [],
+        "reasons": [],
+        "signals": [
+          "safe_destination",
+          "usable_weak_square",
+          "useful_activity_gain",
+          "advantage_transformed"
+        ],
+        "value": {
+          "decision_contrast": 2,
+          "natural_mistake": 2,
+          "transferability": 2,
+          "state_change": 2,
+          "human_difficulty": 2,
+          "mechanism_clarity": 2
+        },
+        "score": 12,
+        "alternative": "b7b4",
+        "naturalMistake": "g7g5",
+        "outcome": {
+          "source": "stockfish_wdl",
+          "root": "tenable",
+          "after": "tenable",
+          "lossPermille": 0
+        },
+        "contrast": {
+          "passed": true,
+          "reason": "contrasting_human_decisions",
+          "plausible": [
+            "b7b4",
+            "h6f5",
+            "h5f3",
+            "f6f5",
+            "h6g4",
+            "a8c8",
+            "b7c7",
+            "g7g5",
+            "e7d8"
+          ],
+          "mechanisms": 9,
+          "goodMoves": [
+            "b7b4",
+            "h6f5",
+            "h5f3",
+            "h6g4"
+          ],
+          "naturalMistake": "g7g5",
+          "consequence": "advantage_or_holding_resource_lost"
+        }
+      },
+      "engineCandidates": [
+        {
+          "uci": "b7b4",
+          "playerCp": 234,
+          "pv": [
+            "b7b4",
+            "e3h6",
+            "g7h6",
+            "e4g3",
+            "h5g4",
+            "a2a3",
+            "f6f5",
+            "a3b4",
+            "a8a1",
+            "e1d2",
+            "a1h1",
+            "g3h1",
+            "e7h4"
+          ]
+        },
+        {
+          "uci": "h6f5",
+          "playerCp": 228,
+          "pv": [
+            "h6f5",
+            "a2a4",
+            "b7b4"
+          ]
+        },
+        {
+          "uci": "h5f3",
+          "playerCp": 205,
+          "pv": [
+            "h5f3",
+            "h1h3",
+            "f3g4",
+            "h3g3",
+            "g4h5",
+            "e3h6",
+            "g7h6",
+            "e4d2",
+            "f6f5",
+            "a2a4",
+            "f5f4",
+            "g3g1",
+            "b7b4"
+          ]
+        },
+        {
+          "uci": "f6f5",
+          "playerCp": 195,
+          "pv": [
+            "f6f5",
+            "e4g5",
+            "f7g8",
+            "a2a4",
+            "f5f4",
+            "e3d2",
+            "h6f5",
+            "g5e6",
+            "f5h4",
+            "a4a5",
+            "h5f3",
+            "h1h3",
+            "f3g4"
+          ]
+        },
+        {
+          "uci": "h6g4",
+          "playerCp": 181,
+          "pv": [
+            "h6g4",
+            "a2a4",
+            "g4e3",
+            "f2e3",
+            "f6f5",
+            "e4g5",
+            "f7g6",
+            "g5e6",
+            "g6h6",
+            "c3b5",
+            "h5f3"
+          ]
+        },
+        {
+          "uci": "a8c8",
+          "playerCp": 171,
+          "pv": [
+            "a8c8",
+            "a2a4",
+            "b7b4",
+            "a4a5",
+            "h5f3",
+            "h1h3",
+            "f3e4",
+            "c3e4",
+            "b4e4",
+            "a5a6"
+          ]
+        },
+        {
+          "uci": "b7c7",
+          "playerCp": 134,
+          "pv": [
+            "b7c7",
+            "e3h6",
+            "g7h6",
+            "c3b5",
+            "c7d7",
+            "h1h3"
+          ]
+        },
+        {
+          "uci": "g7g5",
+          "playerCp": -295,
+          "pv": [
+            "g7g5",
+            "h4g5",
+            "h5g6",
+            "g5f6",
+            "h6g4",
+            "f6e7",
+            "g4e3",
+            "f2e3",
+            "f7e7",
+            "e1e2",
+            "g6e4",
+            "c3e4",
+            "b7b2",
+            "e2f3"
+          ]
+        },
+        {
+          "uci": "e7d8",
+          "playerCp": -380,
+          "pv": [
+            "e7d8",
+            "e4d6",
+            "f7g8",
+            "d6b7",
+            "h5f3",
+            "b7d8",
+            "f3h1",
+            "e1e2",
+            "h1g2",
+            "d8c6",
+            "g8f7",
+            "e2d3",
+            "h6f5"
+          ]
+        }
+      ],
+      "pedagogicalMilestone": {
+        "kind": "concept_state",
+        "proof": "structural",
+        "minimumPlayerMoves": 2,
+        "signal": "threat_reduced"
+      },
+      "requiredSteps": [
+        {
+          "label": "activité avant récolte",
+          "acceptedMoveUcis": [
+            "h5f3",
+            "b7b4",
+            "h6f5",
+            "h6g4"
+          ]
+        },
+        {
+          "label": "activité avant récolte",
+          "acceptedMoveUcis": [
+            "f3g4"
+          ]
+        }
+      ],
+      "sourcePlayerRatings": [
+        1605,
+        1651
+      ],
+      "sourceAverageRating": 1628,
+      "sourceDate": "2013.01.01",
+      "sourceTimeControl": "840+0",
+      "sourceCorpus": "lichess_db_standard_rated_2013-01",
+      "sourceCorpusUrl": "https://database.lichess.org/standard/",
+      "sourceLicense": "CC0",
+      "conceptRelabelLocked": true
+    }
+  ],
+  "challengeReference": [
+    {
+      "exercise": {
+        "id": "rating-pilot-pawn_break-90b1e1a2db7c80",
+        "type": "strategy",
+        "origin": "concept",
+        "mode": "one-move",
+        "pedagogicalUnit": "single_move",
+        "theme": "pawn_break",
+        "conceptSlug": "pawn_break",
+        "domain": "strategy",
+        "category": "strategy",
+        "primaryConcept": "pawn_break",
+        "title": "Choisis un plan utile",
+        "prompt": "Compare les plans humains plausibles avant de jouer.",
+        "sourceLabel": "Partie Lichess publique · décision humaine vérifiée",
+        "fen": "2rq1rk1/pbp2ppp/1p1bp3/7P/Pn1PpP2/1P2P1P1/2PB4/R2QKBNR b KQ - 0 13",
+        "playerColor": "black",
+        "bestMove": "c7c5",
+        "baselinePlayerCp": 116,
+        "engineCandidates": [
+          {
+            "uci": "h7h6",
+            "playerCp": 116,
+            "pv": [
+              "h7h6",
+              "e1f2",
+              "b4d5",
+              "c2c4",
+              "d5f6",
+              "g3g4"
+            ]
+          },
+          {
+            "uci": "c7c5",
+            "playerCp": 102,
+            "pv": [
+              "c7c5",
+              "d2b4",
+              "c5b4",
+              "f1c4",
+              "c8c4",
+              "b3c4",
+              "d8c8",
+              "e1f2",
+              "c8c4",
+              "g1e2",
+              "f8c8"
+            ]
+          },
+          {
+            "uci": "d8e7",
+            "playerCp": 88,
+            "pv": [
+              "d8e7",
+              "h5h6",
+              "g7g6",
+              "g1h3",
+              "f8d8",
+              "f1c4",
+              "b4d5",
+              "h3g5"
+            ]
+          },
+          {
+            "uci": "g8h8",
+            "playerCp": 80,
+            "pv": [
+              "g8h8",
+              "c2c4",
+              "h7h6",
+              "e1f2",
+              "b4d3",
+              "f1d3",
+              "e4d3",
+              "g1f3"
+            ]
+          },
+          {
+            "uci": "b7c6",
+            "playerCp": 53,
+            "pv": [
+              "b7c6",
+              "e1f2",
+              "c6b7",
+              "h5h6",
+              "g7g6",
+              "c2c4",
+              "d6e7",
+              "d2b4",
+              "e7b4"
+            ]
+          },
+          {
+            "uci": "c7c6",
+            "playerCp": 50,
+            "pv": [
+              "c7c6",
+              "h5h6",
+              "g7g6",
+              "c2c4",
+              "d8e7",
+              "e1f2",
+              "e7f6",
+              "g1h3",
+              "c6c5",
+              "d2b4",
+              "c5b4",
+              "h3g5"
+            ]
+          },
+          {
+            "uci": "g7g6",
+            "playerCp": 42,
+            "pv": [
+              "g7g6",
+              "f1c4",
+              "c7c5",
+              "h5g6",
+              "h7g6",
+              "d2b4",
+              "c5b4",
+              "d1g4"
+            ]
+          },
+          {
+            "uci": "e6e5",
+            "playerCp": -104,
+            "pv": [
+              "e6e5",
+              "f4e5",
+              "d6e7",
+              "g1h3",
+              "f7f6",
+              "f1c4",
+              "g8h8",
+              "h3f4",
+              "f6e5",
+              "d4e5",
+              "e7c5"
+            ]
+          }
+        ],
+        "acceptedConceptMoveUcis": [
+          "c7c5"
+        ],
+        "phase": "middlegame",
+        "gameUrl": "https://lichess.org/fV2cuf3p",
+        "concept": "rupture créant un contact nouveau",
+        "maxPlayerMoves": 1,
+        "solutionLine": [
+          "c7c5",
+          "d2b4",
+          "c5b4",
+          "f1c4",
+          "c8c4",
+          "b3c4",
+          "d8c8",
+          "e1f2",
+          "c8c4",
+          "g1e2",
+          "f8c8"
+        ],
+        "difficulty": 1260,
+        "classificationConfidence": 0.9,
+        "patternPolicyAccepted": true,
+        "source": "lichess_standard",
+        "sourceId": "fV2cuf3p-26",
+        "sourceGameId": "fV2cuf3p",
+        "sourcePlayers": [
+          "rustam9",
+          "brainsurgery"
+        ],
+        "sourcePlayerRatings": [
+          1047,
+          1151
+        ],
+        "sourceAverageRating": 1099,
+        "sourceDate": "2017-08-09",
+        "sourceTimeControl": "10+0",
+        "sourceCorpus": "datasnaek/chess via TidyTuesday 2024-10-01",
+        "sourceCorpusUrl": "https://www.kaggle.com/datasets/datasnaek/chess",
+        "sourceLicense": "CC0",
+        "positionPly": 26,
+        "sourceRole": "human_practice",
+        "pedagogicalMechanism": "pawn_break",
+        "keyPieces": [
+          "c7"
+        ],
+        "keySquares": [
+          "d4"
+        ],
+        "verificationSource": "Stockfish 18 Lite depth 10; bounded rating pilot",
+        "verification": {
+          "engine": "Stockfish",
+          "version": "18 lite",
+          "depth": 10,
+          "multiPv": 4
+        },
+        "isVerified": false,
+        "trainingAssessment": {
+          "version": 2,
+          "referenceQuality": "high",
+          "exerciseability": false,
+          "failedGates": [],
+          "reasons": [
+            "competing_sound_plan_not_explained"
+          ],
+          "signals": [
+            "pawn_contact_created",
+            "advantage_transformed"
+          ],
+          "value": {
+            "decision_contrast": 2,
+            "natural_mistake": 2,
+            "transferability": 2,
+            "state_change": 2,
+            "human_difficulty": 2,
+            "mechanism_clarity": 2
+          },
+          "score": 12,
+          "alternative": "h7h6",
+          "naturalMistake": "b7c6",
+          "outcome": {
+            "source": "stockfish_wdl",
+            "root": "tenable",
+            "after": "tenable",
+            "lossPermille": 0,
+            "verifiedDepth": 10
+          },
+          "contrast": {
+            "passed": true,
+            "reason": "contrasting_human_decisions",
+            "plausible": [
+              "h7h6",
+              "c7c5",
+              "d8e7",
+              "g8h8",
+              "b7c6",
+              "c7c6",
+              "g7g6",
+              "e6e5"
+            ],
+            "mechanisms": 8,
+            "goodMoves": [
+              "c7c5"
+            ],
+            "naturalMistake": "b7c6",
+            "consequence": "mechanism_missed_with_objective_cost"
+          }
+        }
+      },
+      "disposition": "CHALLENGE_REFERENCE",
+      "reasons": [
+        "competing_sound_plan_not_explained"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "rating-pilot-piece_activity-964d3a330ea38a",
+        "type": "strategy",
+        "origin": "concept",
+        "mode": "one-move",
+        "pedagogicalUnit": "single_move",
+        "theme": "piece_activity",
+        "conceptSlug": "piece_activity",
+        "domain": "strategy",
+        "category": "strategy",
+        "primaryConcept": "piece_activity",
+        "title": "Choisis un plan utile",
+        "prompt": "Compare les plans humains plausibles avant de jouer.",
+        "sourceLabel": "Partie Lichess publique · décision humaine vérifiée",
+        "fen": "rnb2rk1/pp3ppp/3b1q2/3Pp3/2B5/2N5/PP3PPP/R2QK1NR w KQ - 0 11",
+        "playerColor": "white",
+        "bestMove": "g1f3",
+        "baselinePlayerCp": -56,
+        "engineCandidates": [
+          {
+            "uci": "g1f3",
+            "playerCp": -56,
+            "pv": [
+              "g1f3",
+              "c8g4",
+              "c4e2",
+              "b8d7",
+              "f3d2",
+              "g4e2",
+              "d1e2",
+              "f6g6",
+              "e1g1"
+            ]
+          },
+          {
+            "uci": "d1e2",
+            "playerCp": -60,
+            "pv": [
+              "d1e2",
+              "f6f4",
+              "h2h3",
+              "b8d7",
+              "g1f3",
+              "d7f6",
+              "e1g1"
+            ]
+          },
+          {
+            "uci": "g1e2",
+            "playerCp": -70,
+            "pv": [
+              "g1e2",
+              "f6h4",
+              "c4b3",
+              "b8d7",
+              "e2g3",
+              "f7f5",
+              "e1g1",
+              "d7f6",
+              "c3b5",
+              "d6c5",
+              "b5c7",
+              "f6g4",
+              "h2h3"
+            ]
+          },
+          {
+            "uci": "d1d2",
+            "playerCp": -80,
+            "pv": [
+              "d1d2",
+              "f6h4",
+              "c4b3",
+              "e5e4",
+              "g2g3",
+              "h4e7",
+              "g1e2",
+              "b8d7"
+            ]
+          },
+          {
+            "uci": "c4d3",
+            "playerCp": -92,
+            "pv": [
+              "c4d3",
+              "f6e7",
+              "g1f3",
+              "f7f5",
+              "f3d2",
+              "e5e4",
+              "d3e2",
+              "b8d7"
+            ]
+          },
+          {
+            "uci": "a2a3",
+            "playerCp": -92,
+            "pv": [
+              "a2a3",
+              "f6g6",
+              "g1e2",
+              "g6g2",
+              "e2g3",
+              "g2h3",
+              "c3e4",
+              "h3h6",
+              "d1c2",
+              "f7f5",
+              "e4d6",
+              "h6d6",
+              "e1c1",
+              "d6h6",
+              "c2d2"
+            ]
+          },
+          {
+            "uci": "c3e4",
+            "playerCp": -129,
+            "pv": [
+              "c3e4",
+              "d6b4",
+              "e1f1",
+              "f6g6",
+              "e4g3",
+              "b8d7",
+              "c4d3",
+              "g6d6",
+              "g3e4",
+              "d6b6",
+              "g1f3"
+            ]
+          },
+          {
+            "uci": "f2f3",
+            "playerCp": -479,
+            "pv": [
+              "f2f3",
+              "f6h4",
+              "g2g3",
+              "h4c4",
+              "g1e2",
+              "b8a6",
+              "c3e4",
+              "d6b4",
+              "e2c3"
+            ]
+          }
+        ],
+        "acceptedConceptMoveUcis": [
+          "g1f3",
+          "c4d3"
+        ],
+        "phase": "middlegame",
+        "gameUrl": "https://lichess.org/NS6ccssb",
+        "concept": "activité vers cibles concrètes",
+        "maxPlayerMoves": 1,
+        "solutionLine": [
+          "g1f3",
+          "c8g4",
+          "c4e2",
+          "b8d7",
+          "f3d2",
+          "g4e2",
+          "d1e2",
+          "f6g6",
+          "e1g1"
+        ],
+        "difficulty": 1260,
+        "classificationConfidence": 0.9,
+        "patternPolicyAccepted": true,
+        "source": "lichess_standard",
+        "sourceId": "NS6ccssb-21",
+        "sourceGameId": "NS6ccssb",
+        "sourcePlayers": [
+          "shivangithegenius",
+          "biyanivedant01"
+        ],
+        "sourcePlayerRatings": [
+          1056,
+          1156
+        ],
+        "sourceAverageRating": 1106,
+        "sourceDate": "2017-08-15",
+        "sourceTimeControl": "10+10",
+        "sourceCorpus": "datasnaek/chess via TidyTuesday 2024-10-01",
+        "sourceCorpusUrl": "https://www.kaggle.com/datasets/datasnaek/chess",
+        "sourceLicense": "CC0",
+        "positionPly": 21,
+        "sourceRole": "human_practice",
+        "pedagogicalMechanism": "piece_activity",
+        "keyPieces": [
+          "g1"
+        ],
+        "keySquares": [
+          "e5"
+        ],
+        "verificationSource": "Stockfish 18 Lite depth 10; bounded rating pilot",
+        "verification": {
+          "engine": "Stockfish",
+          "version": "18 lite",
+          "depth": 10,
+          "multiPv": 4
+        },
+        "trainingAssessment": {
+          "version": 2,
+          "referenceQuality": "high",
+          "exerciseability": false,
+          "failedGates": [
+            "outcome"
+          ],
+          "reasons": [
+            "lost_without_saving_resource"
+          ],
+          "signals": [
+            "safe_destination",
+            "useful_activity_gain",
+            "advantage_transformed"
+          ],
+          "value": {
+            "decision_contrast": 2,
+            "natural_mistake": 2,
+            "transferability": 2,
+            "state_change": 2,
+            "human_difficulty": 2,
+            "mechanism_clarity": 2
+          },
+          "score": 12,
+          "alternative": "d1e2",
+          "naturalMistake": "a2a3",
+          "outcome": {
+            "source": "stockfish_wdl",
+            "root": "loss",
+            "after": "loss",
+            "lossPermille": 104,
+            "verifiedDepth": 10
+          },
+          "contrast": {
+            "passed": true,
+            "reason": "contrasting_human_decisions",
+            "plausible": [
+              "g1f3",
+              "d1e2",
+              "g1e2",
+              "d1d2",
+              "c4d3",
+              "a2a3",
+              "c3e4",
+              "f2f3"
+            ],
+            "mechanisms": 7,
+            "goodMoves": [
+              "g1f3"
+            ],
+            "naturalMistake": "a2a3",
+            "consequence": "mechanism_missed_with_objective_cost"
+          }
+        },
+        "isVerified": false
+      },
+      "disposition": "CHALLENGE_REFERENCE",
+      "reasons": [
+        "lost_without_saving_resource"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "rating-pilot-weak_pawn-98381e08a999bb",
+        "type": "strategy",
+        "origin": "concept",
+        "mode": "one-move",
+        "pedagogicalUnit": "single_move",
+        "theme": "weak_pawn",
+        "conceptSlug": "weak_pawn",
+        "domain": "strategy",
+        "category": "strategy",
+        "primaryConcept": "weak_pawn",
+        "title": "Choisis un plan utile",
+        "prompt": "Compare les plans humains plausibles avant de jouer.",
+        "sourceLabel": "Partie Lichess publique · décision humaine vérifiée",
+        "fen": "r1bq1rk1/p1p4p/2p1p1p1/5p2/2PPp3/P1P1P3/5PPP/R1BQ1RK1 b - - 0 14",
+        "playerColor": "black",
+        "bestMove": "d8e7",
+        "baselinePlayerCp": -2,
+        "engineCandidates": [
+          {
+            "uci": "e6e5",
+            "playerCp": -2,
+            "pv": [
+              "e6e5",
+              "a1b1",
+              "d8f6",
+              "d4e5",
+              "f6e5",
+              "a3a4"
+            ]
+          },
+          {
+            "uci": "a8b8",
+            "playerCp": -14,
+            "pv": [
+              "a8b8",
+              "f2f3",
+              "e6e5",
+              "f3e4",
+              "d8h4",
+              "e4f5",
+              "c8f5",
+              "d1e2"
+            ]
+          },
+          {
+            "uci": "d8f6",
+            "playerCp": -15,
+            "pv": [
+              "d8f6",
+              "f2f4",
+              "e4f3",
+              "d1f3",
+              "e6e5",
+              "a3a4",
+              "f6d6",
+              "d4e5"
+            ]
+          },
+          {
+            "uci": "d8d7",
+            "playerCp": -22,
+            "pv": [
+              "d8d7",
+              "a1b1",
+              "e6e5",
+              "f1e1",
+              "g6g5",
+              "f2f4",
+              "e4f3",
+              "d1f3",
+              "e5e4",
+              "f3h5",
+              "d7g7"
+            ]
+          },
+          {
+            "uci": "f8f7",
+            "playerCp": -30,
+            "pv": [
+              "f8f7",
+              "a1b1",
+              "e6e5",
+              "f2f4",
+              "e5f4",
+              "e3f4",
+              "d8d6",
+              "f1e1"
+            ]
+          },
+          {
+            "uci": "c8d7",
+            "playerCp": -45,
+            "pv": [
+              "c8d7",
+              "a3a4",
+              "e6e5",
+              "d4e5",
+              "f8f7",
+              "f2f4",
+              "e4f3",
+              "d1f3",
+              "d8e7"
+            ]
+          },
+          {
+            "uci": "d8e7",
+            "playerCp": -50,
+            "pv": [
+              "d8e7",
+              "a3a4",
+              "f8f7",
+              "c1a3",
+              "e7g5",
+              "f2f4",
+              "e4f3",
+              "d1f3"
+            ]
+          },
+          {
+            "uci": "d8d6",
+            "playerCp": -69,
+            "pv": [
+              "d8d6",
+              "a3a4",
+              "d6d8",
+              "c1a3",
+              "f8f7",
+              "a3c5",
+              "c8a6",
+              "d1b3",
+              "g6g5"
+            ]
+          },
+          {
+            "uci": "f5f4",
+            "playerCp": -208,
+            "pv": [
+              "f5f4",
+              "e3f4",
+              "d8h4",
+              "d1a4",
+              "c8d7",
+              "a4c2",
+              "a8e8",
+              "c2e4",
+              "g6g5",
+              "g2g3",
+              "h4h3",
+              "f4g5"
+            ]
+          }
+        ],
+        "acceptedConceptMoveUcis": [
+          "d8e7"
+        ],
+        "phase": "middlegame",
+        "gameUrl": "https://lichess.org/M3vpf2Ki",
+        "concept": "fixer et attaquer la faiblesse",
+        "maxPlayerMoves": 1,
+        "solutionLine": [
+          "d8e7",
+          "a3a4",
+          "f8f7",
+          "c1a3",
+          "e7g5",
+          "f2f4",
+          "e4f3",
+          "d1f3"
+        ],
+        "difficulty": 1305,
+        "classificationConfidence": 0.9,
+        "patternPolicyAccepted": true,
+        "source": "lichess_standard",
+        "sourceId": "M3vpf2Ki-28",
+        "sourceGameId": "M3vpf2Ki",
+        "sourcePlayers": [
+          "shivangithegenius",
+          "chinmaysharma"
+        ],
+        "sourcePlayerRatings": [
+          1077,
+          1148
+        ],
+        "sourceAverageRating": 1113,
+        "sourceDate": "2017-08-15",
+        "sourceTimeControl": "10+10",
+        "sourceCorpus": "datasnaek/chess via TidyTuesday 2024-10-01",
+        "sourceCorpusUrl": "https://www.kaggle.com/datasets/datasnaek/chess",
+        "sourceLicense": "CC0",
+        "positionPly": 28,
+        "sourceRole": "human_practice",
+        "pedagogicalMechanism": "weak_pawn",
+        "keyPieces": [
+          "d8"
+        ],
+        "keySquares": [
+          "a3"
+        ],
+        "verificationSource": "Stockfish 18 Lite depth 10; bounded rating pilot",
+        "verification": {
+          "engine": "Stockfish",
+          "version": "18 lite",
+          "depth": 10,
+          "multiPv": 4
+        },
+        "trainingAssessment": {
+          "version": 2,
+          "referenceQuality": "high",
+          "exerciseability": false,
+          "failedGates": [
+            "outcome"
+          ],
+          "reasons": [
+            "lost_without_saving_resource"
+          ],
+          "signals": [
+            "safe_destination",
+            "new_weak_pawn_pressure"
+          ],
+          "value": {
+            "decision_contrast": 2,
+            "natural_mistake": 2,
+            "transferability": 2,
+            "state_change": 2,
+            "human_difficulty": 2,
+            "mechanism_clarity": 2
+          },
+          "score": 12,
+          "alternative": "a8b8",
+          "naturalMistake": "f5f4",
+          "outcome": {
+            "source": "stockfish_wdl",
+            "root": "tenable",
+            "after": "loss",
+            "lossPermille": 4,
+            "verifiedDepth": 10
+          },
+          "contrast": {
+            "passed": true,
+            "reason": "contrasting_human_decisions",
+            "plausible": [
+              "a8b8",
+              "d8f6",
+              "d8d7",
+              "f8f7",
+              "c8d7",
+              "d8e7",
+              "d8d6",
+              "f5f4"
+            ],
+            "mechanisms": 7,
+            "goodMoves": [
+              "d8e7",
+              "d8d6"
+            ],
+            "naturalMistake": "f5f4",
+            "consequence": "mechanism_missed_with_objective_cost"
+          }
+        },
+        "isVerified": false
+      },
+      "disposition": "CHALLENGE_REFERENCE",
+      "reasons": [
+        "lost_without_saving_resource"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "rating-pilot-pawn_break-2e911a07a9b23a",
+        "type": "strategy",
+        "origin": "concept",
+        "mode": "one-move",
+        "pedagogicalUnit": "single_move",
+        "theme": "pawn_break",
+        "conceptSlug": "pawn_break",
+        "domain": "strategy",
+        "category": "strategy",
+        "primaryConcept": "pawn_break",
+        "title": "Choisis un plan utile",
+        "prompt": "Compare les plans humains plausibles avant de jouer.",
+        "sourceLabel": "Partie Lichess publique · décision humaine vérifiée",
+        "fen": "r2q1rk1/pp1npp1p/3p2p1/2pP2N1/8/3P4/P1P2PPP/R2Q1RK1 w - - 2 14",
+        "playerColor": "white",
+        "bestMove": "d3d4",
+        "baselinePlayerCp": -68,
+        "engineCandidates": [
+          {
+            "uci": "f2f4",
+            "playerCp": -68,
+            "pv": [
+              "f2f4",
+              "h7h6",
+              "g5e4",
+              "f7f5",
+              "e4d2",
+              "b7b5",
+              "c2c4",
+              "d7f6",
+              "d1e2",
+              "f8f7"
+            ]
+          },
+          {
+            "uci": "c2c4",
+            "playerCp": -75,
+            "pv": [
+              "c2c4",
+              "h7h6",
+              "g5e4",
+              "g8h7",
+              "f2f4",
+              "f7f5",
+              "e4c3",
+              "d7f6",
+              "f1e1"
+            ]
+          },
+          {
+            "uci": "a2a4",
+            "playerCp": -84,
+            "pv": [
+              "a2a4",
+              "d7f6",
+              "c2c4",
+              "d8d7",
+              "f2f4",
+              "d7g4",
+              "d1g4",
+              "f6g4",
+              "a1e1",
+              "h7h6"
+            ]
+          },
+          {
+            "uci": "a1b1",
+            "playerCp": -85,
+            "pv": [
+              "a1b1",
+              "b7b6",
+              "f2f4",
+              "h7h6",
+              "g5e4",
+              "f7f5",
+              "e4d2",
+              "d7f6",
+              "c2c4",
+              "g8h7",
+              "f1e1",
+              "d8d7"
+            ]
+          },
+          {
+            "uci": "f2f3",
+            "playerCp": -119,
+            "pv": [
+              "f2f3",
+              "d7f6",
+              "c2c4",
+              "b7b5",
+              "d1d2",
+              "b5c4",
+              "d3c4",
+              "a8b8",
+              "a1e1"
+            ]
+          },
+          {
+            "uci": "f1e1",
+            "playerCp": -122,
+            "pv": [
+              "f1e1",
+              "b7b5",
+              "h2h3",
+              "a8b8",
+              "d3d4",
+              "d7b6",
+              "a2a4",
+              "b5b4",
+              "d4c5",
+              "d6c5"
+            ]
+          },
+          {
+            "uci": "d3d4",
+            "playerCp": -128,
+            "pv": [
+              "d3d4",
+              "h7h6",
+              "g5f3",
+              "c5d4",
+              "d1d4",
+              "f8e8",
+              "a1b1"
+            ]
+          },
+          {
+            "uci": "c2c3",
+            "playerCp": -130,
+            "pv": [
+              "c2c3",
+              "d7f6",
+              "c3c4",
+              "d8d7",
+              "f1e1",
+              "b7b5",
+              "h2h3",
+              "f8b8",
+              "d1d2",
+              "h7h6"
+            ]
+          },
+          {
+            "uci": "g5e4",
+            "playerCp": -136,
+            "pv": [
+              "g5e4",
+              "b7b5",
+              "d1e2",
+              "d7f6",
+              "c2c4",
+              "a8b8",
+              "h2h3"
+            ]
+          }
+        ],
+        "acceptedConceptMoveUcis": [
+          "d3d4"
+        ],
+        "phase": "middlegame",
+        "gameUrl": "https://lichess.org/DiCTkvZH",
+        "concept": "rupture créant un contact nouveau",
+        "maxPlayerMoves": 1,
+        "solutionLine": [
+          "d3d4",
+          "h7h6",
+          "g5f3",
+          "c5d4",
+          "d1d4",
+          "f8e8",
+          "a1b1"
+        ],
+        "difficulty": 1305,
+        "classificationConfidence": 0.9,
+        "patternPolicyAccepted": true,
+        "source": "lichess_standard",
+        "sourceId": "DiCTkvZH-27",
+        "sourceGameId": "DiCTkvZH",
+        "sourcePlayers": [
+          "rv0209",
+          "shivangithegenius"
+        ],
+        "sourcePlayerRatings": [
+          1200,
+          1002
+        ],
+        "sourceAverageRating": 1101,
+        "sourceDate": "2017-08-15",
+        "sourceTimeControl": "10+10",
+        "sourceCorpus": "datasnaek/chess via TidyTuesday 2024-10-01",
+        "sourceCorpusUrl": "https://www.kaggle.com/datasets/datasnaek/chess",
+        "sourceLicense": "CC0",
+        "positionPly": 27,
+        "sourceRole": "human_practice",
+        "pedagogicalMechanism": "pawn_break",
+        "keyPieces": [
+          "d3"
+        ],
+        "keySquares": [
+          "c5"
+        ],
+        "verificationSource": "Stockfish 18 Lite depth 10; bounded rating pilot",
+        "verification": {
+          "engine": "Stockfish",
+          "version": "18 lite",
+          "depth": 10,
+          "multiPv": 4
+        },
+        "trainingAssessment": {
+          "version": 2,
+          "referenceQuality": "high",
+          "exerciseability": false,
+          "failedGates": [
+            "outcome",
+            "decision_contrast",
+            "human_value",
+            "sequence"
+          ],
+          "reasons": [
+            "lost_without_saving_resource",
+            "reasonable_plans_have_no_necessary_contrast",
+            "insufficient_independent_human_decision_evidence",
+            "single_move_not_deep_enough"
+          ],
+          "signals": [
+            "pawn_contact_created",
+            "advantage_transformed"
+          ],
+          "value": {
+            "decision_contrast": 0,
+            "natural_mistake": 0,
+            "transferability": 2,
+            "state_change": 2,
+            "human_difficulty": 2,
+            "mechanism_clarity": 2
+          },
+          "score": 8,
+          "alternative": "f2f4",
+          "outcome": {
+            "source": "stockfish_wdl",
+            "root": "loss",
+            "after": "loss",
+            "lossPermille": 134,
+            "verifiedDepth": 10
+          },
+          "contrast": {
+            "passed": false,
+            "reason": "reasonable_plans_have_no_necessary_contrast",
+            "plausible": [
+              "f2f4",
+              "c2c4",
+              "a2a4",
+              "a1b1",
+              "f2f3",
+              "f1e1",
+              "d3d4",
+              "c2c3",
+              "g5e4"
+            ],
+            "mechanisms": 7,
+            "goodMoves": [
+              "d3d4"
+            ]
+          }
+        },
+        "isVerified": false
+      },
+      "disposition": "CHALLENGE_REFERENCE",
+      "reasons": [
+        "contrast:reasonable_plans_have_no_necessary_contrast",
+        "lost_without_saving_resource",
+        "reasonable_plans_have_no_necessary_contrast",
+        "insufficient_independent_human_decision_evidence",
+        "single_move_not_deep_enough"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "rating-pilot-open_file-2c465ea3a46d53",
+        "type": "strategy",
+        "origin": "concept",
+        "mode": "one-move",
+        "pedagogicalUnit": "single_move",
+        "theme": "open_file",
+        "conceptSlug": "open_file",
+        "domain": "strategy",
+        "category": "strategy",
+        "primaryConcept": "open_file",
+        "title": "Choisis un plan utile",
+        "prompt": "Compare les plans humains plausibles avant de jouer.",
+        "sourceLabel": "Partie Lichess publique · décision humaine vérifiée",
+        "fen": "r6r/p1p1kp1p/2B2n2/6p1/1b1P1p2/4P3/PPP2PPP/3R1RK1 b - - 0 13",
+        "playerColor": "black",
+        "bestMove": "h8d8",
+        "baselinePlayerCp": 190,
+        "engineCandidates": [
+          {
+            "uci": "a8b8",
+            "playerCp": 190,
+            "pv": [
+              "a8b8",
+              "e3f4",
+              "g5f4",
+              "c2c3",
+              "b4d6",
+              "b2b4",
+              "e7f8",
+              "b4b5",
+              "b8b6"
+            ]
+          },
+          {
+            "uci": "a8d8",
+            "playerCp": 135,
+            "pv": [
+              "a8d8",
+              "c2c3",
+              "d8d6",
+              "c6a4",
+              "b4a5",
+              "e3f4",
+              "g5f4",
+              "f1e1",
+              "e7f8",
+              "b2b4"
+            ]
+          },
+          {
+            "uci": "a8g8",
+            "playerCp": 96,
+            "pv": [
+              "a8g8",
+              "c2c3",
+              "b4a5",
+              "f1e1",
+              "a5b6",
+              "e3f4",
+              "e7d6",
+              "f4g5",
+              "g8g5",
+              "h2h4"
+            ]
+          },
+          {
+            "uci": "a8c8",
+            "playerCp": 94,
+            "pv": [
+              "a8c8",
+              "c2c3",
+              "b4a5",
+              "b2b4",
+              "a5b6",
+              "f1e1",
+              "f4e3",
+              "e1e3",
+              "e7f8"
+            ]
+          },
+          {
+            "uci": "a8f8",
+            "playerCp": 87,
+            "pv": [
+              "a8f8",
+              "c2c3",
+              "e7d6",
+              "c6a4",
+              "b4a5",
+              "e3f4",
+              "g5f4",
+              "b2b4"
+            ]
+          },
+          {
+            "uci": "f4e3",
+            "playerCp": 17,
+            "pv": [
+              "f4e3",
+              "c6a8",
+              "h8a8",
+              "f2e3",
+              "b4d6",
+              "c2c4"
+            ]
+          },
+          {
+            "uci": "a7a6",
+            "playerCp": -48,
+            "pv": [
+              "a7a6",
+              "c2c3",
+              "b4d6",
+              "c6a8",
+              "h8a8",
+              "e3f4",
+              "g5f4",
+              "d1e1",
+              "e7d7"
+            ]
+          },
+          {
+            "uci": "h8d8",
+            "playerCp": -49,
+            "pv": [
+              "h8d8",
+              "e3f4",
+              "g5f4",
+              "c6a8",
+              "d8a8",
+              "c2c3"
+            ]
+          },
+          {
+            "uci": "h8g8",
+            "playerCp": -56,
+            "pv": [
+              "h8g8",
+              "c6a8",
+              "g8a8",
+              "c2c3",
+              "b4d6",
+              "e3f4",
+              "g5f4",
+              "f1e1",
+              "e7d7"
+            ]
+          }
+        ],
+        "acceptedConceptMoveUcis": [
+          "a8d8"
+        ],
+        "phase": "middlegame",
+        "gameUrl": "https://lichess.org/6pOeX4hN",
+        "concept": "entrée ou cible sur la colonne",
+        "maxPlayerMoves": 1,
+        "solutionLine": [
+          "h8d8",
+          "e3f4",
+          "g5f4",
+          "c6a8",
+          "d8a8",
+          "c2c3"
+        ],
+        "difficulty": 1305,
+        "classificationConfidence": 0.9,
+        "patternPolicyAccepted": true,
+        "source": "lichess_standard",
+        "sourceId": "6pOeX4hN-26",
+        "sourceGameId": "6pOeX4hN",
+        "sourcePlayers": [
+          "ck666",
+          "rustam9"
+        ],
+        "sourcePlayerRatings": [
+          1071,
+          1068
+        ],
+        "sourceAverageRating": 1070,
+        "sourceDate": "2017-08-07",
+        "sourceTimeControl": "10+0",
+        "sourceCorpus": "datasnaek/chess via TidyTuesday 2024-10-01",
+        "sourceCorpusUrl": "https://www.kaggle.com/datasets/datasnaek/chess",
+        "sourceLicense": "CC0",
+        "positionPly": 26,
+        "sourceRole": "human_practice",
+        "pedagogicalMechanism": "open_file",
+        "keyPieces": [
+          "h8"
+        ],
+        "keySquares": [
+          "d4"
+        ],
+        "verificationSource": "Stockfish 18 Lite depth 10; bounded rating pilot",
+        "verification": {
+          "engine": "Stockfish",
+          "version": "18 lite",
+          "depth": 10,
+          "multiPv": 4
+        },
+        "trainingAssessment": {
+          "version": 2,
+          "referenceQuality": "high",
+          "exerciseability": false,
+          "failedGates": [
+            "outcome",
+            "decision_contrast",
+            "verification",
+            "human_value",
+            "sequence"
+          ],
+          "reasons": [
+            "lost_without_saving_resource",
+            "reasonable_plans_have_no_necessary_contrast",
+            "teaching_move_objectively_inferior",
+            "insufficient_independent_human_decision_evidence",
+            "single_move_not_deep_enough"
+          ],
+          "signals": [
+            "safe_destination",
+            "useful_file",
+            "useful_activity_gain",
+            "material_advantage_used",
+            "advantage_transformed"
+          ],
+          "value": {
+            "decision_contrast": 0,
+            "natural_mistake": 0,
+            "transferability": 2,
+            "state_change": 2,
+            "human_difficulty": 2,
+            "mechanism_clarity": 2
+          },
+          "score": 8,
+          "alternative": "a8b8",
+          "outcome": {
+            "source": "stockfish_wdl",
+            "root": "tenable",
+            "after": "loss",
+            "lossPermille": 0,
+            "verifiedDepth": 10
+          },
+          "contrast": {
+            "passed": false,
+            "reason": "reasonable_plans_have_no_necessary_contrast",
+            "plausible": [
+              "a8b8",
+              "a8d8",
+              "a8g8",
+              "a8c8",
+              "a8f8",
+              "f4e3",
+              "a7a6",
+              "h8d8",
+              "h8g8"
+            ],
+            "mechanisms": 5,
+            "goodMoves": [
+              "h8d8"
+            ]
+          }
+        },
+        "isVerified": false
+      },
+      "disposition": "CHALLENGE_REFERENCE",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "contrast:reasonable_plans_have_no_necessary_contrast",
+        "lost_without_saving_resource",
+        "reasonable_plans_have_no_necessary_contrast",
+        "teaching_move_objectively_inferior",
+        "insufficient_independent_human_decision_evidence",
+        "single_move_not_deep_enough"
+      ]
+    }
+  ],
+  "quarantine": [],
+  "rejected": [
+    {
+      "id": "rating-pilot-weak_pawn-3f5767c39f19ec",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "forcing_tactic_dominates",
+        "strategy_requires_balanced_plan_choice",
+        "teaching_move_objectively_inferior"
+      ]
+    },
+    {
+      "id": "rating-pilot-piece_activity-fa219bfd6aa6f7",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "forcing_tactic_dominates",
+        "strategy_requires_balanced_plan_choice",
+        "teaching_move_objectively_inferior"
+      ]
+    },
+    {
+      "id": "rating-pilot-pawn_break-2082fb02b52877",
+      "reasons": [
+        "human_move_not_sound_enough",
+        "forcing_tactic_dominates",
+        "lost_without_saving_resource"
+      ]
+    },
+    {
+      "id": "rating-pilot-piece_activity-119b93e43bb0bb",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "forcing_tactic_dominates",
+        "teaching_move_objectively_inferior"
+      ]
+    },
+    {
+      "id": "rating-pilot-open_file-45c738988dc494",
+      "reasons": [
+        "forcing_tactic_dominates",
+        "contrast:reasonable_plans_have_no_necessary_contrast",
+        "lost_without_saving_resource",
+        "reasonable_plans_have_no_necessary_contrast",
+        "insufficient_independent_human_decision_evidence",
+        "single_move_not_deep_enough"
+      ]
+    },
+    {
+      "id": "rating-pilot-pawn_break-83c6cda3fe6f79",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "strategy_requires_balanced_plan_choice",
+        "teaching_move_objectively_inferior"
+      ]
+    },
+    {
+      "id": "rating-pilot-pawn_break-8cc9e3f7f3bbfc",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "strategy_requires_balanced_plan_choice",
+        "teaching_move_objectively_inferior"
+      ]
+    },
+    {
+      "id": "rating-pilot-weak_pawn-17ce79ad2d25ad",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "contrast:reasonable_plans_have_no_necessary_contrast",
+        "strategy_requires_balanced_plan_choice",
+        "reasonable_plans_have_no_necessary_contrast",
+        "insufficient_independent_human_decision_evidence",
+        "single_move_not_deep_enough"
+      ]
+    },
+    {
+      "id": "rating-pilot-piece_activity-f872341364e52f",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "strategy_requires_balanced_plan_choice",
+        "teaching_move_objectively_inferior"
+      ]
+    },
+    {
+      "id": "rating-pilot-piece_activity-1d78407879844c",
+      "reasons": [
+        "lost_without_saving_resource"
+      ]
+    },
+    {
+      "id": "rating-pilot-open_file-69b19186194f70",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "contrast:reasonable_plans_have_no_necessary_contrast",
+        "strategy_requires_balanced_plan_choice",
+        "reasonable_plans_have_no_necessary_contrast",
+        "insufficient_independent_human_decision_evidence",
+        "single_move_not_deep_enough"
+      ]
+    },
+    {
+      "id": "rating-pilot-improve_worst_piece-711edae1730012",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "strategy_requires_balanced_plan_choice"
+      ]
+    },
+    {
+      "id": "rating-pilot-weak_pawn-aea7350453170d",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "teaching_move_objectively_inferior"
+      ]
+    },
+    {
+      "id": "rating-pilot-weak_pawn-e123f8e81e70ef",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "strategy_requires_balanced_plan_choice"
+      ]
+    },
+    {
+      "id": "rating-pilot-open_file-cbf19d3b1cff53",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "contrast:reasonable_plans_have_no_necessary_contrast",
+        "lost_without_saving_resource",
+        "reasonable_plans_have_no_necessary_contrast",
+        "teaching_move_objectively_inferior",
+        "insufficient_independent_human_decision_evidence",
+        "single_move_not_deep_enough"
+      ]
+    },
+    {
+      "id": "rating-pilot-open_file-a8730f864f4af1",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "strategy_requires_balanced_plan_choice"
+      ]
+    },
+    {
+      "id": "rating-pilot-improve_worst_piece-937e72322cfeb7",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "strategy_requires_balanced_plan_choice",
+        "teaching_move_objectively_inferior"
+      ]
+    },
+    {
+      "id": "rating-pilot-improve_worst_piece-d0b24f22f4255c",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "strategy_requires_balanced_plan_choice"
+      ]
+    },
+    {
+      "id": "rating-pilot-improve_worst_piece-52b3b03d012b57",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "human_move_not_sound_enough",
+        "strategy_requires_balanced_plan_choice",
+        "teaching_move_objectively_inferior"
+      ]
+    },
+    {
+      "id": "rating-pilot-improve_worst_piece-6152bb3b7af916",
+      "reasons": [
+        "not_balanced_enough_for_strategy",
+        "strategy_requires_balanced_plan_choice"
+      ]
+    },
+    {
+      "id": "master-simplify_when_ahead-0980a43c4e0123",
+      "reasons": [
+        "same_source_game_as_active_lesson"
+      ]
+    },
+    {
+      "id": "quality-mine-restrict_counterplay-1dcd5524ac4030",
+      "reasons": [
+        "advantage_above_conversion_pilot_prior"
+      ]
+    },
+    {
+      "id": "quality-mine-restrict_counterplay-77ee7cf7938428",
+      "reasons": [
+        "advantage_above_conversion_pilot_prior"
+      ]
+    }
+  ],
+  "report": {
+    "sourceGames800To1200": 361,
+    "strategyDeepReview": 25,
+    "priorLichessDeepReview": 48,
+    "activeByDomain": {
+      "strategy": 0,
+      "conversion": 5,
+      "endgame": 0,
+      "defense": 0
+    },
+    "referenceByDomain": {
+      "strategy": 5,
+      "conversion": 0,
+      "endgame": 3,
+      "defense": 0
+    },
+    "sourceDecisions": {
+      "lichessStandard2013": "use_for_1200_1800_conversion_and_model_positions",
+      "datasnaekTidyTuesday": "stop_after_bounded_800_1200_pilot_low_yield",
+      "lichessPuzzles": "retain_for_verified_defensive_resources_not_quiet_strategy",
+      "lichessTablebase": "retain_as_technical_truth_reference_not_automatic_concept_label",
+      "fics": "do_not_ingest_until_licence_is_clear",
+      "booksAndArticles": "taxonomy_reference_only_no_bulk_copy"
+    }
+  }
+}

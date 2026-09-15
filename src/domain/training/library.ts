@@ -17,6 +17,7 @@ import {
 } from "./validation";
 import QUALITY_BANK from "./quality-bank.generated.json";
 import REMINED_REFERENCE from "./remined-reference.generated.json";
+import PEDAGOGY_PILOT from "./pedagogy-pilot.generated.json";
 import { isReferencePosition, type TrainingAssessment } from "./human-quality";
 import { enrichCausalExplanation } from "./causal-explanation";
 import { assessExplanationQuality } from "./explanation-quality";
@@ -478,6 +479,8 @@ function verifiedStructuredExercise(exercise: TrainingExercise): TrainingExercis
   };
 }
 
+const PEDAGOGY_PILOT_IDS = new Set((PEDAGOGY_PILOT.activeTraining as TrainingExercise[]).map((exercise) => exercise.id));
+
 const RAW_EXERCISE_POOL = [
   ...CONCEPT_LIBRARY
     .filter((exercise) => ![
@@ -485,12 +488,22 @@ const RAW_EXERCISE_POOL = [
       "opening-italian-center",
     ].includes(exercise.key))
     .map(curatedExercise),
-  ...STRUCTURED_TRAINING_BANK.map(verifiedStructuredExercise).map(withTrainingTaxonomy),
-  ...(REMINED_REFERENCE.positions as TrainingExercise[]).map(verifiedStructuredExercise).map(withTrainingTaxonomy),
+  ...STRUCTURED_TRAINING_BANK
+    .filter((exercise) => !PEDAGOGY_PILOT_IDS.has(exercise.id))
+    .map(verifiedStructuredExercise).map(withTrainingTaxonomy),
+  ...(REMINED_REFERENCE.positions as TrainingExercise[])
+    .filter((exercise) => !PEDAGOGY_PILOT_IDS.has(exercise.id))
+    .map(verifiedStructuredExercise).map(withTrainingTaxonomy),
+  ...(PEDAGOGY_PILOT.activeTraining as TrainingExercise[]).map(verifiedStructuredExercise).map(withTrainingTaxonomy),
   ...LICHESS_LIBRARY,
 ].map(withPedagogicalContract);
 
-const assessments = QUALITY_BANK.assessments as Record<string, TrainingAssessment>;
+const assessments = {
+  ...(QUALITY_BANK.assessments as Record<string, TrainingAssessment>),
+  ...Object.fromEntries((PEDAGOGY_PILOT.activeTraining as TrainingExercise[])
+    .filter((exercise) => exercise.trainingAssessment)
+    .map((exercise) => [exercise.id, exercise.trainingAssessment!])),
+};
 const patches = QUALITY_BANK.patches as Record<string, Partial<TrainingExercise>>;
 const GATED_EXERCISE_POOL = gateTrainingExercises(RAW_EXERCISE_POOL.map((exercise) => ({ ...exercise, ...patches[exercise.id] })));
 // Deduplicate after human qualification: a rejected neighbouring reference
@@ -558,7 +571,10 @@ const EXPLANATION_HARD_FAILURES = new Set([...EXPLANATION_ASSESSMENTS]
 const FINAL_VALIDATION_POOL = QUALITY_PREPARED_POOL.filter((exercise) => (
   !EXPLANATION_HARD_FAILURES.has(exercise.id) && shouldPublishTrainingLesson(exercise)
 )).map(finalizeTrainingExerciseValidation);
-const FINAL_GATE = gateTrainingExercises(FINAL_VALIDATION_POOL, { requireFinalFingerprint: true });
+const FINAL_GATE = gateTrainingExercises(FINAL_VALIDATION_POOL, {
+  requireFinalFingerprint: true,
+  requireTeachingFacts: true,
+});
 const EXERCISE_POOL = FINAL_GATE.active;
 
 const REFERENCE_POOL = RAW_EXERCISE_POOL.filter(isReferencePosition)
@@ -592,6 +608,16 @@ export const TRAINING_BANK_GATE_REPORT = {
     const values = [...EXPLANATION_ASSESSMENTS.values()];
     return values.length ? Number((values.reduce((sum, assessment) => sum + assessment.score, 0) / values.length).toFixed(2)) : 0;
   })(),
+  pedagogyPilot: {
+    sourceIds: [...PEDAGOGY_PILOT_IDS],
+    technicalActiveIds: GATED_EXERCISE_POOL.active.filter((exercise) => PEDAGOGY_PILOT_IDS.has(exercise.id)).map((exercise) => exercise.id),
+    humanGateActiveIds: TRAINING_GATED_POOL.active.filter((exercise) => PEDAGOGY_PILOT_IDS.has(exercise.id)).map((exercise) => exercise.id),
+    explanationHardFailureIds: [...EXPLANATION_HARD_FAILURES].filter((id) => PEDAGOGY_PILOT_IDS.has(id)),
+    explanationFailures: Object.fromEntries([...EXPLANATION_ASSESSMENTS]
+      .filter(([id, assessment]) => PEDAGOGY_PILOT_IDS.has(id) && !assessment.passed)
+      .map(([id, assessment]) => [id, assessment.hardNegatives])),
+    finalActiveIds: EXERCISE_POOL.filter((exercise) => PEDAGOGY_PILOT_IDS.has(exercise.id)).map((exercise) => exercise.id),
+  },
 } as const;
 
 function exercisePool(): TrainingExercise[] {

@@ -1,6 +1,7 @@
 import { Chess, type PieceSymbol, type Square } from "chess.js";
 import type { StructuredExerciseExplanation, TrainingExercise } from "../chess/types";
 import { causalFeatures, causalLineFeatures, causalPlanFeatures, CONCEPT_SPECIFICATIONS } from "../patterns/concept-specifications";
+import { deriveTeachingFacts } from "./teaching-facts";
 
 const PIECES: Record<PieceSymbol, string> = {
   p: "pion", n: "cavalier", b: "fou", r: "tour", q: "dame", k: "roi",
@@ -93,7 +94,7 @@ function threatenedSquares(fen: string): string[] {
 
 function primarySignal(exercise: TrainingExercise): { signal?: string; from: string; to: string; targets: string[] } {
   const domain = exercise.domain ?? exercise.category;
-  const feature = domain === "strategy"
+  const feature = domain === "strategy" || (domain === "conversion" && exercise.conceptRelabelLocked)
     ? causalPlanFeatures(exercise.fen, exercise.solutionLine ?? [exercise.bestMove], exercise.conceptSlug)
     : domain === "defense"
       ? causalLineFeatures(exercise.fen, exercise.solutionLine ?? [exercise.bestMove])
@@ -246,6 +247,92 @@ function normalizeSource(exercise: TrainingExercise): StructuredExerciseExplanat
   return { source: "causal_detector", detail: "Mécanisme vérifié par les caractéristiques observables de la position." };
 }
 
+function pieceName(piece: string): string {
+  return PIECES[piece as PieceSymbol] ?? "pièce";
+}
+
+function priorityTeachingCopy(
+  exercise: TrainingExercise,
+  facts: NonNullable<ReturnType<typeof deriveTeachingFacts>>,
+  chosen: NonNullable<ReturnType<typeof moveInfo>>,
+): Pick<StructuredExerciseExplanation, "problem" | "chosenPlan" | "whyItWorksHere" | "stateChange" | "transferRule"> {
+  const move = `${facts.realizedMoveUci.slice(0, 2)}–${facts.realizedMoveUci.slice(2, 4)}`;
+  const targets = facts.targetSquares.length ? facts.targetSquares.join(", ") : undefined;
+  switch (exercise.conceptSlug) {
+    case "open_file": {
+      const roles: Record<string, string> = {
+        double_rooks_on_file: "doubler les tours",
+        contest_open_file: "contester la colonne à la tour adverse",
+        semi_open_file_with_target: "faire pression sur la cible de la colonne semi-ouverte",
+        open_file_entry_square: "obtenir une case d’entrée",
+        open_file_with_target: "viser une cible concrète",
+      };
+      const role = roles[facts.mechanismSubtype] ?? "donner un rôle concret à la tour";
+      return {
+        problem: `La colonne ${facts.file} est utilisable : la tour en ${facts.subject.square} peut y ${role}${targets ? ` vers ${targets}` : ""}.`,
+        chosenPlan: `${chosen.label} place la tour sur la colonne ${facts.file} pour ${role}.`,
+        whyItWorksHere: `Après ${move}, la tour dispose réellement de ${targets ?? facts.destinationSquare} ; la colonne n’est donc pas occupée pour une raison décorative.`,
+        stateChange: `La tour passe de ${facts.subject.square} à ${facts.destinationSquare} et la colonne ${facts.file} devient un axe utile${targets ? ` vers ${targets}` : ""}.`,
+        transferRule: targets ? "Une colonne ne mérite d’être occupée que si elle donne une entrée, une cible ou permet de contester une pièce adverse." : undefined,
+      };
+    }
+    case "king_activity": {
+      const roles: Record<string, string> = {
+        support_passed_pawn: "soutenir le pion passé",
+        king_and_pawn_race: "entrer dans la course contre le pion adverse",
+        attack_weakness: "attaquer une faiblesse",
+        king_penetration: "pénétrer dans le camp adverse",
+        king_centralization: "centraliser le roi",
+      };
+      const role = roles[facts.mechanismSubtype] ?? "approcher une cible";
+      return {
+        problem: `Dans cette finale, le roi en ${facts.subject.square} peut ${role}${targets ? ` autour de ${targets}` : ""}.`,
+        chosenPlan: `${chosen.label} commence la route du roi pour ${role}.`,
+        whyItWorksHere: `${move} réduit concrètement la distance vers ${targets ?? facts.destinationSquare}.`,
+        stateChange: `Le roi atteint ${facts.destinationSquare}${targets ? ` et se rapproche de ${targets}` : ""}.`,
+        transferRule: targets ? "En finale, active le roi vers une cible précise ; la centralisation seule n’est pas encore un plan." : undefined,
+      };
+    }
+    case "favorable_exchange": {
+      const captured = facts.captured ? `${piecePhrase(pieceName(facts.captured.piece))} en ${facts.captured.square}` : undefined;
+      const roles: Record<string, string> = {
+        transition_to_favorable_endgame: "entrer dans une finale plus favorable",
+        remove_active_piece: "retirer une pièce adverse active",
+        trade_bad_piece_for_active_piece: "échanger sa pièce la moins utile contre une pièce adverse active",
+        reduce_counterplay_by_exchange: "réduire le contre-jeu adverse",
+      };
+      const role = roles[facts.mechanismSubtype] ?? "améliorer durablement la position";
+      return {
+        problem: captured ? `La pièce adverse (${captured}) porte une partie du jeu adverse ; l’échange doit avoir une conséquence positionnelle vérifiable.` : "Aucun échange positionnel fiable n’est démontré.",
+        chosenPlan: facts.realizedMoveUci === exercise.bestMove
+          ? `${chosen.label} réalise l’échange pour ${role}.`
+          : `${chosen.label} prépare ${move}, l’échange qui permet de ${role}.`,
+        whyItWorksHere: captured ? `${move} retire précisément ${captured} et permet de ${role}.` : "",
+        stateChange: captured ? `Après ${move}, ${captured} disparaît et le plan peut ${role}.` : "",
+        transferRule: captured ? "Un échange est favorable par ce qu’il change — activité, structure, finale ou contre-jeu — jamais parce qu’il est simplement possible." : undefined,
+      };
+    }
+    case "restrict_counterplay": {
+      const roles: Record<string, string> = {
+        neutralize_passed_pawn: "neutraliser le pion passé",
+        exchange_active_piece: "échanger la pièce active adverse",
+        reduce_king_threat: "réduire une menace directe contre le roi",
+        neutralize_concrete_threat: "neutraliser la ressource adverse immédiate",
+      };
+      const role = roles[facts.mechanismSubtype] ?? "réduire le contre-jeu";
+      return {
+        problem: `Avant de convertir, il faut ${role}${targets ? ` autour de ${targets}` : ""}.`,
+        chosenPlan: `${chosen.label} prépare la décision qui permet de ${role}.`,
+        whyItWorksHere: `${move} réduit une menace réellement présente${targets ? ` sur ${targets}` : ""}.`,
+        stateChange: `Après ${move}, ChessPath constate la réduction de la ressource adverse${targets ? ` liée à ${targets}` : ""}.`,
+        transferRule: targets ? "Avant d’avancer un avantage, identifie puis neutralise la ressource concrète qui crée le contre-jeu." : undefined,
+      };
+    }
+    default:
+      return {};
+  }
+}
+
 /** Adds a position-first explanation to already verified non-tactical material.
  * It never labels a position: it only verbalises evidence already produced by
  * the concept detector, the decision contrast and the verified reference line. */
@@ -256,6 +343,7 @@ export function enrichCausalExplanation(exercise: TrainingExercise): TrainingExe
   const chosen = moveInfo(exercise.fen, exercise.bestMove);
   if (!chosen) return exercise;
   const detected = primarySignal(exercise);
+  const teachingFacts = deriveTeachingFacts(exercise);
   const detectedStateChange = detected.signal
     ? SIGNAL_COPY[detected.signal](detected.from, detected.to, detected.targets)
     : `Après ${chosen.label}, le rôle de ${piecePhrase(chosen.piece)} change de ${chosen.from} vers ${chosen.to}.`;
@@ -301,23 +389,24 @@ export function enrichCausalExplanation(exercise: TrainingExercise): TrainingExe
   const verifiedPlanSteps = (exercise.solutionLine ?? [exercise.bestMove])
     .filter((_uci, index) => index % 2 === 0)
     .map((uci) => `${uci.slice(0, 2)}–${uci.slice(2, 4)}`);
+  const priorityCopy = teachingFacts ? priorityTeachingCopy(exercise, teachingFacts, chosen) : undefined;
   const explanation: StructuredExerciseExplanation = {
     ...legacy,
-    problem: immediateProblem(exercise, chosen, detected, legacy),
+    problem: priorityCopy?.problem ?? immediateProblem(exercise, chosen, detected, legacy),
     primaryConcept: CONCEPTS[exercise.conceptSlug] ?? legacy.focus,
     opponentResource: opponentResource(exercise),
     candidatePlans,
-    chosenPlan: `${chosen.label} — ${legacy.plan}`,
-    whyItWorksHere: detected.signal ? stateChange : legacy.chosenPlanRationale ?? legacy.objective,
+    chosenPlan: priorityCopy?.chosenPlan ?? `${chosen.label} — ${legacy.plan}`,
+    whyItWorksHere: priorityCopy?.whyItWorksHere ?? (detected.signal ? stateChange : legacy.chosenPlanRationale ?? legacy.objective),
     naturalAlternative: evidencedNatural ? `${evidencedNatural.label} est un choix humain réellement observé ou annoté.` : undefined,
     whyNaturalAlternativeIsInferior: evidencedNatural
       ? alternativeConsequence(exercise, evidencedNatural, chosen, detected)
       : undefined,
     naturalAlternativeEvidence: evidencedNatural ? naturalAlternativeEvidence : undefined,
-    stateChange,
-    resultingPositionChange: stateChange,
-    milestone: milestoneCopy(exercise, stateChange),
-    transferRule: (() => {
+    stateChange: priorityCopy?.stateChange ?? stateChange,
+    resultingPositionChange: priorityCopy?.stateChange ?? stateChange,
+    milestone: milestoneCopy(exercise, priorityCopy?.stateChange ?? stateChange),
+    transferRule: priorityCopy ? priorityCopy.transferRule : (() => {
       const authored = legacy.transferRule ?? legacy.rule;
       if (!/^((si|quand|lorsque|avant)\b)/i.test(authored)) return undefined;
       if (/^quand une position présente le même mécanisme\b/i.test(authored)) return undefined;
@@ -330,15 +419,18 @@ export function enrichCausalExplanation(exercise: TrainingExercise): TrainingExe
     chosenPlanRationale: detected.signal ? stateChange : legacy.chosenPlanRationale ?? legacy.objective,
     opponentIdea: opponentResource(exercise) ?? legacy.opponentIdea,
     planSteps: verifiedPlanSteps,
+    ...(teachingFacts ? { teachingFacts } : {}),
   };
   const reply = exercise.solutionLine?.[1];
   const nextOwn = exercise.solutionLine?.[2];
   const planArrows = [
     { from: chosen.from, to: chosen.to, color: "primary" as const, role: "move" as const, label: "décision" },
-    ...(nextOwn ? [{ from: nextOwn.slice(0, 2), to: nextOwn.slice(2, 4), color: "secondary" as const, role: "route" as const, label: "suite vérifiée" }] : []),
+    ...(teachingFacts && teachingFacts.realizedMoveUci !== exercise.bestMove
+      ? [{ from: teachingFacts.realizedMoveUci.slice(0, 2), to: teachingFacts.realizedMoveUci.slice(2, 4), color: "secondary" as const, role: "route" as const, label: "mécanisme réalisé" }]
+      : nextOwn ? [{ from: nextOwn.slice(0, 2), to: nextOwn.slice(2, 4), color: "secondary" as const, role: "route" as const, label: "suite vérifiée" }] : []),
     ...(reply ? [{ from: reply.slice(0, 2), to: reply.slice(2, 4), color: "warning" as const, role: "opponent_resource" as const, label: "meilleure résistance" }] : []),
   ].slice(0, 3);
-  const planSquares = [...new Set([chosen.to, ...detected.targets])].slice(0, 3).map((square, index) => ({
+  const planSquares = [...new Set([teachingFacts?.destinationSquare ?? chosen.to, ...(teachingFacts?.targetSquares ?? detected.targets)])].slice(0, 3).map((square, index) => ({
     square, color: index === 0 ? "primary" as const : "secondary" as const,
     role: index === 0 ? "milestone" as const : "target" as const,
   }));

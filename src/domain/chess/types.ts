@@ -257,6 +257,23 @@ export type PlanSquare = {
   role?: "target" | "milestone" | "danger";
 };
 
+/** Board-derived facts behind a non-tactical lesson. These fields are the
+ * machine-checkable contract; prose and visual annotations are rendered from
+ * them and are never used as a source of chess truth. */
+export type ExerciseTeachingFacts = {
+  version: 1;
+  decisionMoveUci: string;
+  realizedMoveUci: string;
+  signal: string;
+  mechanismSubtype: string;
+  phase: GamePhase;
+  subject: { square: string; piece: string; color: "white" | "black" };
+  destinationSquare: string;
+  targetSquares: string[];
+  captured?: { square: string; piece: string; color: "white" | "black" };
+  file?: string;
+};
+
 export type StructuredExerciseExplanation = {
   notice: string;
   focus: string;
@@ -299,6 +316,7 @@ export type StructuredExerciseExplanation = {
   };
   humanDifficulty?: "easy" | "appropriate" | "challenging_but_useful" | "advanced";
   difficultyReasons?: string[];
+  teachingFacts?: ExerciseTeachingFacts;
 };
 
 export type TrainingExercise = {
@@ -355,6 +373,9 @@ export type TrainingExercise = {
   classificationConfidence?: number;
   /** The shared Pattern Engine policy accepted the originating occurrence. */
   patternPolicyAccepted?: boolean;
+  /** An offline audit established the primary concept; runtime refinement may
+   * improve the lesson but cannot relabel it from a later PV signal. */
+  conceptRelabelLocked?: boolean;
   /** Kept for persisted V2 exercises; new exercises use secondaryConceptSlugs. */
   secondaryConceptSlug?: import("@/domain/knowledge/concepts").ConceptSlug;
   difficulty?: number;
@@ -363,6 +384,15 @@ export type TrainingExercise = {
   /** Stable source metadata used to avoid serving neighbouring moments from one game. */
   sourceGameId?: string;
   sourcePlayers?: string[];
+  /** Source-game strength is provenance, never the exercise difficulty. */
+  sourcePlayerRatings?: number[];
+  sourceAverageRating?: number;
+  sourceDate?: string;
+  sourceTimeControl?: string;
+  sourceCorpus?: string;
+  sourceCorpusUrl?: string;
+  sourceLicense?: string;
+  sourceTransformations?: string[];
   positionPly?: number;
   sourceRole?: "human_practice" | "model_position" | "canonical";
   pedagogicalMechanism?: string;
