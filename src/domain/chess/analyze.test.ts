@@ -84,7 +84,7 @@ describe("analyzePayload resilience", () => {
     );
   });
 
-  it("keeps an equal middlegame position selected by a reliable pattern", async () => {
+  it("uses real MultiPV for a shortlisted personal lesson", async () => {
     const chess = new Chess("4k3/8/4q1r1/8/8/3N4/8/K7 w - - 0 1");
     const fenBefore = chess.fen();
     const played = chess.move("Kb1");
@@ -102,8 +102,10 @@ describe("analyzePayload resilience", () => {
     };
     const input = payload();
     input.games[0] = { ...input.games[0], moves: [move] };
+    const requestedMultiPv: number[] = [];
     const engine: PositionEvaluator = {
-      evaluate: async (fen) => {
+      evaluate: async (fen, _depth, multiPv = 1) => {
+        requestedMultiPv.push(multiPv);
         const board = new Chess(fen);
         const sideToMove = sideToMoveFromFen(fen);
         const bestMove = fen === fenBefore
@@ -112,20 +114,28 @@ describe("analyzePayload resilience", () => {
               const first = board.moves({ verbose: true })[0];
               return first ? `${first.from}${first.to}${first.promotion ?? ""}` : "";
             })();
+        const whiteCp = fen === fenBefore ? 0 : -300;
         return {
           fen,
           sideToMove,
-          whiteCp: 0,
+          whiteCp,
           bestMove,
           depth: 10,
           lines: bestMove ? [{
             multipv: 1,
             depth: 10,
-            rawScore: { type: "cp", value: 0 },
-            whiteScore: { type: "cp", value: 0 },
-            whiteCp: 0,
+            rawScore: { type: "cp", value: whiteCp },
+            whiteScore: { type: "cp", value: whiteCp },
+            whiteCp,
             pv: [bestMove],
-          }] : [],
+          }, ...(fen === fenBefore && multiPv > 1 ? [{
+            multipv: 2,
+            depth: 10,
+            rawScore: { type: "cp" as const, value: -250 },
+            whiteScore: { type: "cp" as const, value: -250 },
+            whiteCp: -250,
+            pv: [move.uci],
+          }] : [])] : [],
           debug: { fen, sideToMove, requestedDepth: 10, reachedDepth: 10, bestMove, lines: [] },
         };
       },
@@ -133,9 +143,14 @@ describe("analyzePayload resilience", () => {
 
     const result = await analyzePayload(input, engine, () => undefined);
 
-    expect(result.games[0].analyzedMoves[0].pedagogical?.kind).toBe("stable_pattern");
+    expect(result.games[0].analyzedMoves[0].pedagogical?.kind).toBe("collapse");
     expect(result.exercises.some((exercise) => (
       exercise.origin === "personal" && exercise.conceptSlug === "fork"
     ))).toBe(true);
+    expect(requestedMultiPv).toContain(4);
+    expect(result.candidateAuditTrail).toContainEqual(expect.objectContaining({
+      candidateId: "resilience-game:20",
+      state: "PUBLISHED",
+    }));
   });
 });

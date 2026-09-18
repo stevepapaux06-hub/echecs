@@ -147,16 +147,31 @@ export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
     failures: aggregate.opportunities - aggregate.successes,
     confidence: confidenceForConcept(aggregate.opportunities, aggregate.confidenceTotal / aggregate.opportunities),
   }));
+  // A personalized weakness is a repeated failure, not merely a concept seen
+  // once and not a successful concept with issueCount=0.
+  const actionableThemes = themes.filter((theme) => theme.issueCount >= 2);
   const matchedTheme = priority === "conversion"
-    ? themes.find((theme) => theme.id === "conversion")
+    ? actionableThemes.find((theme) => theme.id === "conversion")
     : priority === "defense"
-      ? themes.find((theme) => theme.id === "defense")
+      ? actionableThemes.find((theme) => theme.id === "defense")
       : priority === "endgame"
-        ? themes.find((theme) => theme.category === "endgame")
+        ? actionableThemes.find((theme) => theme.category === "endgame")
         : priority === "middlegame"
-          ? themes.find((theme) => theme.category === "strategy")
+          ? actionableThemes.find((theme) => theme.category === "strategy")
           : undefined;
-  const primaryTheme = matchedTheme ?? themes[0]!;
+  const primaryTheme = matchedTheme ?? actionableThemes[0] ?? {
+    id: "insufficient_evidence",
+    category: "tactic" as const,
+    title: "Données encore insuffisantes",
+    summary: "Aucune faiblesse récurrente suffisamment fiable n’apparaît encore dans cet échantillon.",
+    confidence: "low" as const,
+    sampleSize: allMoves.length,
+    issueCount: 0,
+    successCount: 0,
+    evidence: [],
+    positionIds: [],
+  };
+  if (primaryTheme.id === "insufficient_evidence") priority = "stability";
   const priorityTitle = primaryTheme.title || fallbackTitle;
   const prioritySummary = primaryTheme.summary || fallbackSummary;
   const strengths = [
@@ -172,7 +187,7 @@ export function calculateMetrics(games: AnalyzedGame[]): DiagnosticMetrics {
     `${importantErrors.length} grosse${importantErrors.length > 1 ? "s" : ""} perte${importantErrors.length > 1 ? "s" : ""} d’évaluation détectée${importantErrors.length > 1 ? "s" : ""}.`,
     `${worstPhase.label} : phase la plus coûteuse sur cet échantillon (${worstPhase.averageLossCp} cp par décision).`,
   ];
-  if (primaryTheme) {
+  if (primaryTheme.issueCount > 0) {
     weaknesses[0] = `${primaryTheme.title} : ${primaryTheme.issueCount} problème${primaryTheme.issueCount > 1 ? "s" : ""} sur ${primaryTheme.sampleSize} exemple${primaryTheme.sampleSize > 1 ? "s" : ""} pertinent${primaryTheme.sampleSize > 1 ? "s" : ""}.`;
   }
 

@@ -112,6 +112,21 @@ export type AnalyzedMove = MoveSnapshot & {
   pedagogical?: import("@/domain/diagnostic/pedagogical-score").PedagogicalAssessment;
   patterns?: import("@/domain/patterns/engine").PatternOccurrence[];
   pawnStructure?: import("@/domain/knowledge/pawn-structures").PawnStructureRecognition;
+  /** Cross-depth evidence used to avoid publishing a brittle top-1 answer. */
+  multiPvStability?: MultiPvStability;
+};
+
+export type MultiPvStabilityStatus = "stable" | "multi_plan" | "unstable";
+
+export type MultiPvStability = {
+  status: MultiPvStabilityStatus;
+  analyzedDepths: number[];
+  bestMoves: string[];
+  /** Moves whose ranking remained compatible with a reasonable answer. */
+  acceptedMoveUcis: string[];
+  maxDepthReached: number;
+  /** True when the per-analysis adaptive probe budget or max depth stopped probing. */
+  budgetExhausted: boolean;
 };
 
 export type AnalyzedGame = ParsedGame & {
@@ -226,6 +241,61 @@ export type TrainingCandidateLine = {
   /** Stable display value: positive means White is better, negative means Black is better. */
   whiteCentricCp?: number;
   pv: string[];
+  /** MultiPV evidence used by the answer contract. */
+  isForcing?: boolean;
+  mechanisms?: string[];
+  planFamily?: string;
+};
+
+export type PersonalExerciseReason = "ERROR" | "OPPORTUNITY" | "PATTERN_REINFORCEMENT";
+export type PedagogicalConceptRole = "PRIMARY" | "SECONDARY" | "AMBIGUOUS";
+
+export type AcceptedTrainingAnswer = {
+  moveUci: string;
+  playerCp: number;
+  lossFromBestCp: number;
+  reason: "same_mechanism" | "equivalent_human_plan";
+  mechanisms: string[];
+  planFamily: string;
+};
+
+export type TrainingAnswerContract = {
+  version: 1;
+  bestPlayerCp: number;
+  equivalentToleranceCp: number;
+  accepted: AcceptedTrainingAnswer[];
+  stability?: MultiPvStability;
+};
+
+export type CandidateTerminalState =
+  | "PUBLISHED"
+  | "VALIDATION_FAILED"
+  | "LOW_PRIORITY"
+  | "DEDUPLICATED"
+  | "TACTICAL_OVERRIDE"
+  | "CONCEPT_CONFLICT"
+  | "NO_BANK_MATCH"
+  | "SESSION_BUDGET"
+  | "ANSWER_AMBIGUITY"
+  | "LOW_CONFIDENCE"
+  | "ABSTAINED"
+  | "OTHER_EXPLICIT_REASON";
+
+export type CandidateAuditEntry = {
+  candidateId: string;
+  gameId: string;
+  ply: number;
+  state: CandidateTerminalState;
+  reasons: string[];
+  exerciseId?: string;
+  conceptSlug?: string;
+};
+
+export type TrainingContentResolution = {
+  requestedConcept: string;
+  servedConcept: string | null;
+  relation: "exact" | "declared_fallback" | "unavailable";
+  exerciseCount: number;
 };
 
 export type PedagogyAnnotation = {
@@ -351,6 +421,12 @@ export type TrainingExercise = {
   engineCandidates?: TrainingCandidateLine[];
   /** Stockfish-sound moves that demonstrate the same precise concept. */
   acceptedConceptMoveUcis?: string[];
+  /** Why this personal position is allowed to become a lesson. */
+  personalReason?: PersonalExerciseReason;
+  /** Only a PRIMARY concept may be published as the exercise title. */
+  conceptRole?: PedagogicalConceptRole;
+  /** Explicit MultiPV-backed set of acceptable first decisions. */
+  answerContract?: TrainingAnswerContract;
   pedagogy?: PedagogyAnnotation;
   phase: GamePhase;
   gameUrl?: string;
@@ -437,4 +513,7 @@ export type CompleteAnalysis = {
   games: AnalyzedGame[];
   metrics: DiagnosticMetrics;
   exercises: TrainingExercise[];
+  /** Terminal disposition for every personal candidate considered. */
+  candidateAuditTrail?: CandidateAuditEntry[];
+  trainingContentResolution?: TrainingContentResolution;
 };

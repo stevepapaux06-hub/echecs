@@ -75,6 +75,15 @@ afterEach(() => {
 });
 
 describe("StockfishClient request isolation", () => {
+  it("forwards MultiPV through the PositionEvaluator-compatible evaluate method", async () => {
+    vi.stubGlobal("Worker", FakeWorker);
+    const client = new StockfishClient();
+    const result = await client.evaluate(WHITE_FEN, 9, 2);
+    expect(result.lines).toHaveLength(2);
+    expect(FakeWorker.latest?.commands).toContain("setoption name MultiPV value 2");
+    client.destroy();
+  });
+
   it("serializes concurrent calls and keeps each result tied to its FEN", async () => {
     vi.stubGlobal("Worker", FakeWorker);
     const client = new StockfishClient();

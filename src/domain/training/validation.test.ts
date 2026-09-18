@@ -101,6 +101,33 @@ describe("training bank gate", () => {
     expect(validation.reasons).toContain("verified_content_changed");
   });
 
+  it("invalidates final validation when the accepted-answer contract changes", () => {
+    const accepted = base.acceptedConceptMoveUcis?.[0] ?? base.bestMove;
+    const finalized = finalizeTrainingExerciseValidation({
+      ...base,
+      validationFingerprint: undefined,
+      answerContract: {
+        version: 1,
+        bestPlayerCp: base.baselinePlayerCp,
+        equivalentToleranceCp: 35,
+        accepted: [{
+          moveUci: accepted,
+          playerCp: base.baselinePlayerCp,
+          lossFromBestCp: 0,
+          reason: "same_mechanism",
+          mechanisms: [base.conceptSlug],
+          planFamily: base.conceptSlug,
+        }],
+      },
+    });
+    const changed = {
+      ...finalized,
+      answerContract: { ...finalized.answerContract!, equivalentToleranceCp: 80 },
+    };
+    expect(validateTrainingExercise(changed, { requireFinalFingerprint: true }).reasons)
+      .toContain("verified_content_changed");
+  });
+
   it("cannot publish a verified exercise without final-state proof", () => {
     const unstamped = { ...base, validationFingerprint: undefined };
     expect(gateTrainingExercises([unstamped], { requireFinalFingerprint: true }).active).toEqual([]);

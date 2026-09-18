@@ -4,6 +4,7 @@ import type { AnalyzedGame, AnalyzedMove, DiagnosticMetrics, EngineEvaluation } 
 import {
   filterLostPositionCascade,
   generateExercises,
+  generateExercisesWithAudit,
   isPedagogicallyEligiblePersonalMove,
 } from "./generate";
 
@@ -35,28 +36,34 @@ describe("lost-position cascade filter", () => {
   });
 });
 
-function evaluation(fen: string, whiteCp: number, pv: string[]): EngineEvaluation {
+function evaluation(
+  fen: string,
+  whiteCp: number,
+  pv: string[],
+  alternatives: Array<{ whiteCp: number; pv: string[] }> = [],
+): EngineEvaluation {
   const sideToMove = fen.split(" ")[1] as "w" | "b";
+  const values = [{ whiteCp, pv }, ...alternatives];
   return {
     fen,
     sideToMove,
     whiteCp,
     bestMove: pv[0],
     depth: 10,
-    lines: [{
-      multipv: 1,
+    lines: values.map((line, index) => ({
+      multipv: index + 1,
       depth: 10,
-      rawScore: { type: "cp", value: sideToMove === "w" ? whiteCp : -whiteCp },
-      whiteScore: { type: "cp", value: whiteCp },
-      whiteCp,
-      pv,
-    }],
+      rawScore: { type: "cp", value: sideToMove === "w" ? line.whiteCp : -line.whiteCp },
+      whiteScore: { type: "cp", value: line.whiteCp },
+      whiteCp: line.whiteCp,
+      pv: line.pv,
+    })),
     debug: { fen, sideToMove, requestedDepth: 10, reachedDepth: 10, bestMove: pv[0], lines: [] },
   };
 }
 
 describe("personal exercise generation", () => {
-  it("keeps a personal pilot concept accepted at the shared policy boundary", () => {
+  it("does not publish a policy-accepted signal when the move has no causal proof", () => {
     const fen = "4k3/8/8/8/8/8/3q4/3QK3 w - - 0 1";
     const afterFen = "4k3/8/8/8/8/8/3q4/3Q1K2 b - - 1 1";
     const candidate = {
@@ -74,7 +81,7 @@ describe("personal exercise generation", () => {
         reliablePatternConfidence: 0.66, worthy: true,
       },
     } as AnalyzedMove;
-    expect(isPedagogicallyEligiblePersonalMove(candidate)).toBe(true);
+    expect(isPedagogicallyEligiblePersonalMove(candidate)).toBe(false);
     expect(isPedagogicallyEligiblePersonalMove({
       ...candidate,
       patterns: candidate.patterns?.map((pattern) => ({ ...pattern, productEligible: false })),
@@ -147,7 +154,9 @@ describe("personal exercise generation", () => {
         fenBefore: fen,
         fenAfter: afterFen,
         phase: "middlegame",
-        before: evaluation(fen, 100, ["d1d2", "e8f7", "d2d7"]),
+        before: evaluation(fen, 100, ["d1d2", "e8f7", "d2d7"], [
+          { whiteCp: -300, pv: ["e1f1", "d2d1"] },
+        ]),
         after: evaluation(afterFen, -300, ["d2d1", "f1f2"]),
         playerCpBefore: 100,
         playerCpAfter: -300,
@@ -230,11 +239,23 @@ describe("personal exercise generation", () => {
         fenBefore: fen,
         fenAfter: "4k3/8/8/8/8/8/3q4/3Q1K2 b - - 1 1",
         phase: "middlegame" as const,
-        before: evaluation(fen, 100, ["d1d2", "e8f7", "d2d7"]),
+        before: evaluation(fen, 100, ["d1d2", "e8f7", "d2d7"], [
+          { whiteCp: -300, pv: ["e1f1", "d2d1"] },
+        ]),
         after: evaluation("4k3/8/8/8/8/8/3q4/3Q1K2 b - - 1 1", -300, ["d2d1"]),
         playerCpBefore: 100,
         playerCpAfter: -300,
         lossCp: 400,
+        patterns: [{
+          conceptSlug: "loose_piece" as const,
+          fen,
+          ply: 17,
+          confidence: 0.94,
+          opportunity: true,
+          success: false,
+          source: "pattern_engine_stockfish_validated" as const,
+          moveUci: "d1d2",
+        }],
         pedagogical: {
           beforeState: "slightly_better" as const,
           afterState: "losing" as const,
@@ -303,7 +324,7 @@ describe("personal exercise generation", () => {
       .toBeGreaterThan(7);
   });
 
-  it("keeps an equal middlegame strategy position without a large engine drop", () => {
+  it("abstains when a stable pattern exists but the played move is objectively equivalent", () => {
     const fen = "r2q1rk1/pp1nbppp/2p1pn2/8/8/2N1PN2/PPQ1BPPP/R4RK1 w - - 2 13";
     const after = new Chess(fen);
     after.move("h3");
@@ -331,7 +352,9 @@ describe("personal exercise generation", () => {
         fenBefore: fen,
         fenAfter: after.fen(),
         phase: "middlegame",
-        before: evaluation(fen, 0, ["a1d1", "d8c7"]),
+        before: evaluation(fen, 0, ["a1d1", "d8c7"], [
+          { whiteCp: 0, pv: ["h2h3", "d8c7"] },
+        ]),
         after: evaluation(after.fen(), 0, ["d8c7"]),
         playerCpBefore: 0,
         playerCpAfter: 0,
@@ -390,13 +413,12 @@ describe("personal exercise generation", () => {
       themes: [theme],
       primaryTheme: theme,
     };
-    const strategy = generateExercises([game], metrics).find((exercise) => exercise.origin === "personal");
-    expect(strategy).toMatchObject({
-      conceptSlug: "open_file",
-      category: "strategy",
-      phase: "middlegame",
-      baselinePlayerCp: 0,
-    });
-    expect(strategy?.explanation?.focus).toContain("tour");
+    const generated = generateExercisesWithAudit([game], metrics);
+    expect(generated.exercises.find((exercise) => exercise.origin === "personal")).toBeUndefined();
+    expect(generated.auditTrail).toContainEqual(expect.objectContaining({
+      candidateId: "quiet-strategy:25",
+      state: "ABSTAINED",
+      reasons: ["played_move_already_best_or_equivalent"],
+    }));
   });
 });

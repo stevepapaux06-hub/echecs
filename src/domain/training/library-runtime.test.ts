@@ -27,4 +27,20 @@ describe("precompiled browser bank", { timeout: 300_000 }, () => {
           .toEqual(source.conceptExercisesFor("strategy", concept, 12, rating));
       }
   });
+  it("serves only exact concepts or declared pedagogical fallbacks", () => {
+    expect(runtime.resolveConceptExercises("endgame-rook", 2).resolution).toMatchObject({
+      requestedConcept: "rook_endgame",
+      servedConcept: "rook_endgame",
+      relation: "exact",
+    });
+    expect(runtime.resolveConceptExercises("defense", 2).resolution).toMatchObject({
+      requestedConcept: "defense",
+      servedConcept: "defensive_resource",
+      relation: "declared_fallback",
+    });
+    expect(runtime.resolveConceptExercises("unmapped-theme", 2)).toMatchObject({
+      exercises: [],
+      resolution: { relation: "unavailable", servedConcept: null },
+    });
+  });
 });

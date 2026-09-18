@@ -152,6 +152,23 @@ describe("personalized training session", () => {
     expect(session.every((exercise) => exercise.conceptSlug === "fork")).toBe(true);
   });
 
+  it("abstains instead of silently replacing an unsupported diagnosis with Mix", () => {
+    expect(buildTrainingSession(concepts, [], "recommended", 12, {
+      priorityConcept: "insufficient_evidence",
+      userRating: 1_300,
+    })).toEqual([]);
+  });
+
+  it("uses only a declared compatible fallback for a broad legacy diagnosis", () => {
+    const session = buildTrainingSession(concepts, [], "recommended", 12, {
+      priorityConcept: "conversion",
+      priorityDomain: "conversion",
+      userRating: 1_300,
+    });
+    expect(session.length).toBeGreaterThan(0);
+    expect(session.every((exercise) => exercise.conceptSlug === "convert_small_advantage")).toBe(true);
+  });
+
   it("uses the seed to vary the first position instead of storage order", () => {
     const pool = concepts.filter((exercise) => exercise.conceptSlug === "fork").slice(0, 80);
     const firstIds = new Set(["alpha", "beta", "gamma", "delta"].map((seed) => (

@@ -73,8 +73,8 @@ export class StockfishClient {
     }
   }
 
-  async evaluate(fen: string, depth = 7): Promise<EngineEvaluation> {
-    return this.analyze(fen, { depth, multiPv: 1 });
+  async evaluate(fen: string, depth = 7, multiPv = 1): Promise<EngineEvaluation> {
+    return this.analyze(fen, { depth, multiPv });
   }
 
   analyze(fen: string, options: EngineAnalysisOptions = {}): Promise<EngineEvaluation> {

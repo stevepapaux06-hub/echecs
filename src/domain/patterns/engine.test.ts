@@ -107,6 +107,35 @@ describe("deterministic Pattern Engine", () => {
     expect(occurrences.some((entry) => entry.conceptSlug === "convert_small_advantage")).toBe(false);
   });
 
+  it("does not count a promotion's incidental attacks as a personal fork issue", () => {
+    const fen = "k6r/6P1/8/8/8/8/8/4K3 w - - 0 1";
+    expect(detectMovePatterns(fen, "g7g8q").some((pattern) => pattern.conceptSlug === "fork"))
+      .toBe(true);
+    const chess = new Chess(fen);
+    chess.move("Ke2");
+    const analyzed = {
+      ply: 17,
+      san: "Ke2",
+      uci: "e1e2",
+      from: "e1",
+      to: "e2",
+      color: "w",
+      fenBefore: fen,
+      fenAfter: chess.fen(),
+      phase: "endgame",
+      playerCpBefore: 200,
+      playerCpAfter: -100,
+      lossCp: 300,
+      before: {
+        bestMove: "g7g8q",
+        lines: [{ pv: ["g7g8q"], multipv: 1, depth: 10, whiteCp: 200 }],
+      },
+      after: {},
+    } as unknown as AnalyzedMove;
+    expect(patternsForAnalyzedMove(analyzed).some((entry) => entry.conceptSlug === "fork"))
+      .toBe(false);
+  });
+
   it("labels an active answer to a concrete threat as a defensive resource", () => {
     const patterns = detectMovePatterns(
       "6k1/5ppp/8/8/2p5/3r4/5PPP/3R2K1 w - - 0 1",

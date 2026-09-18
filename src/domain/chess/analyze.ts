@@ -7,11 +7,18 @@ import type {
   MoveSnapshot,
 } from "./types";
 import { calculateMetrics } from "../diagnostic/metrics";
-import { generateExercises } from "../training/generate";
+import { generateExercisesWithAudit } from "../training/generate";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
 import { patternsForAnalyzedMove, structureForPosition } from "../patterns/engine";
 import { patternCandidatesForPosition } from "../patterns/engine";
 import { scorePedagogicalMoment } from "../diagnostic/pedagogical-score";
+import {
+  assessMultiPvStability,
+  MAX_ADAPTIVE_STABILITY_POSITIONS,
+  MULTIPV_MAX_DEPTH,
+  MULTIPV_STABILITY_DEPTH_STEP,
+  needsAdaptiveMultiPvProbe,
+} from "./multipv-stability";
 
 export type AnalysisProgress = {
   completed: number;
@@ -20,7 +27,7 @@ export type AnalysisProgress = {
 };
 
 export type PositionEvaluator = {
-  evaluate: (fen: string, depth?: number) => Promise<EngineEvaluation>;
+  evaluate: (fen: string, depth?: number, multiPv?: number) => Promise<EngineEvaluation>;
 };
 
 function analysisBudget(gameCount: number): {
@@ -47,7 +54,15 @@ function movesToAnalyze(
   if (candidates.length <= limit) return candidates;
   const step = (candidates.length - 1) / Math.max(1, limit - 1);
   const uniform = Array.from({ length: limit }, (_, index) => candidates[Math.round(index * step)]);
-  const patternDriven = candidates
+  // Pattern detection enumerates legal moves. Bound that work before scanning
+  // so a long game cannot stall the whole multi-game analysis.
+  const patternScanLimit = Math.max(limit, patternLimit * 3);
+  const patternScan = candidates.length <= patternScanLimit
+    ? candidates
+    : Array.from({ length: patternScanLimit }, (_, index) => (
+        candidates[Math.round(index * (candidates.length - 1) / Math.max(1, patternScanLimit - 1))]
+      ));
+  const patternDriven = patternScan
     .map((move) => ({
       move,
       patterns: patternCandidatesForPosition(move.fenBefore, { phase: move.phase, ply: move.ply }),
@@ -87,10 +102,11 @@ export async function analyzePayload(
   let skippedDecisions = 0;
   let shallowFallbacks = 0;
   let consecutiveFailures = 0;
+  let adaptiveStabilityPositions = 0;
   const cache = new Map<string, EngineEvaluation>();
 
-  async function evaluate(fen: string, depth: number, label: string): Promise<EngineEvaluation> {
-    const key = `${depth}:${fen}`;
+  async function evaluate(fen: string, depth: number, label: string, multiPv = 1): Promise<EngineEvaluation> {
+    const key = `${depth}:${multiPv}:${fen}`;
     const cached = cache.get(key);
     if (cached) {
       completed += 1;
@@ -98,7 +114,7 @@ export async function analyzePayload(
       return cached;
     }
     try {
-      const result = await engine.evaluate(fen, depth);
+      const result = await engine.evaluate(fen, depth, multiPv);
       cache.set(key, result);
       return result;
     } finally {
@@ -179,16 +195,53 @@ export async function analyzePayload(
   total = completed + critical.length * 2;
 
   for (const { game, move } of critical) {
+    const shallowBefore = move.before;
     const [beforeResult, afterResult] = await Promise.allSettled([
-      evaluate(move.fenBefore, 10, "Seconde passe approfondie sur tes décisions critiques"),
+      // Real alternatives are only requested for shortlisted pedagogical
+      // moments, keeping the first pass fast while avoiding top-1 lessons.
+      evaluate(move.fenBefore, 10, "Seconde passe approfondie sur tes décisions critiques", 4),
       evaluate(move.fenAfter, 10, "Validation des erreurs récurrentes"),
     ]);
     if (beforeResult.status === "rejected" || afterResult.status === "rejected") {
       shallowFallbacks += 1;
       continue;
     }
-    const before = beforeResult.value;
+    let before = beforeResult.value;
     const after = afterResult.value;
+    const stabilityHistory = [shallowBefore, before];
+    const needsProbe = needsAdaptiveMultiPvProbe(shallowBefore, before, game.playerColor);
+    let stabilityBudgetExhausted = false;
+    if (needsProbe) {
+      if (adaptiveStabilityPositions >= MAX_ADAPTIVE_STABILITY_POSITIONS) {
+        stabilityBudgetExhausted = true;
+      } else {
+        adaptiveStabilityPositions += 1;
+        for (let depth = 12; depth <= MULTIPV_MAX_DEPTH; depth += MULTIPV_STABILITY_DEPTH_STEP) {
+          total += 1;
+          try {
+            before = await evaluate(
+              move.fenBefore,
+              depth,
+              "Stockfish stabilise les plans candidats",
+              4,
+            );
+            stabilityHistory.push(before);
+          } catch {
+            shallowFallbacks += 1;
+            stabilityBudgetExhausted = true;
+            break;
+          }
+          const currentStability = assessMultiPvStability(stabilityHistory, game.playerColor);
+          if (currentStability.status !== "unstable") break;
+          if (depth === MULTIPV_MAX_DEPTH) stabilityBudgetExhausted = true;
+        }
+      }
+    }
+    move.multiPvStability = assessMultiPvStability(
+      stabilityHistory,
+      game.playerColor,
+      stabilityBudgetExhausted,
+    );
     move.before = before;
     move.after = after;
     move.playerCpBefore = evaluationForPlayer(before.whiteCp, game.playerColor);
@@ -217,12 +270,15 @@ export async function analyzePayload(
   if (shallowFallbacks > 0) {
     warnings.push(`${shallowFallbacks} décision${shallowFallbacks > 1 ? "s critiques restent" : " critique reste"} évaluée${shallowFallbacks > 1 ? "s" : ""} à la profondeur initiale.`);
   }
+  const generated = generateExercisesWithAudit(analyzedGames, metrics);
   return {
     profile: payload.profile,
     warnings,
     selection: payload.selection,
     games: analyzedGames,
     metrics,
-    exercises: generateExercises(analyzedGames, metrics),
+    exercises: generated.exercises,
+    candidateAuditTrail: generated.auditTrail,
+    trainingContentResolution: generated.bankResolution,
   };
 }

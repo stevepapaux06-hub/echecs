@@ -139,6 +139,7 @@ const LEGACY_CONCEPT_SLUGS: Readonly<Record<string, ConceptSlug>> = {
   "cut-off-king": "restrict_counterplay",
   "missed-forcing-moves": "forcing_moves",
   "loose-pieces": "loose_piece",
+  "endgame-rook": "rook_endgame",
 };
 
 export function normalizeConceptSlug(value: string): string {

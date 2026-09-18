@@ -38,6 +38,7 @@ function stableStringify(value: unknown): string {
 export function trainingExerciseValidationFingerprint(exercise: TrainingExercise): string {
   const serialized = stableStringify({
     acceptedConceptMoveUcis: exercise.acceptedConceptMoveUcis,
+    answerContract: exercise.answerContract,
     baselinePlayerCp: exercise.baselinePlayerCp,
     bestMove: exercise.bestMove,
     category: exercise.category,
@@ -51,6 +52,8 @@ export function trainingExerciseValidationFingerprint(exercise: TrainingExercise
     maxPlayerMoves: exercise.maxPlayerMoves,
     mode: exercise.mode,
     patternPolicyAccepted: exercise.patternPolicyAccepted,
+    personalReason: exercise.personalReason,
+    conceptRole: exercise.conceptRole,
     pedagogicalMilestone: exercise.pedagogicalMilestone,
     pedagogicalUnit: exercise.pedagogicalUnit,
     phase: exercise.phase,
@@ -288,6 +291,16 @@ export function validateTrainingExercise(
     reasons.push("defense_outcome_not_verified");
   }
   if (!hasTrustedVerification(exercise)) reasons.push("verification_metadata_missing");
+  if (exercise.source === "personal_game") {
+    if (!exercise.personalReason) reasons.push("personal_reason_missing");
+    if (exercise.conceptRole !== "PRIMARY") reasons.push("personal_concept_not_primary");
+    if (!exercise.answerContract?.accepted.length) reasons.push("personal_answer_contract_missing");
+    const contractMoves = exercise.answerContract?.accepted.map((answer) => answer.moveUci).toSorted() ?? [];
+    const acceptedMoves = [...new Set(exercise.acceptedConceptMoveUcis ?? [])].toSorted();
+    if (contractMoves.length && JSON.stringify(contractMoves) !== JSON.stringify(acceptedMoves)) {
+      reasons.push("personal_answer_contract_mismatch");
+    }
+  }
   const currentFingerprint = trainingExerciseValidationFingerprint(exercise);
   if (exercise.validationFingerprint && exercise.validationFingerprint !== currentFingerprint) {
     reasons.push("verified_content_changed");
@@ -315,6 +328,10 @@ export function validateTrainingExercise(
     "favorable_exchange_without_exchange",
     "primary_annotation_move_mismatch",
     "teaching_destination_not_annotated",
+    "personal_reason_missing",
+    "personal_concept_not_primary",
+    "personal_answer_contract_missing",
+    "personal_answer_contract_mismatch",
   ].includes(reason));
   return {
     status: rejected ? "rejected" : reasons.length ? "needs_verification" : "active",

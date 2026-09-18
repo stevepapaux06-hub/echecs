@@ -1,6 +1,9 @@
-import type { TrainingExercise } from "../chess/types";
+import type { TrainingContentResolution, TrainingExercise } from "../chess/types";
 import { normalizeConceptSlug } from "../knowledge/concepts";
 import BANK, { RUNTIME_BANK_MANIFEST } from "./runtime-bank.generated";
+import { DECLARED_TRAINING_FALLBACKS } from "./fallbacks";
+
+export { DECLARED_TRAINING_FALLBACKS } from "./fallbacks";
 
 export { RUNTIME_BANK_MANIFEST };
 
@@ -36,6 +39,34 @@ export function conceptExercisesFor(
   _category: TrainingExercise["category"], conceptSlug: string, limit = 2, userRating?: number,
 ): TrainingExercise[] {
   return conceptExercisesForSlug(conceptSlug, limit, userRating);
+}
+
+export function resolveConceptExercises(
+  conceptSlug: string,
+  limit = 2,
+  userRating?: number,
+): { exercises: TrainingExercise[]; resolution: TrainingContentResolution } {
+  const requestedConcept = normalizeConceptSlug(conceptSlug);
+  const exact = conceptExercisesForSlug(requestedConcept, limit, userRating);
+  if (exact.length) {
+    return {
+      exercises: exact,
+      resolution: { requestedConcept, servedConcept: requestedConcept, relation: "exact", exerciseCount: exact.length },
+    };
+  }
+  for (const fallback of DECLARED_TRAINING_FALLBACKS[requestedConcept] ?? []) {
+    const exercises = conceptExercisesForSlug(fallback, limit, userRating);
+    if (exercises.length) {
+      return {
+        exercises,
+        resolution: { requestedConcept, servedConcept: fallback, relation: "declared_fallback", exerciseCount: exercises.length },
+      };
+    }
+  }
+  return {
+    exercises: [],
+    resolution: { requestedConcept, servedConcept: null, relation: "unavailable", exerciseCount: 0 },
+  };
 }
 
 export function allConceptExercises(): TrainingExercise[] {

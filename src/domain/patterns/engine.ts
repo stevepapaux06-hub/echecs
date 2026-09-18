@@ -345,6 +345,7 @@ export function patternsForAnalyzedMove(
     minConfidence,
   });
   const playedPatterns = detectMovePatterns(move.fenBefore, move.uci)
+    .filter((pattern) => !(pattern.conceptSlug === "fork" && move.uci.length > 4))
     .filter((pattern) => pattern.pedagogicalPromotionScore === undefined
       ? pattern.confidence >= minConfidence
       : isPatternProductEligible(pattern));
@@ -352,6 +353,11 @@ export function patternsForAnalyzedMove(
   const occurrences = new Map<ConceptSlug, PatternOccurrence>();
 
   for (const candidate of independent.filter((item) => engineMoves.has(item.moveUci))) {
+    // A promoted piece may immediately attack two targets, but the teachable
+    // cause is promotion. Keep the generic detector intact for the curated
+    // bank while preventing this incidental signal from polluting a player's
+    // diagnosis or personalized exercise queue.
+    if (candidate.conceptSlug === "fork" && candidate.moveUci.length > 4) continue;
     if (CONCEPT_SPECIFICATIONS[candidate.conceptSlug] && move.playerCpBefore < -150) continue;
     occurrences.set(candidate.conceptSlug, {
       conceptSlug: candidate.conceptSlug,
@@ -359,7 +365,10 @@ export function patternsForAnalyzedMove(
       ply: move.ply,
       confidence: candidate.confidence,
       opportunity: true,
-      success: move.lossCp <= 80 && playedConcepts.has(candidate.conceptSlug),
+      // Choosing another objectively equivalent plan is not evidence that the
+      // player is weak at this concept. It remains an observed opportunity,
+      // but only an objectively costly miss becomes a diagnostic issue.
+      success: move.lossCp <= 60 || playedConcepts.has(candidate.conceptSlug),
       source: "pattern_engine_stockfish_validated",
       moveUci: candidate.moveUci,
       pedagogicalPromotionScore: candidate.pedagogicalPromotionScore,

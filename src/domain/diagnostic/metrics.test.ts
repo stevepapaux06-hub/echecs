@@ -109,7 +109,10 @@ describe("calculateMetrics", () => {
       failures: 1,
       confidence: "low",
     });
-    expect(metrics.primaryTheme).toMatchObject({ id: "fork", sampleSize: 2, successCount: 1, issueCount: 1 });
+    expect(metrics.themes).toContainEqual(expect.objectContaining({
+      id: "fork", sampleSize: 2, successCount: 1, issueCount: 1,
+    }));
+    expect(metrics.primaryTheme).toMatchObject({ id: "insufficient_evidence", issueCount: 0 });
   });
 
   it("does not reject a pilot occurrence accepted exactly at shared policy boundaries", () => {
@@ -129,6 +132,24 @@ describe("calculateMetrics", () => {
     }];
     expect(calculateMetrics([game("pilot-boundary", "loss", [accepted])]).conceptStats)
       .toContainEqual(expect.objectContaining({ conceptSlug: "open_file", opportunities: 1 }));
+  });
+
+  it("never recommends a successful-only concept as a weakness", () => {
+    const successful = move("middlegame", 20, 20);
+    successful.patterns = [{
+      conceptSlug: "fork",
+      fen: successful.fenBefore,
+      ply: successful.ply,
+      confidence: 0.95,
+      opportunity: true,
+      success: true,
+      source: "pattern_engine_stockfish_validated",
+      moveUci: "g1f3",
+    }];
+    const metrics = calculateMetrics([game("success-only", "draw", [successful])]);
+    expect(metrics.primaryTheme.id).toBe("insufficient_evidence");
+    expect(metrics.primaryTheme.issueCount).toBe(0);
+    expect(metrics.priorityTitle).toBe("Données encore insuffisantes");
   });
 
   it("keeps exact patterns and conversion in the same diagnostic", () => {

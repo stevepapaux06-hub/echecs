@@ -1,20 +1,22 @@
 import type {
   AnalyzedGame,
   AnalyzedMove,
+  CandidateAuditEntry,
   DiagnosticCategory,
   DiagnosticMetrics,
+  TrainingContentResolution,
   TrainingExercise,
   TrainingType,
 } from "@/domain/chess/types";
-import { evaluationForPlayer } from "../../infrastructure/engine/uci";
-import { conceptExercisesFor } from "./library-runtime";
+import { resolveConceptExercises } from "./library-runtime";
 import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
-import { detectMovePatterns } from "../patterns/engine";
 import { isPatternProductEligible } from "../patterns/policy";
 import { buildExerciseTeaching } from "./explanation";
 import { withTrainingTaxonomy } from "./taxonomy";
 import { withPedagogicalContract } from "./contract";
 import { finalizeTrainingExerciseValidation } from "./validation";
+import { validateTrainingExercise } from "./validation";
+import { assessPersonalExercise, estimatePedagogicalDifficulty } from "./personal-contract";
 
 export const DEFAULT_TRAINING_FILTER_CONFIG = {
   lostPositionThresholdCp: 200,
@@ -51,23 +53,7 @@ function conceptSpecificity(slug: string): number {
  * completely won/lost are rejected even when the raw engine delta is large.
  */
 export function isPedagogicallyEligiblePersonalMove(move: AnalyzedMove): boolean {
-  const assessment = move.pedagogical;
-  if (!assessment?.worthy || assessment.score < 55) return false;
-  if (!move.before.bestMove || !move.before.lines[0]?.pv[0]) return false;
-  const reliableConcept = (move.patterns ?? []).some((pattern) => (
-    pattern.opportunity
-    && !pattern.success
-    && isPatternProductEligible(pattern)
-    && pattern.conceptSlug !== "forcing_moves"
-  ));
-  const stateBased = STATE_BASED_MOMENTS.has(assessment.kind);
-  if (!reliableConcept && !stateBased) return false;
-  if (assessment.beforeState === "clearly_lost"
-    && (assessment.kind !== "defensive_resource" || assessment.afterState === "clearly_lost")) return false;
-  if (assessment.beforeState === "clearly_winning" && assessment.afterState !== "equal"
-    && assessment.afterState !== "slightly_worse" && assessment.afterState !== "losing"
-    && assessment.afterState !== "clearly_lost") return false;
-  return true;
+  return assessPersonalExercise(move).eligible;
 }
 
 /**
@@ -115,15 +101,6 @@ function categoryForType(type: TrainingType): DiagnosticCategory {
   if (type === "strategy") return "strategy";
   if (type === "opening") return "opening";
   return "tactic";
-}
-
-function conceptForType(type: TrainingType): string {
-  if (type === "conversion") return "restrict_counterplay";
-  if (type === "defense") return "defensive_resource";
-  if (type === "endgame") return "king_activity";
-  if (type === "strategy") return "improve_worst_piece";
-  if (type === "opening") return "development";
-  return "forcing_moves";
 }
 
 function typeForMoment(
@@ -201,47 +178,77 @@ function exerciseShape(
   return { mode: "line", maxPlayerMoves: 2 };
 }
 
-export function generateExercises(
+export function generateExercisesWithAudit(
   games: AnalyzedGame[],
   metrics: DiagnosticMetrics,
-): TrainingExercise[] {
+): {
+  exercises: TrainingExercise[];
+  auditTrail: CandidateAuditEntry[];
+  bankResolution: TrainingContentResolution;
+} {
   const primaryConceptSlug = normalizeConceptSlug(metrics.primaryTheme.id);
   const primaryPositions = new Set(metrics.primaryTheme.positionIds);
+  const auditById = new Map<string, CandidateAuditEntry>();
   const ranked = games
-    .flatMap((game) => filterLostPositionCascade(game.analyzedMoves.toSorted((a, b) => a.ply - b.ply)).map((move) => ({
-      game,
-      move,
-      positionId: `${game.id}:${move.ply}`,
-    })))
-    .filter(({ move }) => move.before.bestMove)
+    .flatMap((game) => {
+      const ordered = game.analyzedMoves.toSorted((a, b) => a.ply - b.ply);
+      const kept = filterLostPositionCascade(ordered);
+      const keptMoves = new Set(kept);
+      for (const move of ordered) {
+        if (keptMoves.has(move)) continue;
+        const candidateId = `${game.id}:${move.ply}`;
+        auditById.set(candidateId, {
+          candidateId, gameId: game.id, ply: move.ply,
+          state: "ABSTAINED", reasons: ["lost_position_cascade"],
+        });
+      }
+      return kept.map((move) => ({ game, move, positionId: `${game.id}:${move.ply}` }));
+    })
     .toSorted((a, b) => {
       const priorityDifference = Number(primaryPositions.has(b.positionId)) - Number(primaryPositions.has(a.positionId));
       return priorityDifference
         || (b.move.pedagogical?.score ?? 0) - (a.move.pedagogical?.score ?? 0)
         || b.move.lossCp - a.move.lossCp;
     });
-  const pedagogical = ranked.filter(({ move }) => isPedagogicallyEligiblePersonalMove(move));
-  const balancedStrategy = pedagogical.filter(({ move }) => (
-    move.phase === "middlegame"
-    && move.playerCpBefore >= -120
-    && move.playerCpBefore <= 120
-    && move.patterns?.some((pattern) => {
-      const category = conceptDefinition(pattern.conceptSlug)?.category;
-      return !pattern.success && (category === "strategy" || pattern.conceptSlug === "passed_pawn");
-    })
-  ));
+  const assessed = ranked.map((item) => ({ ...item, decision: assessPersonalExercise(item.move) }));
+  for (const item of assessed.filter(({ decision }) => !decision.eligible)) {
+    auditById.set(item.positionId, {
+      candidateId: item.positionId,
+      gameId: item.game.id,
+      ply: item.move.ply,
+      state: item.decision.terminalReason,
+      reasons: item.decision.reasons,
+      conceptSlug: item.decision.conceptSlug,
+    });
+  }
+  const pedagogical = assessed.filter(({ decision }) => decision.eligible);
   const seenFens = new Set<string>();
   const primaryPedagogical = pedagogical.filter(({ positionId }) => primaryPositions.has(positionId));
-  const candidateOrder = [...primaryPedagogical, ...balancedStrategy, ...pedagogical];
+  const candidateOrder = [...primaryPedagogical, ...pedagogical];
+  const seenCandidates = new Set<string>();
   const candidates = candidateOrder
-    .filter(({ move }) => {
-      if (seenFens.has(move.fenBefore)) return false;
+    .filter(({ game, move, positionId }) => {
+      if (seenCandidates.has(positionId)) return false;
+      seenCandidates.add(positionId);
+      if (seenFens.has(move.fenBefore)) {
+        auditById.set(positionId, {
+          candidateId: positionId, gameId: game.id, ply: move.ply,
+          state: "DEDUPLICATED", reasons: ["duplicate_fen"],
+        });
+        return false;
+      }
       seenFens.add(move.fenBefore);
       return true;
-    })
-    .slice(0, MAX_PERSONAL_RESERVE);
+    });
+  for (const item of candidates.slice(MAX_PERSONAL_RESERVE)) {
+    auditById.set(item.positionId, {
+      candidateId: item.positionId, gameId: item.game.id, ply: item.move.ply,
+      state: "SESSION_BUDGET", reasons: ["personal_reserve_limit"],
+      conceptSlug: item.decision.conceptSlug,
+    });
+  }
 
-  const personal = candidates.map(({ game, move }): TrainingExercise => {
+  const personal = candidates.slice(0, MAX_PERSONAL_RESERVE).flatMap(({ game, move, positionId, decision }): TrainingExercise[] => {
     const fallbackType = getType(move.playerCpBefore, move.phase);
     const relatedToPrimary = primaryPositions.has(`${game.id}:${move.ply}`);
     const patterns = move.patterns?.toSorted((a, b) => (
@@ -249,13 +256,8 @@ export function generateExercises(
       || conceptSpecificity(b.conceptSlug) - conceptSpecificity(a.conceptSlug)
       || b.confidence - a.confidence
     ));
-    const detectedPattern = patterns?.find((pattern) => (
-      !pattern.success && pattern.conceptSlug === primaryConceptSlug
-    )) ?? patterns?.find((pattern) => !pattern.success) ?? patterns?.[0];
-    const conceptSlug = detectedPattern?.conceptSlug
-      ?? (relatedToPrimary && conceptDefinition(primaryConceptSlug)
-        ? primaryConceptSlug
-        : conceptForType(fallbackType));
+    const conceptSlug = decision.conceptSlug!;
+    const detectedPattern = patterns?.find((pattern) => pattern.conceptSlug === conceptSlug);
     const concept = conceptDefinition(conceptSlug);
     const category = conceptSlug === "passed_pawn" && move.phase !== "endgame"
       ? "strategy"
@@ -264,22 +266,20 @@ export function generateExercises(
         : concept?.category ?? (relatedToPrimary ? metrics.primaryTheme.category : categoryForType(fallbackType));
     const type = typeForMoment(fallbackType, category, move.pedagogical?.kind);
     const shape = exerciseShape(type, category, move.playerCpBefore);
-    const solutionLine = move.before.lines[0]?.pv.slice(0, shape.maxPlayerMoves * 2 - 1);
+    const primaryLine = decision.engineCandidates?.find((line) => line.uci === move.before.bestMove)
+      ?? decision.engineCandidates?.[0];
+    const solutionLine = primaryLine?.pv.slice(0, shape.maxPlayerMoves * 2 - 1);
     const teaching = buildExerciseTeaching(
       move.fenBefore,
       move.before.bestMove,
       conceptSlug,
       solutionLine,
     );
-    const acceptedConceptMoveUcis = move.before.lines
-      .filter((line) => line.pv[0] && detectMovePatterns(move.fenBefore, line.pv[0]).some((pattern) => (
-        pattern.conceptSlug === conceptSlug
-      )))
-      .map((line) => line.pv[0]);
+    const acceptedConceptMoveUcis = decision.answerContract!.accepted.map((answer) => answer.moveUci);
     const secondaryConceptSlugs = [...new Set((move.patterns ?? [])
       .filter((pattern) => pattern.conceptSlug !== conceptSlug && isPatternProductEligible(pattern))
       .map((pattern) => pattern.conceptSlug))];
-    return withPedagogicalContract(withTrainingTaxonomy({
+    const exercise = withPedagogicalContract(withTrainingTaxonomy({
       // Stable across analyses: reordering the reserve cannot make a solved
       // personal position look new again.
       id: `personal-${game.id}-${move.ply}`,
@@ -301,18 +301,11 @@ export function generateExercises(
       baselinePlayerCp: move.playerCpBefore,
       playedMovePlayerCp: move.playerCpAfter,
       lossCp: move.lossCp,
-      engineCandidates: move.before.lines
-        .filter((line) => line.pv[0])
-        .slice(0, 3)
-        .map((line) => ({
-          uci: line.pv[0],
-          playerCp: evaluationForPlayer(line.whiteCp, game.playerColor),
-          whiteCentricCp: line.whiteCp,
-          pv: line.pv.slice(0, 6),
-        })),
-      acceptedConceptMoveUcis: acceptedConceptMoveUcis.length
-        ? acceptedConceptMoveUcis
-        : [move.before.bestMove],
+      engineCandidates: decision.engineCandidates,
+      acceptedConceptMoveUcis,
+      personalReason: decision.personalReason,
+      conceptRole: decision.conceptRole,
+      answerContract: decision.answerContract,
       phase: move.phase,
       gameUrl: game.url,
       opponent: game.opponent,
@@ -328,9 +321,12 @@ export function generateExercises(
       secondaryConcepts: secondaryConceptSlugs,
       classificationConfidence: detectedPattern?.confidence
         ?? (STATE_BASED_MOMENTS.has(move.pedagogical?.kind ?? "") ? 0.86 : 0.75),
-      difficulty: game.playerRating || undefined,
+      difficulty: estimatePedagogicalDifficulty(move, decision),
       source: "personal_game",
       sourceId: game.id,
+      sourceGameId: game.id,
+      sourceDate: game.playedAt > 0 ? new Date(game.playedAt * 1_000).toISOString() : undefined,
+      positionPly: move.ply,
       verificationSource: "Stockfish analysis from the saved personal game",
       verification: {
         engine: "Stockfish",
@@ -343,19 +339,62 @@ export function generateExercises(
       verificationStatus: "active",
       patternPolicyAccepted: detectedPattern ? isPatternProductEligible(detectedPattern) : undefined,
     }));
-  }).filter((exercise) => (
-    Boolean(exercise.explanation)
-    && ((exercise.classificationConfidence ?? 0) >= 0.8 || exercise.patternPolicyAccepted === true)
-  )).map(finalizeTrainingExerciseValidation)
-    .filter((exercise) => exercise.verificationStatus === "active");
+    if (!exercise.explanation) {
+      auditById.set(positionId, {
+        candidateId: positionId, gameId: game.id, ply: move.ply,
+        state: "VALIDATION_FAILED", reasons: ["causal_explanation_unavailable"], conceptSlug,
+      });
+      return [];
+    }
+    if ((exercise.classificationConfidence ?? 0) < 0.8 && exercise.patternPolicyAccepted !== true) {
+      auditById.set(positionId, {
+        candidateId: positionId, gameId: game.id, ply: move.ply,
+        state: "LOW_CONFIDENCE", reasons: ["classification_confidence_below_policy"], conceptSlug,
+      });
+      return [];
+    }
+    const finalized = finalizeTrainingExerciseValidation(exercise);
+    const validation = validateTrainingExercise(finalized, { requireFinalFingerprint: true, requireTeachingFacts: true });
+    if (finalized.verificationStatus !== "active" || validation.status !== "active") {
+      auditById.set(positionId, {
+        candidateId: positionId, gameId: game.id, ply: move.ply,
+        state: "VALIDATION_FAILED",
+        reasons: validation.reasons.length ? validation.reasons : ["final_validation_failed"],
+        exerciseId: finalized.id,
+        conceptSlug,
+      });
+      return [];
+    }
+    auditById.set(positionId, {
+      candidateId: positionId, gameId: game.id, ply: move.ply,
+      state: "PUBLISHED", reasons: [], exerciseId: finalized.id, conceptSlug,
+    });
+    return [finalized];
+  });
 
-  const concepts = conceptExercisesFor(
-    metrics.primaryTheme.category,
-    primaryConceptSlug,
-    2,
-    games[0]?.playerRating,
-  );
+  const resolved = metrics.primaryTheme.issueCount > 0
+    ? resolveConceptExercises(primaryConceptSlug, 2, games[0]?.playerRating)
+    : {
+        exercises: [],
+        resolution: {
+          requestedConcept: primaryConceptSlug,
+          servedConcept: null,
+          relation: "unavailable" as const,
+          exerciseCount: 0,
+        },
+      };
+  const exercises = personal.length === 0
+    ? resolved.exercises
+    : [personal[0], ...resolved.exercises, ...personal.slice(1)];
+  return {
+    exercises,
+    auditTrail: [...auditById.values()].toSorted((first, second) => (
+      first.gameId.localeCompare(second.gameId) || first.ply - second.ply
+    )),
+    bankResolution: resolved.resolution,
+  };
+}
 
-  if (personal.length === 0) return concepts;
-  return [personal[0], ...concepts, ...personal.slice(1)];
+export function generateExercises(games: AnalyzedGame[], metrics: DiagnosticMetrics): TrainingExercise[] {
+  return generateExercisesWithAudit(games, metrics).exercises;
 }

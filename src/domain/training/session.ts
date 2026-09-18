@@ -5,6 +5,7 @@ import type {
 } from "@/domain/chess/types";
 import { conceptDefinition, normalizeConceptSlug } from "../knowledge/concepts";
 import { trainingTaxonomy } from "./taxonomy";
+import { declaredFallbacksFor } from "./fallbacks";
 
 export type TrainingFilter = "recommended" | "mix" | DiagnosticCategory | `concept:${string}`;
 export type TrainingSourceFilter = "mix" | "personal" | "bank";
@@ -171,12 +172,18 @@ export function buildTrainingSession(
   const normalizedPriority = options.priorityConcept
     ? normalizeConceptSlug(options.priorityConcept)
     : null;
+  const priorityCandidates = normalizedPriority
+    ? [normalizedPriority, ...declaredFallbacksFor(normalizedPriority)]
+    : [];
   const priorityConcept = filter === "recommended"
-    && normalizedPriority
-    && supportsExactTransfer(normalizedPriority)
-    && exercises.some((exercise) => preciseConcept(exercise) === normalizedPriority)
-    ? normalizedPriority
+    ? priorityCandidates.find((candidate) => (
+        supportsExactTransfer(candidate)
+        && exercises.some((exercise) => preciseConcept(exercise) === candidate)
+      )) ?? null
     : null;
+  // A recommendation request with no exact or declared compatible content is
+  // an honest absence, not permission to substitute a random mixed session.
+  if (filter === "recommended" && normalizedPriority && !priorityConcept) return [];
   const exactConcept = requestedConcept ?? priorityConcept;
   const exactDomain = requestedDomain ?? (priorityConcept ? options.priorityDomain ?? null : null);
   const filteredByLesson = (exactConcept
