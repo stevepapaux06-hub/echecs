@@ -822,6 +822,109 @@ button:disabled { cursor: not-allowed; opacity: .48; }
   .progress-domain-concepts > div > button { grid-template-columns: 110px 1fr auto; }
   .progress-concept-detail { padding: 0 12px 14px; }
 }
+
+/* Progresser · carte du joueur */
+.player-map-page { max-width: 1180px; }
+.player-map-hero { padding: 24px 0 70px; display: grid; grid-template-columns: minmax(0, .9fr) minmax(440px, 1.1fr); align-items: center; gap: clamp(42px, 7vw, 96px); }
+.player-map-copy h1 { max-width: 650px; margin: 0; font-family: Georgia, serif; font-size: clamp(46px, 5.9vw, 74px); font-weight: 500; line-height: 1.01; letter-spacing: -.057em; }
+.player-map-copy > p:last-of-type { max-width: 600px; margin: 21px 0 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
+.player-map-confidence { margin-top: 28px; display: flex; align-items: center; flex-wrap: wrap; gap: 9px; color: var(--emerald); font-size: 10px; font-weight: 720; }
+.player-map-confidence i { width: 3px; height: 3px; background: #a7b0aa; border-radius: 50%; }
+.player-radar-card { padding: 20px 24px 18px; background: linear-gradient(150deg, #173b30 0%, #0f2c24 100%); border: 1px solid rgba(255,255,255,.06); border-radius: 26px; box-shadow: 0 24px 55px rgba(22,55,44,.16); }
+.player-radar-heading { display: flex; justify-content: space-between; color: rgba(255,255,255,.56); font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+.player-radar-heading strong { color: var(--mint); }
+.player-radar { width: 100%; max-height: 360px; overflow: visible; }
+.radar-grid { fill: none; stroke: rgba(255,255,255,.1); stroke-width: 1; }
+.radar-axis { stroke: rgba(255,255,255,.08); }
+.radar-value-line { stroke: var(--mint); stroke-width: 2.2; stroke-linecap: round; }
+.radar-value-dot { fill: var(--mint); stroke: #173b30; stroke-width: 3; }
+.radar-profile { fill: rgba(184,227,109,.15); stroke: var(--mint); stroke-width: 2; stroke-linejoin: round; }
+.radar-label { fill: white; font-size: 10px; font-weight: 750; }
+.radar-label-value { fill: rgba(255,255,255,.52); font-size: 8px; font-weight: 600; }
+.radar-missing .radar-value-line { stroke: rgba(255,255,255,.22); stroke-dasharray: 3 4; }
+.radar-missing .radar-value-dot { fill: #173b30; stroke: rgba(255,255,255,.42); stroke-width: 1.5; }
+.radar-missing .radar-label { fill: rgba(255,255,255,.6); }
+.player-radar-card > p { max-width: 480px; margin: -4px auto 0; color: rgba(255,255,255,.46); font-size: 8px; line-height: 1.5; text-align: center; }
+.player-insights-section { padding: 64px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; border-top: 1px solid var(--line); }
+.player-insight-column { min-width: 0; padding: clamp(22px, 3vw, 34px); background: rgba(255,255,255,.42); border: 1px solid rgba(20,33,28,.06); border-radius: 22px; }
+.player-insight-column .progress-section-heading { margin-bottom: 25px; }
+.player-insight-list { display: grid; gap: 10px; }
+.player-insight-card { padding: 19px 20px 16px; display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; background: #fffefa; border: 1px solid rgba(20,33,28,.08); border-radius: 14px; }
+.player-insight-card > span { grid-column: 1 / -1; color: var(--emerald); font-size: 7px; font-weight: 850; text-transform: uppercase; letter-spacing: .11em; }
+.player-insight-card.work > span { color: #985b2e; }
+.player-insight-card h3 { margin: 4px 0 0; font-family: Georgia, serif; font-size: 23px; font-weight: 500; letter-spacing: -.025em; }
+.player-insight-card > p { grid-column: 1; margin: 3px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.player-insight-stats { grid-column: 2; grid-row: 2 / 4; min-width: 74px; display: grid; align-content: center; justify-items: end; }
+.player-insight-stats strong { color: var(--emerald); font-family: Georgia, serif; font-size: 26px; font-weight: 500; }
+.player-insight-stats small { color: var(--muted); font-size: 7px; text-align: right; }
+.player-insight-actions { grid-column: 1 / -1; margin-top: 10px; padding-top: 11px; display: flex; justify-content: flex-end; gap: 7px; border-top: 1px solid rgba(20,33,28,.07); }
+.player-insight-actions button, .progress-concept-detail nav button, .player-insight-empty button { min-height: 34px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: var(--emerald); background: transparent; border: 1px solid rgba(25,78,59,.16); border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: 760; }
+.player-insight-actions button:last-child, .progress-concept-detail nav button:last-child { color: white; background: var(--emerald); border-color: var(--emerald); }
+.player-insight-empty { min-height: 138px; padding: 22px; display: flex; align-items: flex-start; gap: 11px; color: var(--muted); background: rgba(20,33,28,.035); border-radius: 14px; }
+.player-insight-empty p { flex: 1; margin: 0; font-size: 10px; line-height: 1.6; }
+.player-insight-empty svg { flex: 0 0 auto; color: #89958e; }
+.progress-evidence-panel { margin: 8px 0 58px; color: white; background: var(--emerald); border-radius: 24px; overflow: hidden; box-shadow: 0 25px 60px rgba(15,44,36,.15); }
+.progress-evidence-panel > header { padding: 30px 34px 25px; display: flex; justify-content: space-between; gap: 20px; border-bottom: 1px solid rgba(255,255,255,.12); }
+.progress-evidence-panel > header span { color: var(--mint); font-size: 8px; font-weight: 820; text-transform: uppercase; letter-spacing: .11em; }
+.progress-evidence-panel h3 { margin: 8px 0 4px; font-family: Georgia, serif; font-size: 34px; font-weight: 500; }
+.progress-evidence-panel > header p { margin: 0; color: rgba(255,255,255,.58); font-size: 10px; }
+.progress-evidence-panel > header button { width: 38px; height: 38px; display: grid; place-items: center; color: white; background: rgba(255,255,255,.08); border: 0; border-radius: 50%; cursor: pointer; }
+.progress-evidence-list { max-height: 690px; padding: 15px; display: grid; gap: 10px; overflow-y: auto; }
+.progress-evidence-list > article { padding: 15px; display: grid; grid-template-columns: minmax(180px, 240px) 1fr; gap: 24px; background: rgba(255,255,255,.055); border-radius: 15px; }
+.progress-mini-board { width: 100%; aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr); overflow: hidden; border-radius: 8px; }
+.progress-mini-board span { display: grid; place-items: center; color: #14211c; font-family: "Segoe UI Symbol", serif; font-size: clamp(17px, 2.25vw, 29px); line-height: 1; text-shadow: 0 1px rgba(255,255,255,.25); }
+.progress-mini-board .light { background: #e8dfc9; }
+.progress-mini-board .dark { background: #7f9b79; }
+.evidence-position-missing { height: 100%; min-height: 145px; padding: 18px; display: grid; place-items: center; color: rgba(255,255,255,.5); background: rgba(255,255,255,.05); border: 1px dashed rgba(255,255,255,.18); border-radius: 9px; font-size: 9px; text-align: center; }
+.evidence-story { padding: 7px 10px 7px 0; }
+.evidence-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: rgba(255,255,255,.48); font-size: 8px; }
+.evidence-meta span:first-child { padding: 4px 7px; color: #ffd7b9; background: rgba(242,179,132,.13); border-radius: 99px; font-weight: 820; text-transform: uppercase; }
+.evidence-meta span.opportunity { color: var(--mint); background: rgba(184,227,109,.1); }
+.evidence-story h4 { margin: 15px 0 9px; font-family: Georgia, serif; font-size: 23px; font-weight: 500; }
+.evidence-story dl { margin: 0 0 13px; display: flex; gap: 22px; }
+.evidence-story dl div { display: grid; gap: 3px; }
+.evidence-story dt { color: rgba(255,255,255,.42); font-size: 7px; font-weight: 750; text-transform: uppercase; }
+.evidence-story dd { margin: 0; font-size: 10px; }
+.evidence-story p { max-width: 670px; margin: 7px 0; color: rgba(255,255,255,.66); font-size: 10px; line-height: 1.55; }
+.evidence-story a { width: fit-content; margin-top: 12px; display: flex; align-items: center; gap: 5px; color: var(--mint); font-size: 9px; font-weight: 760; text-decoration: none; }
+.progress-evidence-panel > footer { padding: 16px 24px 22px; display: flex; justify-content: flex-end; }
+.player-evolution-section { margin-top: 0; }
+.progress-status.focus-recommandé { color: #7d5225; background: #f1dfbe; }
+.progress-status.point-fort-observé { color: #234b3c; background: var(--mint); }
+.progress-status.priorité { color: #783d28; background: #f2c9b8; }
+.progress-concept-detail > div { margin: 13px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.progress-concept-detail > div span { min-width: 90px; padding: 9px 10px; display: grid; gap: 2px; background: rgba(20,33,28,.035); border-radius: 8px; }
+.progress-concept-detail > div strong { color: var(--ink); font-family: Georgia, serif; font-size: 16px; font-weight: 500; }
+.progress-concept-detail nav { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
+
+@media (max-width: 900px) {
+  .player-map-hero { grid-template-columns: 1fr; gap: 34px; }
+  .player-radar-card { max-width: 620px; width: 100%; margin: 0 auto; }
+  .player-insights-section { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .player-map-hero { padding-top: 6px; padding-bottom: 46px; }
+  .player-map-copy h1 { font-size: clamp(42px, 13vw, 58px); }
+  .player-map-confidence { align-items: flex-start; flex-direction: column; }
+  .player-map-confidence i { display: none; }
+  .player-radar-card { padding: 15px 8px 14px; border-radius: 20px; }
+  .player-radar { margin-top: 4px; }
+  .player-insights-section { padding: 40px 0; }
+  .player-insight-column { padding: 18px 14px; }
+  .player-insight-card { grid-template-columns: 1fr; }
+  .player-insight-stats { grid-column: 1; grid-row: auto; justify-items: start; }
+  .player-insight-stats small { text-align: left; }
+  .player-insight-actions { justify-content: stretch; }
+  .player-insight-actions button { flex: 1; }
+  .progress-evidence-panel { margin-bottom: 40px; border-radius: 18px; }
+  .progress-evidence-panel > header { padding: 23px 20px 19px; }
+  .progress-evidence-list > article { grid-template-columns: 1fr; }
+  .evidence-position { max-width: 280px; width: 100%; margin: 0 auto; }
+  .evidence-story { padding: 4px; }
+  .progress-evidence-panel > footer .lime-button { width: 100%; }
+  .progress-domain-concepts > div > button { grid-template-columns: 112px 1fr auto; }
+  .progress-domain-concepts .progress-status { white-space: normal; line-height: 1.2; }
+}
 .empty-state-page { min-height: calc(100vh - 82px); display: grid; place-content: center; justify-items: start; }
 .empty-state-page > svg { color: var(--emerald); }
 .empty-state-page h1 { max-width: 750px; margin: 0; font-family: Georgia, serif; font-size: clamp(42px, 6vw, 66px); font-weight: 500; line-height: 1.05; }

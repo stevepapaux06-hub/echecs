@@ -56,6 +56,36 @@ describe("progress read model", () => {
     expect(rich.observedStrengths.some((item) => item.conceptSlug === "pin")).toBe(false);
   });
 
+  it("builds each player-map axis from observed opportunities without inventing missing data", () => {
+    const balanced = buildProgressFixture("BALANCED");
+    expect(balanced.domains).toHaveLength(5);
+    expect(balanced.domains.find((domain) => domain.category === "tactic")).toMatchObject({
+      opportunities: 20,
+      correctlyTreated: 16,
+      successRate: 0.8,
+      observation: "WELL_OBSERVED",
+    });
+    expect(buildProgressFixture("INSUFFICIENT_DATA").domains.every((domain) => (
+      domain.successRate === null && domain.observation === "INSUFFICIENT_DATA"
+    ))).toBe(true);
+  });
+
+  it("does not call a well-observed 73/74 concept insufficient", () => {
+    const input = progressFixtureInput("RICH_PROFILE");
+    input.games = Array.from({ length: 20 }, (_, index) => ({
+      ...input.games[index],
+      concepts: [{ conceptSlug: "fork", opportunities: index < 17 ? 4 : 2, successes: index === 0 ? 3 : index < 17 ? 4 : 2 }],
+    }));
+    input.evidence = [];
+    const result = buildProgressReadModel(input);
+    expect(result.domains.find((domain) => domain.category === "tactic")).toMatchObject({
+      opportunities: 74,
+      correctlyTreated: 73,
+      observation: "WELL_OBSERVED",
+    });
+    expect(result.observedStrengths).toContainEqual(expect.objectContaining({ conceptSlug: "fork" }));
+  });
+
   it("keeps ERROR and OPPORTUNITY evidence separate", () => {
     const recurring = concept(buildProgressFixture("RECURRING"), "fork");
     expect(recurring).toMatchObject({ historicalErrors: 2, historicalMissedOpportunities: 1 });
@@ -106,7 +136,8 @@ describe("progress read model", () => {
 
   it("keeps every named DEV/TEST fixture executable through the production read-model builder", () => {
     expect(PROGRESS_FIXTURE_NAMES.map((name) => buildProgressFixture(name).dataState)).toEqual([
-      "NO_DATA", "INSUFFICIENT_DATA", "READY", "READY", "READY", "READY", "READY",
+      "NO_DATA", "INSUFFICIENT_DATA", "READY", "READY", "READY", "READY",
+      "READY", "READY", "READY", "READY", "READY",
     ]);
   });
 });

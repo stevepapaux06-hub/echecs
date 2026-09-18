@@ -96,6 +96,18 @@ export type ProgressGraphPoint = {
   gamesWithValidatedProblem: number;
 };
 
+export type ProgressDomain = {
+  category: Exclude<DiagnosticCategory, "opening">;
+  label: string;
+  opportunities: number;
+  correctlyTreated: number;
+  failures: number;
+  successRate: number | null;
+  observation: "INSUFFICIENT_DATA" | "OBSERVED" | "WELL_OBSERVED";
+  trend: ProgressTrend;
+  conceptCount: number;
+};
+
 export type ProgressReadModel = {
   dataState: ProgressDataState;
   uniqueGames: number;
@@ -108,6 +120,7 @@ export type ProgressReadModel = {
   concepts: ProgressConcept[];
   priority: ProgressPriority | null;
   observedStrengths: ObservedStrength[];
+  domains: ProgressDomain[];
   reevaluation: {
     newGamesNeeded: number;
     comparisonWindowGames: 20;
@@ -127,7 +140,17 @@ export const PROGRESS_READ_MODEL_POLICY = {
   minimumComparableExposures: 5,
   minimumImprovementRateDrop: 0.2,
   minimumStrengthSuccessRate: 0.8,
+  minimumDomainExposures: 5,
+  wellObservedDomainExposures: 15,
 } as const;
+
+const PROGRESS_DOMAINS: Array<{ category: ProgressDomain["category"]; label: string }> = [
+  { category: "tactic", label: "Tactique" },
+  { category: "strategy", label: "Stratégie" },
+  { category: "conversion", label: "Conversion" },
+  { category: "defense", label: "Défense" },
+  { category: "endgame", label: "Finales" },
+];
 
 function finiteDate(value: string | undefined): number | null {
   if (!value) return null;
@@ -301,7 +324,7 @@ export function buildProgressReadModel(input: {
     ? "NO_DATA"
     : comparisonReady ? "READY" : "INSUFFICIENT_DATA";
 
-  const recurring = aggregateRecurringWeaknesses(evidence.map(({ userId: _userId, ...item }) => item));
+  const recurring = aggregateRecurringWeaknesses(evidence);
   const recurringByConcept = new Map(recurring.map((item) => [item.conceptSlug, item]));
   const conceptSlugs = new Set<string>(recurring.map((item) => item.conceptSlug));
   for (const game of games) for (const concept of game.concepts) conceptSlugs.add(concept.conceptSlug);
@@ -365,7 +388,7 @@ export function buildProgressReadModel(input: {
   } : null;
 
   const observedStrengths = concepts.flatMap((concept): ObservedStrength[] => {
-    if (dataState !== "READY" || concept.recent.exposures < PROGRESS_READ_MODEL_POLICY.minimumComparableExposures) return [];
+    if (concept.recent.exposures < PROGRESS_READ_MODEL_POLICY.minimumComparableExposures) return [];
     if (concept.recent.successRate === null || concept.recent.successRate < PROGRESS_READ_MODEL_POLICY.minimumStrengthSuccessRate) return [];
     if (concept.status !== "RESOLVED" && concept.historicalStatus !== "INSUFFICIENT_EVIDENCE") return [];
     return [{
@@ -383,6 +406,46 @@ export function buildProgressReadModel(input: {
     graphPoints(games, evidence, concept.conceptSlug),
   ]));
 
+  // The player map is an observed success rate, not a synthetic rating. It
+  // aggregates up to two ten-game windows so a single new game cannot replace
+  // the whole profile. Fewer than five observed opportunities remains missing.
+  const domains = PROGRESS_DOMAINS.map(({ category, label }): ProgressDomain => {
+    const domainConcepts = concepts.filter((concept) => concept.category === category);
+    const recentOpportunities = domainConcepts.reduce((sum, concept) => sum + concept.recent.exposures, 0);
+    const recentSuccesses = domainConcepts.reduce((sum, concept) => sum + concept.recent.correctlyTreated, 0);
+    const previousOpportunities = domainConcepts.reduce((sum, concept) => sum + concept.previous.exposures, 0);
+    const previousSuccesses = domainConcepts.reduce((sum, concept) => sum + concept.previous.correctlyTreated, 0);
+    const opportunities = recentOpportunities + previousOpportunities;
+    const correctlyTreated = recentSuccesses + previousSuccesses;
+    const successRate = opportunities >= PROGRESS_READ_MODEL_POLICY.minimumDomainExposures
+      ? correctlyTreated / opportunities
+      : null;
+    const comparable = recentOpportunities >= PROGRESS_READ_MODEL_POLICY.minimumComparableExposures
+      && previousOpportunities >= PROGRESS_READ_MODEL_POLICY.minimumComparableExposures;
+    let trend: ProgressTrend = "INSUFFICIENT_DATA";
+    if (comparable) {
+      const recentRate = recentSuccesses / recentOpportunities;
+      const previousRate = previousSuccesses / previousOpportunities;
+      const delta = recentRate - previousRate;
+      trend = delta >= PROGRESS_READ_MODEL_POLICY.minimumImprovementRateDrop
+        ? "IMPROVING"
+        : delta <= -PROGRESS_READ_MODEL_POLICY.minimumImprovementRateDrop ? "WORSENING" : "STABLE";
+    }
+    return {
+      category,
+      label,
+      opportunities,
+      correctlyTreated,
+      failures: opportunities - correctlyTreated,
+      successRate,
+      observation: opportunities < PROGRESS_READ_MODEL_POLICY.minimumDomainExposures
+        ? "INSUFFICIENT_DATA"
+        : opportunities >= PROGRESS_READ_MODEL_POLICY.wellObservedDomainExposures ? "WELL_OBSERVED" : "OBSERVED",
+      trend,
+      conceptCount: domainConcepts.length,
+    };
+  });
+
   return {
     dataState,
     uniqueGames: games.length,
@@ -395,6 +458,7 @@ export function buildProgressReadModel(input: {
     concepts,
     priority,
     observedStrengths,
+    domains,
     reevaluation: {
       newGamesNeeded,
       comparisonWindowGames: 20,

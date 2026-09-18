@@ -8,6 +8,10 @@ export const PROGRESS_FIXTURE_NAMES = [
   "RECURRING",
   "IMPROVING",
   "RESOLVED",
+  "BALANCED",
+  "TACTICAL_STRENGTH",
+  "STRATEGY_FRAGILE",
+  "MULTIPLE_STRENGTHS",
   "RICH_PROFILE",
 ] as const;
 
@@ -108,6 +112,50 @@ export function progressFixtureInput(name: ProgressFixtureName): {
         successes: index > 10 && index <= 16 ? 1 : 0,
       }]),
       evidence: [proof(2, "outpost"), proof(5, "outpost"), proof(8, "outpost")],
+    };
+  }
+  if (name === "BALANCED") {
+    return {
+      userId: USER_ID,
+      games: twentyGames((index) => [
+        { conceptSlug: "fork", opportunities: 1, successes: Number(index % 5 !== 0) },
+        { conceptSlug: "open_file", opportunities: 1, successes: Number(index % 4 !== 0) },
+        { conceptSlug: "convert_small_advantage", opportunities: 1, successes: Number(index % 5 !== 1) },
+        { conceptSlug: "active_defense", opportunities: 1, successes: Number(index % 5 !== 2) },
+        { conceptSlug: "king_activity", opportunities: 1, successes: Number(index % 4 !== 1) },
+      ]),
+      evidence: [],
+    };
+  }
+  if (name === "TACTICAL_STRENGTH") {
+    return {
+      userId: USER_ID,
+      games: twentyGames((index) => [
+        { conceptSlug: "fork", opportunities: 2, successes: index === 3 ? 1 : 2 },
+        { conceptSlug: "open_file", opportunities: 1, successes: Number(index % 3 !== 0) },
+      ]),
+      evidence: [],
+    };
+  }
+  if (name === "STRATEGY_FRAGILE") {
+    return {
+      userId: USER_ID,
+      games: twentyGames((index) => [
+        { conceptSlug: "open_file", opportunities: 1, successes: Number(![4, 8, 12, 16, 20].includes(index)) },
+        { conceptSlug: "fork", opportunities: 1, successes: Number(index % 5 !== 0) },
+      ]),
+      evidence: [proof(4, "open_file"), proof(8, "open_file"), proof(12, "open_file"), proof(16, "open_file"), proof(20, "open_file")],
+    };
+  }
+  if (name === "MULTIPLE_STRENGTHS") {
+    return {
+      userId: USER_ID,
+      games: twentyGames(() => [
+        { conceptSlug: "fork", opportunities: 1, successes: 1 },
+        { conceptSlug: "piece_activity", opportunities: 1, successes: 1 },
+        { conceptSlug: "king_activity", opportunities: 1, successes: 1 },
+      ]),
+      evidence: [],
     };
   }
 
