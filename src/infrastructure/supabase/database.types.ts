@@ -294,6 +294,63 @@ export type Database = {
         }
         Relationships: []
       }
+      pedagogical_evidence: {
+        Row: {
+          analyzed_at: string
+          concept_slug: string
+          confidence: number
+          created_at: string
+          game_id: string
+          id: string
+          invalidated_at: string | null
+          is_active: boolean
+          moment_id: string
+          played_at: string | null
+          position_ply: number | null
+          reason: string
+          source_exercise_id: string
+          updated_at: string
+          user_id: string
+          validation_fingerprint: string
+        }
+        Insert: {
+          analyzed_at?: string
+          concept_slug: string
+          confidence: number
+          created_at?: string
+          game_id: string
+          id?: string
+          invalidated_at?: string | null
+          is_active?: boolean
+          moment_id: string
+          played_at?: string | null
+          position_ply?: number | null
+          reason: string
+          source_exercise_id: string
+          updated_at?: string
+          user_id: string
+          validation_fingerprint: string
+        }
+        Update: {
+          analyzed_at?: string
+          concept_slug?: string
+          confidence?: number
+          created_at?: string
+          game_id?: string
+          id?: string
+          invalidated_at?: string | null
+          is_active?: boolean
+          moment_id?: string
+          played_at?: string | null
+          position_ply?: number | null
+          reason?: string
+          source_exercise_id?: string
+          updated_at?: string
+          user_id?: string
+          validation_fingerprint?: string
+        }
+        Relationships: []
+      }
       progress_snapshots: {
         Row: {
           analysis_id: string | null

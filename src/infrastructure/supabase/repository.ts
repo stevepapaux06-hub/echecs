@@ -13,8 +13,23 @@ import type { Json } from "./database.types";
 import { normalizeAuthError } from "./auth-errors";
 import { getSupabaseClient } from "./client";
 import { addTrainingConceptAttempt, replaceGameConceptTotals, type ConceptStatCounters } from "../../domain/diagnostic/concept-stats";
+import {
+  aggregateRecurringWeaknesses,
+  weaknessEvidenceFromPublishedExercises,
+  type RecurringWeakness,
+} from "../../domain/diagnostic/recurring-weaknesses";
 import { conceptDefinition, normalizeConceptSlug } from "../../domain/knowledge/concepts";
 import { isPatternProductEligible } from "../../domain/patterns/policy";
+import {
+  buildProgressReadModel,
+  type ProgressGameSample,
+  type ProgressReadModel,
+} from "../../domain/progress/progress-read-model";
+import {
+  activeWeaknessEvidenceFromRows,
+  mergePedagogicalEvidenceForAnalyzedGames,
+  type PersistedPedagogicalEvidence,
+} from "./pedagogical-evidence";
 
 export type AnalysisHistoryItem = {
   id: string;
@@ -58,6 +73,8 @@ export type PersistentProfile = {
   attempts: number;
   trainingAttempts: TrainingAttemptRecord[];
   conceptStats: ConceptStatsRecord[];
+  recurringWeaknesses: RecurringWeakness[];
+  progress: ProgressReadModel;
 };
 
 export type ConceptStatsRecord = {
@@ -120,6 +137,13 @@ function missingOptionalTable(error: { code?: string; message?: string } | null)
   return Boolean(error && (error.code === "42P01" || error.code === "PGRST205"));
 }
 
+function persistedEvidenceRows(rows: Array<Record<string, unknown>>): PersistedPedagogicalEvidence[] {
+  return rows.flatMap((row): PersistedPedagogicalEvidence[] => {
+    if (row.reason !== "ERROR" && row.reason !== "OPPORTUNITY") return [];
+    return [row as unknown as PersistedPedagogicalEvidence];
+  });
+}
+
 function countersFromRow(row: {
   opportunities: number;
   successes: number;
@@ -166,6 +190,38 @@ async function loadGameAnalysisSummaries(userId: string): Promise<GameAnalysisSu
     if ((data?.length ?? 0) < pageSize) break;
   }
   return summaries;
+}
+
+async function loadProgressGames(userId: string): Promise<ProgressGameSample[]> {
+  const supabase = getSupabaseClient();
+  const games: ProgressGameSample[] = [];
+  const pageSize = 1_000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("games")
+      .select("user_id,source,external_id,played_at,analysis_summary")
+      .eq("user_id", userId)
+      .not("analyzed_at", "is", null)
+      .order("played_at", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      if (!row.played_at) continue;
+      const summary = row.analysis_summary as unknown as GameAnalysisSummary | null;
+      games.push({
+        userId: row.user_id,
+        gameId: row.external_id,
+        uniqueGameKey: summary?.version === 1 && typeof summary.gameKey === "string"
+          ? summary.gameKey
+          : `${row.source}:${row.external_id}`,
+        playedAt: row.played_at,
+        hasExposureData: summary?.version === 1 && Array.isArray(summary.concepts),
+        concepts: summary?.version === 1 && Array.isArray(summary.concepts) ? summary.concepts : [],
+      });
+    }
+    if ((data?.length ?? 0) < pageSize) break;
+  }
+  return games;
 }
 
 function throwAuthError(reason: unknown): never {
@@ -262,7 +318,7 @@ function profileFromRow(row: {
 
 export async function loadPersistentProfile(user: User): Promise<PersistentProfile> {
   const supabase = getSupabaseClient();
-  const [profileResult, analysesResult, gamesResult, gamesCountResult, analyzedCountResult, weaknessesResult, attemptsResult, conceptStatsResult] = await Promise.all([
+  const [profileResult, analysesResult, gamesResult, gamesCountResult, analyzedCountResult, weaknessesResult, attemptsResult, conceptStatsResult, evidenceResult, progressGames] = await Promise.all([
     supabase.from("chess_profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("analyses").select("*").order("created_at", { ascending: false }),
     supabase.from("games").select("id,external_id,source,played_at,time_class,result,parsed_game").order("played_at", { ascending: false }).limit(100),
@@ -275,10 +331,26 @@ export async function loadPersistentProfile(user: User): Promise<PersistentProfi
       .order("created_at", { ascending: false })
       .limit(1000),
     supabase.from("concept_stats").select("*"),
+    supabase.from("pedagogical_evidence").select("*").eq("user_id", user.id).eq("is_active", true),
+    loadProgressGames(user.id),
   ]);
   const firstError = profileResult.error || analysesResult.error || gamesResult.error || gamesCountResult.error || analyzedCountResult.error || weaknessesResult.error || attemptsResult.error;
   if (firstError) throw firstError;
   if (conceptStatsResult.error && !missingOptionalTable(conceptStatsResult.error)) throw conceptStatsResult.error;
+  if (evidenceResult.error && !missingOptionalTable(evidenceResult.error)) throw evidenceResult.error;
+
+  const activeEvidence = evidenceResult.error
+    ? []
+    : activeWeaknessEvidenceFromRows(
+      persistedEvidenceRows((evidenceResult.data ?? []) as Array<Record<string, unknown>>),
+      user.id,
+    );
+  const recurringWeaknesses = aggregateRecurringWeaknesses(activeEvidence);
+  const progress = buildProgressReadModel({
+    userId: user.id,
+    games: progressGames,
+    evidence: activeEvidence.map((item) => ({ ...item, userId: user.id })),
+  });
 
   return {
     user,
@@ -338,6 +410,8 @@ export async function loadPersistentProfile(user: User): Promise<PersistentProfi
       lastSeenAt: row.last_seen_at,
       lastTrainedAt: row.last_trained_at,
     })),
+    recurringWeaknesses,
+    progress,
   };
 }
 
@@ -424,6 +498,55 @@ export async function saveGames(
   };
 }
 
+export async function savePedagogicalEvidenceHistory(
+  userId: string,
+  games: AnalyzedGame[],
+  exercises: TrainingExercise[],
+): Promise<RecurringWeakness[]> {
+  const current = weaknessEvidenceFromPublishedExercises(exercises);
+  const analyzedGameIds = [...new Set(games.map((game) => game.id))];
+  if (analyzedGameIds.length === 0) return aggregateRecurringWeaknesses(current);
+
+  const supabase = getSupabaseClient();
+  const { data: existingData, error: existingError } = await supabase
+    .from("pedagogical_evidence")
+    .select("*")
+    .eq("user_id", userId)
+    .in("game_id", analyzedGameIds);
+  if (existingError) {
+    // A rolling deploy remains usable before the additive migration reaches
+    // production; current-analysis recurrence is the temporary fallback.
+    if (missingOptionalTable(existingError)) return aggregateRecurringWeaknesses(current);
+    throw existingError;
+  }
+
+  const analyzedAt = new Date().toISOString();
+  const merged = mergePedagogicalEvidenceForAnalyzedGames({
+    userId,
+    analyzedGameIds,
+    existing: persistedEvidenceRows((existingData ?? []) as Array<Record<string, unknown>>),
+    current,
+    analyzedAt,
+  });
+  if (merged.length) {
+    const { error } = await supabase.from("pedagogical_evidence").upsert(merged, {
+      onConflict: "user_id,game_id,moment_id,concept_slug",
+    });
+    if (error) throw error;
+  }
+
+  const { data: historyData, error: historyError } = await supabase
+    .from("pedagogical_evidence")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_active", true);
+  if (historyError) throw historyError;
+  return aggregateRecurringWeaknesses(activeWeaknessEvidenceFromRows(
+    persistedEvidenceRows((historyData ?? []) as Array<Record<string, unknown>>),
+    userId,
+  ));
+}
+
 export async function saveCompleteAnalysis(
   userId: string,
   payload: AnalysisPayload,
@@ -434,6 +557,7 @@ export async function saveCompleteAnalysis(
 
   const analysisSummaries = new Map(result.games.map((game) => [`${game.source}:${game.id}`, summarizeAnalyzedGame(game)]));
   const savedGames = await saveGames(userId, payload.profile, payload.games, analysisSummaries);
+  result.recurringWeaknesses = await savePedagogicalEvidenceHistory(userId, result.games, result.exercises);
   const cadenceLabel = payload.selection.cadence === "all"
     ? "toutes cadences"
     : payload.selection.cadence[0].toUpperCase() + payload.selection.cadence.slice(1);
