@@ -394,7 +394,8 @@ button:disabled { cursor: not-allowed; opacity: .48; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes orbit { 50% { transform: translateY(74px); } }
 
-.loading-label { margin: 48px 0 12px; color: var(--muted); font-size: 14px; }
+.loading-phase { margin: 38px 0 6px; color: var(--emerald); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.loading-label { min-height: 20px; margin: 0 0 12px; color: var(--muted); font-size: 14px; }
 .progress-track { width: min(570px, 100%); height: 8px; margin: 0 auto; overflow: hidden; background: rgba(20, 33, 28, .09); border-radius: 99px; }
 .progress-track span { height: 100%; display: block; background: linear-gradient(90deg, var(--emerald), #75a84d); border-radius: inherit; transition: width 180ms ease; }
 .progress-number { display: block; margin-top: 10px; color: var(--emerald); font-family: Georgia, serif; font-size: 24px; font-weight: 500; }

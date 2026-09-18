@@ -1,8 +1,21 @@
 import { Chess } from "chess.js";
 import { describe, expect, it } from "vitest";
 import type { AnalysisPayload, EngineEvaluation, MoveSnapshot, ParsedGame } from "./types";
-import { analyzePayload, type PositionEvaluator } from "./analyze";
+import { analyzePayload, type AnalysisProgress, type PositionEvaluator } from "./analyze";
 import { sideToMoveFromFen } from "../../infrastructure/engine/uci";
+import { generateExercisesWithAudit } from "../training/generate";
+
+const postprocess = async (...args: Parameters<typeof generateExercisesWithAudit>) => (
+  generateExercisesWithAudit(...args)
+);
+
+function runAnalysis(
+  input: AnalysisPayload,
+  engine: PositionEvaluator,
+  onProgress: (progress: AnalysisProgress) => void = () => undefined,
+) {
+  return analyzePayload(input, engine, onProgress, postprocess);
+}
 
 function evaluation(fen: string): EngineEvaluation {
   const chess = new Chess(fen);
@@ -76,7 +89,7 @@ describe("analyzePayload resilience", () => {
       },
     };
 
-    const result = await analyzePayload(input, engine, () => undefined);
+    const result = await runAnalysis(input, engine);
 
     expect(result.metrics.positionsAnalyzed).toBe(1);
     expect(result.warnings).toContain(
@@ -141,7 +154,7 @@ describe("analyzePayload resilience", () => {
       },
     };
 
-    const result = await analyzePayload(input, engine, () => undefined);
+    const result = await runAnalysis(input, engine);
 
     expect(result.games[0].analyzedMoves[0].pedagogical?.kind).toBe("collapse");
     expect(result.exercises.some((exercise) => (
@@ -153,4 +166,25 @@ describe("analyzePayload resilience", () => {
       state: "PUBLISHED",
     }));
   });
+
+  it("reports real phases and yields during a longer analysis", async () => {
+    const input = payload();
+    input.games = Array.from({ length: 8 }, (_, index) => ({
+      ...input.games[0],
+      id: `long-game-${index}`,
+    }));
+    const phases: string[] = [];
+    let browserTaskRan = false;
+    setTimeout(() => { browserTaskRan = true; }, 0);
+    const engine: PositionEvaluator = { evaluate: async (fen) => evaluation(fen) };
+
+    await runAnalysis(input, engine, ({ phase }) => phases.push(phase));
+
+    expect(browserTaskRan).toBe(true);
+    expect(phases).toContain("preparation");
+    expect(phases).toContain("analysis");
+    expect(phases).toContain("identification");
+    expect(phases).toContain("training");
+    expect(phases.at(-1)).toBe("finalization");
+  }, 15_000);
 });

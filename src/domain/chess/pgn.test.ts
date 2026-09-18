@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseChessComGame, parsePgnCollection } from "./pgn";
+import { parseChessComGame, parsePgnCollection, parsePgnCollectionAsync } from "./pgn";
 
 describe("parseChessComGame", () => {
   it("reconstructs legal positions and the player perspective", () => {
@@ -48,5 +48,27 @@ describe("parseChessComGame", () => {
 
   it("rejects an empty PGN", () => {
     expect(() => parsePgnCollection("  ", "Alice")).toThrow("vide");
+  });
+
+  it("keeps the chunked parser identical for a multi-game import", async () => {
+    const pgn = `[Event "Round 1"]
+[White "Alice"]
+[Black "Bob"]
+[Result "1-0"]
+[Date "2026.08.20"]
+
+1. e4 e5 2. Nf3 Nc6 1-0
+
+[Event "Round 2"]
+[White "Carol"]
+[Black "Alice"]
+[Result "1/2-1/2"]
+[Date "2026.08.21"]
+
+1. d4 d5 2. c4 e6 1/2-1/2`;
+
+    await expect(parsePgnCollectionAsync(pgn, "Alice", 2)).resolves.toEqual(
+      parsePgnCollection(pgn, "Alice", 2),
+    );
   });
 });

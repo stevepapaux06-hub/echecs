@@ -3,11 +3,15 @@ import type {
   AnalyzedGame,
   AnalyzedMove,
   CompleteAnalysis,
+  CandidateAuditEntry,
+  DiagnosticMetrics,
   EngineEvaluation,
   MoveSnapshot,
+  ParsedGame,
+  TrainingContentResolution,
+  TrainingExercise,
 } from "./types";
 import { calculateMetrics } from "../diagnostic/metrics";
-import { generateExercisesWithAudit } from "../training/generate";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
 import { patternsForAnalyzedMove, structureForPosition } from "../patterns/engine";
 import { patternCandidatesForPosition } from "../patterns/engine";
@@ -20,8 +24,16 @@ import {
   needsAdaptiveMultiPvProbe,
 } from "./multipv-stability";
 import { detectRecurringWeaknesses } from "../diagnostic/recurring-weaknesses";
+import type { AnalysisPhase } from "./analysis-progress";
+import {
+  createAnalysisTimer,
+  measureAnalysisPhase,
+  measureAnalysisPhaseAsync,
+  yieldToMainThread,
+} from "./main-thread";
 
 export type AnalysisProgress = {
+  phase: AnalysisPhase;
   completed: number;
   total: number;
   label: string;
@@ -30,6 +42,17 @@ export type AnalysisProgress = {
 export type PositionEvaluator = {
   evaluate: (fen: string, depth?: number, multiPv?: number) => Promise<EngineEvaluation>;
 };
+
+export type AnalysisPostprocessResult = {
+  exercises: TrainingExercise[];
+  auditTrail: CandidateAuditEntry[];
+  bankResolution: TrainingContentResolution;
+};
+
+export type AnalysisPostprocessor = (
+  games: AnalyzedGame[],
+  metrics: DiagnosticMetrics,
+) => Promise<AnalysisPostprocessResult>;
 
 function analysisBudget(gameCount: number): {
   movesPerGame: number;
@@ -44,12 +67,12 @@ function analysisBudget(gameCount: number): {
   return { movesPerGame: 4, patternPositionsPerGame: 4, firstDepth: 5, deepPositions: 80 };
 }
 
-function movesToAnalyze(
+async function movesToAnalyze(
   moves: MoveSnapshot[],
   playerColor: "white" | "black",
   limit: number,
   patternLimit: number,
-): MoveSnapshot[] {
+): Promise<MoveSnapshot[]> {
   const color = playerColor === "white" ? "w" : "b";
   const candidates = moves.filter((move) => move.color === color && move.ply >= 8 && move.ply <= 100);
   if (candidates.length <= limit) return candidates;
@@ -63,11 +86,15 @@ function movesToAnalyze(
     : Array.from({ length: patternScanLimit }, (_, index) => (
         candidates[Math.round(index * (candidates.length - 1) / Math.max(1, patternScanLimit - 1))]
       ));
-  const patternDriven = patternScan
-    .map((move) => ({
+  const scannedPatterns: Array<{ move: MoveSnapshot; patterns: ReturnType<typeof patternCandidatesForPosition> }> = [];
+  for (const move of patternScan) {
+    scannedPatterns.push({
       move,
       patterns: patternCandidatesForPosition(move.fenBefore, { phase: move.phase, ply: move.ply }),
-    }))
+    });
+    await yieldToMainThread();
+  }
+  const patternDriven = scannedPatterns
     .filter((item) => item.patterns.length > 0)
     .toSorted((first, second) => (
       Math.max(...second.patterns.map((pattern) => pattern.confidence))
@@ -85,43 +112,50 @@ export async function analyzePayload(
   payload: AnalysisPayload,
   engine: PositionEvaluator,
   onProgress: (progress: AnalysisProgress) => void,
+  postprocess?: AnalysisPostprocessor,
 ): Promise<CompleteAnalysis> {
   const games = payload.games.slice(0, 100);
   const budget = analysisBudget(games.length);
-  const selected = games.map((game) => ({
-    game,
-    moves: movesToAnalyze(
-      game.moves,
-      game.playerColor,
-      budget.movesPerGame,
-      budget.patternPositionsPerGame,
-    ),
-  }));
-  let total = selected.reduce((sum, item) => sum + item.moves.length * 2, 0)
-    + budget.deepPositions * 2;
-  let completed = 0;
+  const selected: Array<{ game: ParsedGame; moves: MoveSnapshot[] }> = await measureAnalysisPhaseAsync(
+    "présélection des positions",
+    async () => {
+      const selection: Array<{ game: ParsedGame; moves: MoveSnapshot[] }> = [];
+      for (const [gameIndex, game] of games.entries()) {
+        selection.push({
+          game,
+          moves: await movesToAnalyze(
+            game.moves,
+            game.playerColor,
+            budget.movesPerGame,
+            budget.patternPositionsPerGame,
+          ),
+        });
+        onProgress({
+          phase: "preparation",
+          completed: gameIndex + 1,
+          total: games.length,
+          label: `Préparation · ${gameIndex + 1}/${games.length} parties`,
+        });
+        await yieldToMainThread();
+      }
+      return selection;
+    },
+  );
+  const shallowTotal = selected.reduce((sum, item) => sum + item.moves.length * 2, 0);
+  let shallowCompleted = 0;
   let skippedDecisions = 0;
   let shallowFallbacks = 0;
   let consecutiveFailures = 0;
   let adaptiveStabilityPositions = 0;
   const cache = new Map<string, EngineEvaluation>();
 
-  async function evaluate(fen: string, depth: number, label: string, multiPv = 1): Promise<EngineEvaluation> {
+  async function evaluate(fen: string, depth: number, multiPv = 1): Promise<EngineEvaluation> {
     const key = `${depth}:${multiPv}:${fen}`;
     const cached = cache.get(key);
-    if (cached) {
-      completed += 1;
-      onProgress({ completed, total, label });
-      return cached;
-    }
-    try {
-      const result = await engine.evaluate(fen, depth, multiPv);
-      cache.set(key, result);
-      return result;
-    } finally {
-      completed += 1;
-      onProgress({ completed, total, label });
-    }
+    if (cached) return cached;
+    const result = await engine.evaluate(fen, depth, multiPv);
+    cache.set(key, result);
+    return result;
   }
 
   const analyzedGames: AnalyzedGame[] = [];
@@ -132,14 +166,19 @@ export async function analyzePayload(
         evaluate(
           move.fenBefore,
           budget.firstDepth,
-          `Première passe · ${analyzedGames.length + 1}/${games.length} parties`,
         ),
         evaluate(
           move.fenAfter,
           budget.firstDepth,
-          "Stockfish compare la position avant et après ton coup",
         ),
       ]);
+      shallowCompleted += 2;
+      onProgress({
+        phase: "analysis",
+        completed: shallowCompleted,
+        total: shallowTotal,
+        label: `Analyse de la partie · ${analyzedGames.length + 1}/${games.length}`,
+      });
       if (beforeResult.status === "rejected" || afterResult.status === "rejected") {
         skippedDecisions += 1;
         consecutiveFailures += 1;
@@ -163,24 +202,41 @@ export async function analyzePayload(
       });
     }
     analyzedGames.push({ ...game, analyzedMoves });
+    await yieldToMainThread();
   }
 
   // Pattern candidates are attached before the deep pass so a stable 0.00
   // position can request validation independently of an evaluation delta.
+  const patternTotal = analyzedGames.reduce((sum, game) => sum + game.analyzedMoves.length, 0);
+  let patternCompleted = 0;
+  const classificationTimer = createAnalysisTimer("classification des moments");
   for (const game of analyzedGames) {
     for (const move of game.analyzedMoves) {
-      move.patterns = patternsForAnalyzedMove(move);
-      move.pawnStructure = structureForPosition(move.fenBefore);
-      move.pedagogical = scorePedagogicalMoment({
-        beforeCp: move.playerCpBefore,
-        afterCp: move.playerCpAfter,
-        patterns: move.patterns,
-        phase: move.phase,
-        ply: move.ply,
-        playerRating: game.playerRating,
+      classificationTimer.measure(() => {
+        move.patterns = patternsForAnalyzedMove(move);
+        move.pawnStructure = structureForPosition(move.fenBefore);
+        move.pedagogical = scorePedagogicalMoment({
+          beforeCp: move.playerCpBefore,
+          afterCp: move.playerCpAfter,
+          patterns: move.patterns,
+          phase: move.phase,
+          ply: move.ply,
+          playerRating: game.playerRating,
+        });
       });
+      patternCompleted += 1;
+      if (patternCompleted % 4 === 0 || patternCompleted === patternTotal) {
+        onProgress({
+          phase: "identification",
+          completed: patternCompleted,
+          total: Math.max(1, patternTotal * 2),
+          label: "Identification des moments pédagogiques",
+        });
+        await yieldToMainThread();
+      }
     }
   }
+  classificationTimer.report();
 
   // A second, deeper pass follows pedagogical value rather than raw lossCp.
   // This validates small-advantage conversions and stable pattern positions,
@@ -193,18 +249,23 @@ export async function analyzePayload(
       || b.move.lossCp - a.move.lossCp
     ))
     .slice(0, budget.deepPositions);
-  total = completed + critical.length * 2;
-
-  for (const { game, move } of critical) {
+  for (const [criticalIndex, { game, move }] of critical.entries()) {
     const shallowBefore = move.before;
     const [beforeResult, afterResult] = await Promise.allSettled([
       // Real alternatives are only requested for shortlisted pedagogical
       // moments, keeping the first pass fast while avoiding top-1 lessons.
-      evaluate(move.fenBefore, 10, "Seconde passe approfondie sur tes décisions critiques", 4),
-      evaluate(move.fenAfter, 10, "Validation des erreurs récurrentes"),
+      evaluate(move.fenBefore, 10, 4),
+      evaluate(move.fenAfter, 10),
     ]);
     if (beforeResult.status === "rejected" || afterResult.status === "rejected") {
       shallowFallbacks += 1;
+      onProgress({
+        phase: "identification",
+        completed: patternTotal + criticalIndex + 1,
+        total: Math.max(1, patternTotal + critical.length),
+        label: "Identification des moments · validation approfondie",
+      });
+      await yieldToMainThread();
       continue;
     }
     let before = beforeResult.value;
@@ -218,12 +279,10 @@ export async function analyzePayload(
       } else {
         adaptiveStabilityPositions += 1;
         for (let depth = 12; depth <= MULTIPV_MAX_DEPTH; depth += MULTIPV_STABILITY_DEPTH_STEP) {
-          total += 1;
           try {
             before = await evaluate(
               move.fenBefore,
               depth,
-              "Stockfish stabilise les plans candidats",
               4,
             );
             stabilityHistory.push(before);
@@ -258,9 +317,18 @@ export async function analyzePayload(
       ply: move.ply,
       playerRating: game.playerRating,
     });
+    onProgress({
+      phase: "identification",
+      completed: patternTotal + criticalIndex + 1,
+      total: Math.max(1, patternTotal + critical.length),
+      label: "Identification des moments · validation approfondie",
+    });
+    await yieldToMainThread();
   }
 
-  const metrics = calculateMetrics(analyzedGames);
+  onProgress({ phase: "training", completed: 0, total: 1, label: "Préparation de l’entraînement" });
+  await yieldToMainThread();
+  const metrics = measureAnalysisPhase("calcul du diagnostic", () => calculateMetrics(analyzedGames));
   if (metrics.positionsAnalyzed === 0) {
     throw new Error("Stockfish n’a pu évaluer aucune décision exploitable dans ces parties.");
   }
@@ -271,7 +339,21 @@ export async function analyzePayload(
   if (shallowFallbacks > 0) {
     warnings.push(`${shallowFallbacks} décision${shallowFallbacks > 1 ? "s critiques restent" : " critique reste"} évaluée${shallowFallbacks > 1 ? "s" : ""} à la profondeur initiale.`);
   }
-  const generated = generateExercisesWithAudit(analyzedGames, metrics);
+  const generated = await measureAnalysisPhaseAsync(
+    "génération des exercices",
+    async () => {
+      if (postprocess) return postprocess(analyzedGames, metrics);
+      const { generateExercisesWithAudit } = await import("../training/generate");
+      return generateExercisesWithAudit(analyzedGames, metrics);
+    },
+  );
+  onProgress({ phase: "training", completed: 1, total: 1, label: "Préparation de l’entraînement" });
+  await yieldToMainThread();
+  onProgress({ phase: "finalization", completed: 0, total: 1, label: "Finalisation du diagnostic" });
+  const recurringWeaknesses = measureAnalysisPhase(
+    "agrégation des faiblesses",
+    () => detectRecurringWeaknesses(generated.exercises),
+  );
   return {
     profile: payload.profile,
     warnings,
@@ -279,7 +361,7 @@ export async function analyzePayload(
     games: analyzedGames,
     metrics,
     exercises: generated.exercises,
-    recurringWeaknesses: detectRecurringWeaknesses(generated.exercises),
+    recurringWeaknesses,
     candidateAuditTrail: generated.auditTrail,
     trainingContentResolution: generated.bankResolution,
   };

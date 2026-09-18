@@ -24,7 +24,15 @@ import type {
   PlayerProfile,
   TrainingExercise,
 } from "@/domain/chess/types";
-import { parsePgnCollection } from "@/domain/chess/pgn";
+import { parsePgnCollectionAsync } from "@/domain/chess/pgn";
+import {
+  advanceVisualProgress,
+  ANALYSIS_PHASE_LABELS,
+  phaseIsComplete,
+  progressForPhase,
+  type AnalysisPhase,
+} from "@/domain/chess/analysis-progress";
+import { yieldToMainThread } from "@/domain/chess/main-thread";
 import type * as TrainingLibrary from "@/domain/training/library-runtime";
 import {
   buildTrainingSession,
@@ -34,6 +42,7 @@ import {
 } from "@/domain/training/session";
 import { withTrainingTaxonomy } from "@/domain/training/taxonomy";
 import { StockfishClient } from "@/infrastructure/engine/stockfish-client";
+import { generateExercisesOffMainThread } from "@/infrastructure/analysis/analysis-postprocessor";
 import { getSupabaseClient } from "@/infrastructure/supabase/client";
 import {
   loadPersistentProfile,
@@ -203,19 +212,31 @@ function AnalyzeScreen({
 function LoadingScreen({
   label,
   progress,
+  phase,
   connected,
   onNavigate,
 }: {
   label: string;
   progress: number;
+  phase: AnalysisPhase;
   connected: boolean;
   onNavigate: (section: AppSection) => void;
 }) {
+  const [visualProgress, setVisualProgress] = useState(progress);
+  useEffect(() => {
+    if (progress >= 100) return;
+    const timer = window.setInterval(() => {
+      setVisualProgress((current) => advanceVisualProgress(current, progress, phase));
+    }, 350);
+    return () => window.clearInterval(timer);
+  }, [phase, progress]);
+  const displayedProgress = Math.max(visualProgress, Math.min(progress, 100));
+
   const steps = [
-    ["Parties récupérées", progress >= 12],
-    ["Positions reconstruites", progress >= 20],
-    ["Décisions comparées", progress >= 88],
-    ["Diagnostic préparé", progress >= 100],
+    ["Préparation", phaseIsComplete(phase, "preparation")],
+    ["Analyse des parties", phaseIsComplete(phase, "analysis")],
+    ["Moments identifiés", phaseIsComplete(phase, "identification")],
+    ["Entraînement préparé", phaseIsComplete(phase, "training")],
   ] as const;
   return (
     <main className="loading-screen">
@@ -224,9 +245,10 @@ function LoadingScreen({
         <div className="engine-orbit"><span>♞</span></div>
         <p className="eyebrow"><span /> Stockfish travaille sur ton appareil</p>
         <h1>On reconstruit ton jeu,<br />décision par décision.</h1>
+        <p className="loading-phase">{ANALYSIS_PHASE_LABELS[phase]}</p>
         <p className="loading-label">{label}</p>
-        <div className="progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }} /></div>
-        <strong className="progress-number">{Math.round(progress)}%</strong>
+        <div className="progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(displayedProgress)}><span style={{ width: `${displayedProgress}%` }} /></div>
+        <strong className="progress-number">{Math.round(displayedProgress)}%</strong>
         <div className="analysis-steps">{steps.map(([step, done]) => <span className={done ? "done" : ""} key={step}><BadgeCheck size={15} /> {step}</span>)}</div>
         <p className="privacy-note">Position complète évaluée par Stockfish 18 local · aucun calcul matériel maison.</p>
       </section>
@@ -321,6 +343,7 @@ export function ChessPathApp() {
   const [error, setError] = useState<string | null>(null);
   const [loadingLabel, setLoadingLabel] = useState("Connexion à Chess.com");
   const [progress, setProgress] = useState(0);
+  const [analysisPhase, setAnalysisPhase] = useState<AnalysisPhase>("preparation");
   const [result, setResult] = useState<CompleteAnalysis | null>(null);
   const [trainingExercises, setTrainingExercises] = useState<TrainingExercise[]>([]);
   const [trainingLibrary, setTrainingLibrary] = useState<typeof TrainingLibrary | null>(null);
@@ -342,6 +365,21 @@ export function ChessPathApp() {
   const engineRef = useRef<StockfishClient | null>(null);
   const profileRequestRef = useRef(0);
   const activeUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development" || screen !== "loading" || typeof PerformanceObserver === "undefined") return;
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        console.debug(`[ChessPath · Long task] ${entry.duration.toFixed(1)} ms · phase ${analysisPhase}`);
+      }
+    });
+    try {
+      observer.observe({ entryTypes: ["longtask"] });
+    } catch {
+      return;
+    }
+    return () => observer.disconnect();
+  }, [analysisPhase, screen]);
 
   async function refreshProfile(targetUser: User | null) {
     const requestId = ++profileRequestRef.current;
@@ -482,26 +520,34 @@ export function ChessPathApp() {
   }
 
   async function runPayload(payload: AnalysisPayload) {
-    setProgress(14);
+    setAnalysisPhase("preparation");
+    setProgress((current) => Math.max(current, 14));
     setLoadingLabel(`${payload.games.length} parties récupérées · préparation du moteur`);
     const engine = await ensureEngine();
     const { analyzePayload } = await import("@/domain/chess/analyze");
-    setProgress(20);
-    const analysis = await analyzePayload(payload, engine, ({ completed, total, label }) => {
-      setLoadingLabel(label);
-      setProgress(total > 0 ? Math.min(96, 20 + completed / total * 76) : 96);
-    });
-    setLoadingLabel("Le Pattern Engine sélectionne les moments vraiment utiles");
-    setProgress(97);
+    const analysis = await analyzePayload(
+      payload,
+      engine,
+      ({ phase, completed, total, label }) => {
+        setAnalysisPhase(phase);
+        setLoadingLabel(label);
+        const checkpoint = progressForPhase(phase, completed, total);
+        setProgress((current) => Math.max(current, checkpoint));
+      },
+      generateExercisesOffMainThread,
+    );
     // The optional OpenAI pedagogy module remains available in the codebase,
     // but Pattern Engine V1 deliberately performs no paid AI call.
     const completedAnalysis = analysis;
-    setLoadingLabel("Construction de ton diagnostic");
-    setProgress(100);
+    setAnalysisPhase("finalization");
+    setLoadingLabel("Finalisation · assemblage du diagnostic et des exercices");
+    setProgress((current) => Math.max(current, 99));
+    await yieldToMainThread();
     setResult(completedAnalysis);
     setTrainingExercises(completedAnalysis.exercises);
 
     if (user) {
+      setLoadingLabel("Finalisation · sauvegarde de ton analyse");
       setSaveStatus("Sauvegarde de cette analyse dans ton profil…");
       try {
         await saveCompleteAnalysis(user.id, payload, completedAnalysis);
@@ -513,6 +559,8 @@ export function ChessPathApp() {
     } else {
       setSaveStatus("Diagnostic non sauvegardé : connecte ton profil pour le retrouver plus tard.");
     }
+    setProgress(100);
+    await yieldToMainThread();
     setScreen("dashboard");
   }
 
@@ -520,12 +568,13 @@ export function ChessPathApp() {
     setError(null);
     setSaveStatus(null);
     setScreen("loading");
+    setAnalysisPhase("preparation");
     setProgress(4);
     try {
       let payload: AnalysisPayload;
       if (request.source === "pgn") {
         setLoadingLabel("Validation et reconstruction du PGN");
-        payload = parsePgnCollection(request.pgn, request.playerName, request.count);
+        payload = await parsePgnCollectionAsync(request.pgn, request.playerName, request.count);
       } else {
         setLoadingLabel(`Recherche de ${request.count} partie${request.count > 1 ? "s" : ""} ${request.cadence === "all" ? "toutes cadences" : request.cadence}`);
         const response = await fetch("/api/analyze", {
@@ -551,6 +600,7 @@ export function ChessPathApp() {
   ) {
     if (!exercises.length) return;
     setScreen("loading");
+    setAnalysisPhase("preparation");
     setProgress(15);
     setLoadingLabel("Préparation de ta séance Stockfish");
     try {
@@ -619,6 +669,7 @@ export function ChessPathApp() {
       return;
     }
     setScreen("loading");
+    setAnalysisPhase("preparation");
     setError(null);
     setProgress(8);
     setLoadingLabel("Synchronisation des archives Chess.com");
@@ -672,7 +723,7 @@ export function ChessPathApp() {
   }, [persistent?.analyses, result?.exercises, trainingLibrary]);
   const navProps = { onNavigate: navigate, connected };
 
-  if (screen === "loading") return <LoadingScreen label={loadingLabel} progress={progress} {...navProps} />;
+  if (screen === "loading") return <LoadingScreen label={loadingLabel} progress={progress} phase={analysisPhase} {...navProps} />;
   if (screen === "dashboard" && result) return <Dashboard result={result} saveStatus={saveStatus} onTrain={() => navigate("training-hub")} onReset={() => navigate("analyze")} {...navProps} />;
   if (screen === "training" && trainingExercises.length && trainingEngine) return <TrainingBoard key={trainingExercises[0].id} exercises={trainingExercises} engine={trainingEngine} activeFilter={trainingFilter} onBack={() => navigate("training-hub")} onContinue={continueTraining} onAttempt={(...args) => void recordAttempt(...args)} />;
   if (screen === "analyze") return <AnalyzeScreen username={persistent?.chess?.username} error={error} onAnalyze={(request) => void startAnalysis(request)} {...navProps} />;

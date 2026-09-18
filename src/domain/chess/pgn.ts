@@ -7,6 +7,7 @@ import type {
   ParsedGame,
   PlayerColor,
 } from "./types";
+import { yieldToMainThread } from "./main-thread";
 
 type ChessComSide = {
   username: string;
@@ -171,26 +172,12 @@ export function parsePgnGame(pgn: string, playerName: string): ParsedGame {
   };
 }
 
-export function parsePgnCollection(
-  text: string,
+function buildPgnPayload(
+  games: ParsedGame[],
+  failures: string[],
   playerName: string,
   requestedGames = 100,
 ): AnalysisPayload {
-  if (!text.trim()) throw new Error("Le PGN est vide.");
-  if (!playerName.trim()) throw new Error("Indique ton nom tel qu’il apparaît dans le PGN.");
-
-  const documents = splitPgnDocuments(text);
-  const games: ParsedGame[] = [];
-  const failures: string[] = [];
-
-  for (const document of documents.slice(0, 100)) {
-    try {
-      games.push(parsePgnGame(document, playerName));
-    } catch (error) {
-      failures.push(error instanceof Error ? error.message : "Partie PGN invalide.");
-    }
-  }
-
   const selected = games
     .toSorted((a, b) => b.playedAt - a.playedAt)
     .slice(0, Math.min(100, Math.max(1, Math.floor(requestedGames))));
@@ -216,4 +203,47 @@ export function parsePgnCollection(
     warnings,
     selection: { source: "pgn", requestedGames, cadence: "all" },
   };
+}
+
+export function parsePgnCollection(
+  text: string,
+  playerName: string,
+  requestedGames = 100,
+): AnalysisPayload {
+  if (!text.trim()) throw new Error("Le PGN est vide.");
+  if (!playerName.trim()) throw new Error("Indique ton nom tel qu’il apparaît dans le PGN.");
+
+  const games: ParsedGame[] = [];
+  const failures: string[] = [];
+  for (const document of splitPgnDocuments(text).slice(0, 100)) {
+    try {
+      games.push(parsePgnGame(document, playerName));
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : "Partie PGN invalide.");
+    }
+  }
+  return buildPgnPayload(games, failures, playerName, requestedGames);
+}
+
+export async function parsePgnCollectionAsync(
+  text: string,
+  playerName: string,
+  requestedGames = 100,
+): Promise<AnalysisPayload> {
+  if (!text.trim()) throw new Error("Le PGN est vide.");
+  if (!playerName.trim()) throw new Error("Indique ton nom tel qu’il apparaît dans le PGN.");
+
+  const documents = splitPgnDocuments(text);
+  const games: ParsedGame[] = [];
+  const failures: string[] = [];
+  for (const [index, document] of documents.slice(0, 100).entries()) {
+    try {
+      games.push(parsePgnGame(document, playerName));
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : "Partie PGN invalide.");
+    }
+    if (index % 2 === 1) await yieldToMainThread();
+  }
+
+  return buildPgnPayload(games, failures, playerName, requestedGames);
 }
