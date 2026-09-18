@@ -20,6 +20,7 @@ import {
 import type {
   AnalysisPayload,
   CompleteAnalysis,
+  DiagnosticCategory,
   PlayerProfile,
   TrainingExercise,
 } from "@/domain/chess/types";
@@ -328,6 +329,7 @@ export function ChessPathApp() {
   const [trainingFilter, setTrainingFilter] = useState<TrainingFilter>("recommended");
   const [trainingSourceFilter, setTrainingSourceFilter] = useState<TrainingSourceFilter>("mix");
   const [trainingSeenIds, setTrainingSeenIds] = useState<ReadonlySet<string>>(new Set());
+  const [progressTrainingTarget, setProgressTrainingTarget] = useState<{ conceptSlug: string; category: DiagnosticCategory | null; label: string } | null>(null);
   const [trainingEngine, setTrainingEngine] = useState<StockfishClient | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [persistent, setPersistent] = useState<PersistentProfile | null>(null);
@@ -460,7 +462,14 @@ export function ChessPathApp() {
   function navigate(section: AppSection) {
     setError(null);
     setAuthNotice(null);
+    if (section === "training-hub") setProgressTrainingTarget(null);
     setScreen(section);
+  }
+
+  function trainProgressConcept(conceptSlug: string, category: DiagnosticCategory | null, label: string) {
+    setError(null);
+    setProgressTrainingTarget({ conceptSlug, category, label });
+    setScreen("training-hub");
   }
 
   async function ensureEngine(): Promise<StockfishClient> {
@@ -668,8 +677,8 @@ export function ChessPathApp() {
   if (screen === "training" && trainingExercises.length && trainingEngine) return <TrainingBoard key={trainingExercises[0].id} exercises={trainingExercises} engine={trainingEngine} activeFilter={trainingFilter} onBack={() => navigate("training-hub")} onContinue={continueTraining} onAttempt={(...args) => void recordAttempt(...args)} />;
   if (screen === "analyze") return <AnalyzeScreen username={persistent?.chess?.username} error={error} onAnalyze={(request) => void startAnalysis(request)} {...navProps} />;
   if (screen === "training-hub" && !trainingLibrary) return <main className="app-page"><AppNav active="training-hub" {...navProps} /><section className="page-shell"><p role={libraryError ? "alert" : "status"}>{libraryError ?? "Chargement de tes exercices…"}</p>{libraryError ? <button className="primary-button" type="button" onClick={() => { setLibraryError(null); setLibraryRetry((value) => value + 1); }}>Réessayer</button> : null}</section></main>;
-  if (screen === "training-hub") return <main className="app-page"><AppNav active="training-hub" {...navProps} /><TrainingHub exercises={hubExercises} attempts={persistent?.trainingAttempts ?? []} priority={result?.metrics.priorityTitle ?? persistent?.analyses[0]?.metrics.priorityTitle} priorityConcept={result?.metrics.primaryTheme.id ?? persistent?.analyses[0]?.metrics.primaryTheme.id} priorityDomain={result?.metrics.primaryTheme.category ?? persistent?.analyses[0]?.metrics.primaryTheme.category} conceptStats={(persistent?.conceptStats.length ? persistent.conceptStats : result?.metrics.conceptStats ?? []).map((stat) => ({ conceptSlug: stat.conceptSlug, opportunities: stat.opportunities, failures: stat.failures, confidence: "high", lastSeenAt: "lastSeenAt" in stat ? stat.lastSeenAt : null }))} userRating={result?.profile.rating ?? persistent?.chess?.rating} onStart={(items, filter, source) => void startTraining(items, filter, source)} onAnalyze={() => navigate("analyze")} /></main>;
-  if (screen === "progress") return <main className="app-page"><AppNav active="progress" {...navProps} /><ProgressView profile={persistent} onProfile={() => navigate("profile")} /></main>;
+  if (screen === "training-hub") return <main className="app-page"><AppNav active="training-hub" {...navProps} /><TrainingHub exercises={hubExercises} attempts={persistent?.trainingAttempts ?? []} priority={progressTrainingTarget?.label ?? result?.metrics.priorityTitle ?? persistent?.analyses[0]?.metrics.priorityTitle} priorityConcept={progressTrainingTarget?.conceptSlug ?? result?.metrics.primaryTheme.id ?? persistent?.analyses[0]?.metrics.primaryTheme.id} priorityDomain={progressTrainingTarget?.category ?? result?.metrics.primaryTheme.category ?? persistent?.analyses[0]?.metrics.primaryTheme.category} conceptStats={(persistent?.conceptStats.length ? persistent.conceptStats : result?.metrics.conceptStats ?? []).map((stat) => ({ conceptSlug: stat.conceptSlug, opportunities: stat.opportunities, failures: stat.failures, confidence: "high", lastSeenAt: "lastSeenAt" in stat ? stat.lastSeenAt : null }))} userRating={result?.profile.rating ?? persistent?.chess?.rating} onStart={(items, filter, source) => void startTraining(items, filter, source)} onAnalyze={() => navigate("analyze")} /></main>;
+  if (screen === "progress") return <main className="app-page"><AppNav active="progress" {...navProps} /><ProgressView profile={persistent} onProfile={() => navigate("profile")} onAnalyze={() => navigate("analyze")} onTrain={trainProgressConcept} /></main>;
   if (screen === "profile") return <main className="app-page"><AppNav active="profile" {...navProps} />{authNotice ? <p className={`global-notice ${authNotice.kind === "error" ? "error" : ""}`} role={authNotice.kind === "error" ? "alert" : "status"}>{authNotice.message}</p> : null}{saveStatus ? <p className="global-notice">{saveStatus}</p> : null}{error ? <p className="global-notice error">{error}</p> : null}<ProfileView key={user?.id ?? "guest"} user={user} profile={persistent} loading={profileLoading} profileError={profileError} initialAuthMode={authEntryMode} passwordRecovery={passwordRecovery} onPasswordRecovered={() => setPasswordRecovery(false)} onRetryProfile={() => refreshProfile(user)} onSync={synchronize} onLinkChess={linkChessAccount} onUnlinkChess={unlinkChessAccount} onOpenAnalysis={openAnalysis} /></main>;
   return <HomeScreen profile={persistent} error={error} onAnalyze={(request) => void startAnalysis(request)} onNavigate={navigate} />;
 }
