@@ -179,6 +179,11 @@ export async function analyzePayload(
         total: shallowTotal,
         label: `Analyse de la partie · ${analyzedGames.length + 1}/${games.length}`,
       });
+      // Stockfish runs off the main thread, but its serialized queue can start
+      // the next CPU-heavy search from the same microtask turn. Yield between
+      // decisions so rendering, input and browser automation get a real task
+      // window before the worker consumes the next search budget.
+      await yieldToMainThread();
       if (beforeResult.status === "rejected" || afterResult.status === "rejected") {
         skippedDecisions += 1;
         consecutiveFailures += 1;
@@ -257,6 +262,7 @@ export async function analyzePayload(
       evaluate(move.fenBefore, 10, 4),
       evaluate(move.fenAfter, 10),
     ]);
+    await yieldToMainThread();
     if (beforeResult.status === "rejected" || afterResult.status === "rejected") {
       shallowFallbacks += 1;
       onProgress({
@@ -286,6 +292,7 @@ export async function analyzePayload(
               4,
             );
             stabilityHistory.push(before);
+            await yieldToMainThread();
           } catch {
             shallowFallbacks += 1;
             stabilityBudgetExhausted = true;
