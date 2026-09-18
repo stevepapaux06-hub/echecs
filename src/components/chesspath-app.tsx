@@ -32,7 +32,7 @@ import {
   progressForPhase,
   type AnalysisPhase,
 } from "@/domain/chess/analysis-progress";
-import { yieldToMainThread } from "@/domain/chess/main-thread";
+import { measureAnalysisPhaseAsync, yieldToMainThread } from "@/domain/chess/main-thread";
 import type * as TrainingLibrary from "@/domain/training/library-runtime";
 import {
   buildTrainingSession,
@@ -42,7 +42,11 @@ import {
 } from "@/domain/training/session";
 import { withTrainingTaxonomy } from "@/domain/training/taxonomy";
 import { StockfishClient } from "@/infrastructure/engine/stockfish-client";
-import { generateExercisesOffMainThread } from "@/infrastructure/analysis/analysis-postprocessor";
+import {
+  generateExercisesOffMainThread,
+  warmAnalysisPostprocessor,
+} from "@/infrastructure/analysis/analysis-postprocessor";
+import { processPatternsOffMainThread } from "@/infrastructure/analysis/analysis-patterns";
 import { getSupabaseClient } from "@/infrastructure/supabase/client";
 import {
   loadPersistentProfile,
@@ -223,11 +227,33 @@ function LoadingScreen({
   onNavigate: (section: AppSection) => void;
 }) {
   const [visualProgress, setVisualProgress] = useState(progress);
+  const observationRef = useRef({ progress, phase, at: 0, rate: 0 });
+  useEffect(() => {
+    const now = performance.now();
+    const previous = observationRef.current;
+    const elapsedSeconds = previous.at > 0 ? Math.max(0.05, (now - previous.at) / 1_000) : 1;
+    const phaseChanged = previous.phase !== phase;
+    const measuredRate = !phaseChanged && progress > previous.progress
+      ? Math.min(1, (progress - previous.progress) / elapsedSeconds)
+      : previous.rate;
+    observationRef.current = {
+      progress: Math.max(previous.progress, progress),
+      phase,
+      at: now,
+      rate: phaseChanged ? 0 : previous.rate ? previous.rate * 0.65 + measuredRate * 0.35 : measuredRate,
+    };
+  }, [phase, progress]);
   useEffect(() => {
     if (progress >= 100) return;
     const timer = window.setInterval(() => {
-      setVisualProgress((current) => advanceVisualProgress(current, progress, phase));
-    }, 350);
+      setVisualProgress((current) => advanceVisualProgress(
+        current,
+        progress,
+        phase,
+        250,
+        observationRef.current.rate,
+      ));
+    }, 250);
     return () => window.clearInterval(timer);
   }, [phase, progress]);
   const displayedProgress = Math.max(visualProgress, Math.min(progress, 100));
@@ -237,6 +263,7 @@ function LoadingScreen({
     ["Analyse des parties", phaseIsComplete(phase, "analysis")],
     ["Moments identifiés", phaseIsComplete(phase, "identification")],
     ["Entraînement préparé", phaseIsComplete(phase, "training")],
+    ["Analyse sauvegardée", !connected || phaseIsComplete(phase, "saving")],
   ] as const;
   return (
     <main className="loading-screen">
@@ -521,8 +548,11 @@ export function ChessPathApp() {
 
   async function runPayload(payload: AnalysisPayload) {
     setAnalysisPhase("preparation");
-    setProgress((current) => Math.max(current, 14));
+    setProgress((current) => Math.max(current, 6));
     setLoadingLabel(`${payload.games.length} parties récupérées · préparation du moteur`);
+    // The large immutable training bank is loaded once, concurrently with the
+    // engine work, then kept alive for subsequent analyses.
+    const pedagogyWarmup = warmAnalysisPostprocessor().catch(() => undefined);
     const engine = await ensureEngine();
     const { analyzePayload } = await import("@/domain/chess/analyze");
     const analysis = await analyzePayload(
@@ -535,33 +565,42 @@ export function ChessPathApp() {
         setProgress((current) => Math.max(current, checkpoint));
       },
       generateExercisesOffMainThread,
+      processPatternsOffMainThread,
     );
+    await pedagogyWarmup;
     // The optional OpenAI pedagogy module remains available in the codebase,
     // but Pattern Engine V1 deliberately performs no paid AI call.
     const completedAnalysis = analysis;
-    setAnalysisPhase("finalization");
-    setLoadingLabel("Finalisation · assemblage du diagnostic et des exercices");
-    setProgress((current) => Math.max(current, 99));
-    await yieldToMainThread();
     setResult(completedAnalysis);
     setTrainingExercises(completedAnalysis.exercises);
 
+    let refreshAfterCompletion = false;
     if (user) {
-      setLoadingLabel("Finalisation · sauvegarde de ton analyse");
+      setAnalysisPhase("saving");
+      setProgress((current) => Math.max(current, progressForPhase("saving", 0, 1)));
+      setLoadingLabel("Sauvegarde de ton analyse et de tes moments pédagogiques");
       setSaveStatus("Sauvegarde de cette analyse dans ton profil…");
       try {
-        await saveCompleteAnalysis(user.id, payload, completedAnalysis);
+        await measureAnalysisPhaseAsync(
+          "sauvegarde Supabase",
+          () => saveCompleteAnalysis(user.id, payload, completedAnalysis),
+        );
         setSaveStatus("Analyse, parties, faiblesses et exercices sauvegardés dans ton profil.");
-        await refreshProfile(user);
+        refreshAfterCompletion = true;
       } catch (saveError) {
         setSaveStatus(`Le diagnostic fonctionne, mais la sauvegarde a échoué : ${saveError instanceof Error ? saveError.message : "erreur inconnue"}`);
       }
     } else {
       setSaveStatus("Diagnostic non sauvegardé : connecte ton profil pour le retrouver plus tard.");
     }
+    setAnalysisPhase("finalization");
+    setLoadingLabel("Finalisation · vérification du diagnostic et des exercices");
+    setProgress((current) => Math.max(current, 99));
+    await yieldToMainThread();
     setProgress(100);
     await yieldToMainThread();
     setScreen("dashboard");
+    if (refreshAfterCompletion) void refreshProfile(user);
   }
 
   async function startAnalysis(request: AnalysisRequest) {
@@ -574,14 +613,20 @@ export function ChessPathApp() {
       let payload: AnalysisPayload;
       if (request.source === "pgn") {
         setLoadingLabel("Validation et reconstruction du PGN");
-        payload = await parsePgnCollectionAsync(request.pgn, request.playerName, request.count);
+        payload = await measureAnalysisPhaseAsync(
+          "parsing PGN",
+          () => parsePgnCollectionAsync(request.pgn, request.playerName, request.count),
+        );
       } else {
         setLoadingLabel(`Recherche de ${request.count} partie${request.count > 1 ? "s" : ""} ${request.cadence === "all" ? "toutes cadences" : request.cadence}`);
-        const response = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: request.username, limit: request.count, cadence: request.cadence }),
-        });
+        const response = await measureAnalysisPhaseAsync(
+          "récupération Chess.com",
+          () => fetch("/api/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: request.username, limit: request.count, cadence: request.cadence }),
+          }),
+        );
         const data = await readApiResponse<AnalysisPayload>(response, "Impossible de récupérer ces parties");
         if (!Array.isArray(data.games)) throw new Error("ChessPath a reçu des parties dans un format invalide.");
         payload = data;

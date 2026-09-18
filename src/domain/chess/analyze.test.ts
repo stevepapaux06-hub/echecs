@@ -185,6 +185,8 @@ describe("analyzePayload resilience", () => {
     expect(phases).toContain("analysis");
     expect(phases).toContain("identification");
     expect(phases).toContain("training");
-    expect(phases.at(-1)).toBe("finalization");
+    // Saving/finalization belong to the application shell because guest and
+    // authenticated analyses have different persistence work.
+    expect(phases.at(-1)).toBe("training");
   }, 15_000);
 });

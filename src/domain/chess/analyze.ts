@@ -14,7 +14,9 @@ import type {
 import { calculateMetrics } from "../diagnostic/metrics";
 import { evaluationForPlayer } from "../../infrastructure/engine/uci";
 import { patternsForAnalyzedMove, structureForPosition } from "../patterns/engine";
-import { patternCandidatesForPosition } from "../patterns/engine";
+import { patternCandidatesForPosition, type PatternOccurrence, type PositionPatternCandidate } from "../patterns/engine";
+import type { PawnStructureRecognition } from "../knowledge/pawn-structures";
+import type { PedagogicalAssessment } from "../diagnostic/pedagogical-score";
 import { scorePedagogicalMoment } from "../diagnostic/pedagogical-score";
 import {
   assessMultiPvStability,
@@ -54,6 +56,20 @@ export type AnalysisPostprocessor = (
   metrics: DiagnosticMetrics,
 ) => Promise<AnalysisPostprocessResult>;
 
+export type PatternClassificationInput = { move: AnalyzedMove; playerRating: number };
+export type PatternClassification = {
+  patterns: PatternOccurrence[];
+  pawnStructure: PawnStructureRecognition;
+  pedagogical: PedagogicalAssessment;
+};
+export type AnalysisPatternProcessor = {
+  scan: (moves: MoveSnapshot[]) => Promise<PositionPatternCandidate[][]>;
+  classify: (
+    items: PatternClassificationInput[],
+    onProgress?: (completed: number, total: number) => void,
+  ) => Promise<PatternClassification[]>;
+};
+
 function analysisBudget(gameCount: number): {
   movesPerGame: number;
   patternPositionsPerGame: number;
@@ -72,6 +88,7 @@ async function movesToAnalyze(
   playerColor: "white" | "black",
   limit: number,
   patternLimit: number,
+  patternProcessor?: AnalysisPatternProcessor,
 ): Promise<MoveSnapshot[]> {
   const color = playerColor === "white" ? "w" : "b";
   const candidates = moves.filter((move) => move.color === color && move.ply >= 8 && move.ply <= 100);
@@ -86,14 +103,12 @@ async function movesToAnalyze(
     : Array.from({ length: patternScanLimit }, (_, index) => (
         candidates[Math.round(index * (candidates.length - 1) / Math.max(1, patternScanLimit - 1))]
       ));
-  const scannedPatterns: Array<{ move: MoveSnapshot; patterns: ReturnType<typeof patternCandidatesForPosition> }> = [];
-  for (const move of patternScan) {
-    scannedPatterns.push({
-      move,
-      patterns: patternCandidatesForPosition(move.fenBefore, { phase: move.phase, ply: move.ply }),
-    });
-    await yieldToMainThread();
-  }
+  const scanned = patternProcessor
+    ? await patternProcessor.scan(patternScan)
+    : patternScan.map((move) => (
+        patternCandidatesForPosition(move.fenBefore, { phase: move.phase, ply: move.ply })
+      ));
+  const scannedPatterns = patternScan.map((move, index) => ({ move, patterns: scanned[index] ?? [] }));
   const patternDriven = scannedPatterns
     .filter((item) => item.patterns.length > 0)
     .toSorted((first, second) => (
@@ -113,6 +128,7 @@ export async function analyzePayload(
   engine: PositionEvaluator,
   onProgress: (progress: AnalysisProgress) => void,
   postprocess?: AnalysisPostprocessor,
+  patternProcessor?: AnalysisPatternProcessor,
 ): Promise<CompleteAnalysis> {
   const games = payload.games.slice(0, 100);
   const budget = analysisBudget(games.length);
@@ -128,6 +144,7 @@ export async function analyzePayload(
             game.playerColor,
             budget.movesPerGame,
             budget.patternPositionsPerGame,
+            patternProcessor,
           ),
         });
         onProgress({
@@ -159,9 +176,10 @@ export async function analyzePayload(
   }
 
   const analyzedGames: AnalyzedGame[] = [];
-  for (const { game, moves } of selected) {
-    const analyzedMoves: AnalyzedMove[] = [];
-    for (const move of moves) {
+  await measureAnalysisPhaseAsync("évaluations Stockfish initiales", async () => {
+    for (const { game, moves } of selected) {
+      const analyzedMoves: AnalyzedMove[] = [];
+      for (const move of moves) {
       const [beforeResult, afterResult] = await Promise.allSettled([
         evaluate(
           move.fenBefore,
@@ -197,26 +215,47 @@ export async function analyzePayload(
       const after = afterResult.value;
       const playerCpBefore = evaluationForPlayer(before.whiteCp, game.playerColor);
       const playerCpAfter = evaluationForPlayer(after.whiteCp, game.playerColor);
-      analyzedMoves.push({
-        ...move,
-        before,
-        after,
-        playerCpBefore,
-        playerCpAfter,
-        lossCp: Math.max(0, playerCpBefore - playerCpAfter),
-      });
+        analyzedMoves.push({
+          ...move,
+          before,
+          after,
+          playerCpBefore,
+          playerCpAfter,
+          lossCp: Math.max(0, playerCpBefore - playerCpAfter),
+        });
+      }
+      analyzedGames.push({ ...game, analyzedMoves });
+      await yieldToMainThread();
     }
-    analyzedGames.push({ ...game, analyzedMoves });
-    await yieldToMainThread();
-  }
+  });
 
   // Pattern candidates are attached before the deep pass so a stable 0.00
   // position can request validation independently of an evaluation delta.
-  const patternTotal = analyzedGames.reduce((sum, game) => sum + game.analyzedMoves.length, 0);
+  const patternInputs = analyzedGames.flatMap((game) => game.analyzedMoves.map((move) => ({
+    move,
+    playerRating: game.playerRating,
+  })));
+  const patternTotal = patternInputs.length;
   let patternCompleted = 0;
-  const classificationTimer = createAnalysisTimer("classification des moments");
-  for (const game of analyzedGames) {
-    for (const move of game.analyzedMoves) {
+  if (patternProcessor) {
+    const classifications = await measureAnalysisPhaseAsync(
+      "classification des moments (workers)",
+      () => patternProcessor.classify(patternInputs, (completed) => {
+        patternCompleted = completed;
+        onProgress({
+          phase: "identification",
+          completed,
+          total: Math.max(1, patternTotal + budget.deepPositions * 2),
+          label: `Identification des moments · ${completed}/${patternTotal}`,
+        });
+      }),
+    );
+    classifications.forEach((classification, index) => {
+      Object.assign(patternInputs[index].move, classification);
+    });
+  } else {
+    const classificationTimer = createAnalysisTimer("classification des moments");
+    for (const { move, playerRating } of patternInputs) {
       classificationTimer.measure(() => {
         move.patterns = patternsForAnalyzedMove(move);
         move.pawnStructure = structureForPosition(move.fenBefore);
@@ -226,7 +265,7 @@ export async function analyzePayload(
           patterns: move.patterns,
           phase: move.phase,
           ply: move.ply,
-          playerRating: game.playerRating,
+          playerRating,
         });
       });
       patternCompleted += 1;
@@ -234,14 +273,14 @@ export async function analyzePayload(
         onProgress({
           phase: "identification",
           completed: patternCompleted,
-          total: Math.max(1, patternTotal * 2),
+          total: Math.max(1, patternTotal + budget.deepPositions * 2),
           label: "Identification des moments pédagogiques",
         });
         await yieldToMainThread();
       }
     }
+    classificationTimer.report();
   }
-  classificationTimer.report();
 
   // A second, deeper pass follows pedagogical value rather than raw lossCp.
   // This validates small-advantage conversions and stable pattern positions,
@@ -254,8 +293,9 @@ export async function analyzePayload(
       || b.move.lossCp - a.move.lossCp
     ))
     .slice(0, budget.deepPositions);
-  for (const [criticalIndex, { game, move }] of critical.entries()) {
-    const shallowBefore = move.before;
+  await measureAnalysisPhaseAsync("validation Stockfish approfondie", async () => {
+    for (const [criticalIndex, { game, move }] of critical.entries()) {
+      const shallowBefore = move.before;
     const [beforeResult, afterResult] = await Promise.allSettled([
       // Real alternatives are only requested for shortlisted pedagogical
       // moments, keeping the first pass fast while avoiding top-1 lessons.
@@ -268,7 +308,7 @@ export async function analyzePayload(
       onProgress({
         phase: "identification",
         completed: patternTotal + criticalIndex + 1,
-        total: Math.max(1, patternTotal + critical.length),
+        total: Math.max(1, patternTotal + critical.length * 2),
         label: "Identification des moments · validation approfondie",
       });
       await yieldToMainThread();
@@ -314,23 +354,44 @@ export async function analyzePayload(
     move.playerCpBefore = evaluationForPlayer(before.whiteCp, game.playerColor);
     move.playerCpAfter = evaluationForPlayer(after.whiteCp, game.playerColor);
     move.lossCp = Math.max(0, move.playerCpBefore - move.playerCpAfter);
-    move.patterns = patternsForAnalyzedMove(move);
-    move.pawnStructure = structureForPosition(move.fenBefore);
-    move.pedagogical = scorePedagogicalMoment({
-      beforeCp: move.playerCpBefore,
-      afterCp: move.playerCpAfter,
-      patterns: move.patterns,
-      phase: move.phase,
-      ply: move.ply,
-      playerRating: game.playerRating,
-    });
+    if (!patternProcessor) {
+      move.patterns = patternsForAnalyzedMove(move);
+      move.pawnStructure = structureForPosition(move.fenBefore);
+      move.pedagogical = scorePedagogicalMoment({
+        beforeCp: move.playerCpBefore,
+        afterCp: move.playerCpAfter,
+        patterns: move.patterns,
+        phase: move.phase,
+        ply: move.ply,
+        playerRating: game.playerRating,
+      });
+    }
     onProgress({
       phase: "identification",
       completed: patternTotal + criticalIndex + 1,
-      total: Math.max(1, patternTotal + critical.length),
+      total: Math.max(1, patternTotal + critical.length * 2),
       label: "Identification des moments · validation approfondie",
     });
-    await yieldToMainThread();
+      await yieldToMainThread();
+    }
+  });
+
+  if (patternProcessor && critical.length) {
+    const deepClassifications = await measureAnalysisPhaseAsync(
+      "reclassification approfondie (workers)",
+      () => patternProcessor.classify(
+        critical.map(({ game, move }) => ({ move, playerRating: game.playerRating })),
+        (completed) => onProgress({
+          phase: "identification",
+          completed: patternTotal + critical.length + completed,
+          total: Math.max(1, patternTotal + critical.length * 2),
+          label: `Validation des moments · ${completed}/${critical.length}`,
+        }),
+      ),
+    );
+    deepClassifications.forEach((classification, index) => {
+      Object.assign(critical[index].move, classification);
+    });
   }
 
   onProgress({ phase: "training", completed: 0, total: 1, label: "Préparation de l’entraînement" });
@@ -356,7 +417,6 @@ export async function analyzePayload(
   );
   onProgress({ phase: "training", completed: 1, total: 1, label: "Préparation de l’entraînement" });
   await yieldToMainThread();
-  onProgress({ phase: "finalization", completed: 0, total: 1, label: "Finalisation du diagnostic" });
   const recurringWeaknesses = measureAnalysisPhase(
     "agrégation des faiblesses",
     () => detectRecurringWeaknesses(generated.exercises),

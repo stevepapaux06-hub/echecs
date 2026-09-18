@@ -4,9 +4,10 @@ import { advanceVisualProgress, progressForPhase } from "./analysis-progress";
 describe("analysis progress", () => {
   it("maps real checkpoints inside their actual pipeline phase", () => {
     expect(progressForPhase("preparation", 0, 10)).toBe(4);
-    expect(progressForPhase("analysis", 5, 10)).toBe(46);
-    expect(progressForPhase("identification", 10, 10)).toBe(90);
-    expect(progressForPhase("finalization", 0, 1)).toBe(97);
+    expect(progressForPhase("analysis", 5, 10)).toBe(41);
+    expect(progressForPhase("identification", 10, 10)).toBe(87);
+    expect(progressForPhase("saving", 0, 1)).toBe(94);
+    expect(progressForPhase("finalization", 0, 1)).toBe(98);
   });
 
   it("moves visually between checkpoints without crossing the phase ceiling", () => {
@@ -18,7 +19,14 @@ describe("analysis progress", () => {
     }
     expect(values.every((value, index) => index === 0 || value >= values[index - 1])).toBe(true);
     expect(visual).toBeGreaterThan(4);
-    expect(visual).toBeLessThanOrEqual(20);
+    expect(visual).toBeLessThanOrEqual(24);
+  });
+
+  it("adapts interpolation to the observed real checkpoint velocity", () => {
+    const slow = advanceVisualProgress(30, 30, "analysis", 250, 0.2);
+    const fast = advanceVisualProgress(30, 30, "analysis", 250, 4);
+    expect(fast).toBeGreaterThan(slow);
+    expect(fast).toBeLessThanOrEqual(58);
   });
 
   it("never reaches 100 before the real completion signal", () => {
