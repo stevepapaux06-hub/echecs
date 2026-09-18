@@ -513,6 +513,8 @@ export type CompleteAnalysis = {
   games: AnalyzedGame[];
   metrics: DiagnosticMetrics;
   exercises: TrainingExercise[];
+  /** Recurrence is inferred only from finally validated personal exercises. */
+  recurringWeaknesses?: import("../diagnostic/recurring-weaknesses").RecurringWeakness[];
   /** Terminal disposition for every personal candidate considered. */
   candidateAuditTrail?: CandidateAuditEntry[];
   trainingContentResolution?: TrainingContentResolution;

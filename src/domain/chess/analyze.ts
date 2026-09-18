@@ -19,6 +19,7 @@ import {
   MULTIPV_STABILITY_DEPTH_STEP,
   needsAdaptiveMultiPvProbe,
 } from "./multipv-stability";
+import { detectRecurringWeaknesses } from "../diagnostic/recurring-weaknesses";
 
 export type AnalysisProgress = {
   completed: number;
@@ -278,6 +279,7 @@ export async function analyzePayload(
     games: analyzedGames,
     metrics,
     exercises: generated.exercises,
+    recurringWeaknesses: detectRecurringWeaknesses(generated.exercises),
     candidateAuditTrail: generated.auditTrail,
     trainingContentResolution: generated.bankResolution,
   };
