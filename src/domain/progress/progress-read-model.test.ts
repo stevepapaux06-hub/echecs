@@ -60,10 +60,12 @@ describe("progress read model", () => {
     const balanced = buildProgressFixture("BALANCED");
     expect(balanced.domains).toHaveLength(5);
     expect(balanced.domains.find((domain) => domain.category === "tactic")).toMatchObject({
-      opportunities: 20,
-      correctlyTreated: 16,
+      opportunities: 10,
+      correctlyTreated: 8,
       successRate: 0.8,
-      observation: "WELL_OBSERVED",
+      observation: "OBSERVED",
+      recent: { opportunities: 10, correctlyTreated: 8, successRate: 0.8 },
+      previous: { opportunities: 10, correctlyTreated: 8, successRate: 0.8 },
     });
     expect(buildProgressFixture("INSUFFICIENT_DATA").domains.every((domain) => (
       domain.successRate === null && domain.observation === "INSUFFICIENT_DATA"
@@ -72,10 +74,14 @@ describe("progress read model", () => {
 
   it("does not call a well-observed 73/74 concept insufficient", () => {
     const input = progressFixtureInput("RICH_PROFILE");
-    input.games = Array.from({ length: 20 }, (_, index) => ({
-      ...input.games[index],
-      concepts: [{ conceptSlug: "fork", opportunities: index < 17 ? 4 : 2, successes: index === 0 ? 3 : index < 17 ? 4 : 2 }],
-    }));
+    input.games = input.games.map((game) => {
+      const gameNumber = Number(game.gameId.slice(1));
+      const opportunities = gameNumber > 10 ? (gameNumber === 20 ? 11 : 7) : 1;
+      return {
+        ...game,
+        concepts: [{ conceptSlug: "fork", opportunities, successes: gameNumber === 11 ? opportunities - 1 : opportunities }],
+      };
+    });
     input.evidence = [];
     const result = buildProgressReadModel(input);
     expect(result.domains.find((domain) => domain.category === "tactic")).toMatchObject({

@@ -99,6 +99,8 @@ export type ProgressGraphPoint = {
 export type ProgressDomain = {
   category: Exclude<DiagnosticCategory, "opening">;
   label: string;
+  recent: ProgressDomainWindow;
+  previous: ProgressDomainWindow;
   opportunities: number;
   correctlyTreated: number;
   failures: number;
@@ -106,6 +108,13 @@ export type ProgressDomain = {
   observation: "INSUFFICIENT_DATA" | "OBSERVED" | "WELL_OBSERVED";
   trend: ProgressTrend;
   conceptCount: number;
+};
+
+export type ProgressDomainWindow = {
+  opportunities: number;
+  correctlyTreated: number;
+  failures: number;
+  successRate: number | null;
 };
 
 export type ProgressReadModel = {
@@ -406,19 +415,18 @@ export function buildProgressReadModel(input: {
     graphPoints(games, evidence, concept.conceptSlug),
   ]));
 
-  // The player map is an observed success rate, not a synthetic rating. It
-  // aggregates up to two ten-game windows so a single new game cannot replace
-  // the whole profile. Fewer than five observed opportunities remains missing.
+  // The player map is the observed success rate in the latest ten-game window,
+  // never a synthetic rating. The preceding window is kept separately and is
+  // used only for honest like-for-like comparisons. Fewer than five observed
+  // opportunities remains deliberately unmeasured.
   const domains = PROGRESS_DOMAINS.map(({ category, label }): ProgressDomain => {
     const domainConcepts = concepts.filter((concept) => concept.category === category);
     const recentOpportunities = domainConcepts.reduce((sum, concept) => sum + concept.recent.exposures, 0);
     const recentSuccesses = domainConcepts.reduce((sum, concept) => sum + concept.recent.correctlyTreated, 0);
     const previousOpportunities = domainConcepts.reduce((sum, concept) => sum + concept.previous.exposures, 0);
     const previousSuccesses = domainConcepts.reduce((sum, concept) => sum + concept.previous.correctlyTreated, 0);
-    const opportunities = recentOpportunities + previousOpportunities;
-    const correctlyTreated = recentSuccesses + previousSuccesses;
-    const successRate = opportunities >= PROGRESS_READ_MODEL_POLICY.minimumDomainExposures
-      ? correctlyTreated / opportunities
+    const successRate = recentOpportunities >= PROGRESS_READ_MODEL_POLICY.minimumDomainExposures
+      ? recentSuccesses / recentOpportunities
       : null;
     const comparable = recentOpportunities >= PROGRESS_READ_MODEL_POLICY.minimumComparableExposures
       && previousOpportunities >= PROGRESS_READ_MODEL_POLICY.minimumComparableExposures;
@@ -434,13 +442,27 @@ export function buildProgressReadModel(input: {
     return {
       category,
       label,
-      opportunities,
-      correctlyTreated,
-      failures: opportunities - correctlyTreated,
+      recent: {
+        opportunities: recentOpportunities,
+        correctlyTreated: recentSuccesses,
+        failures: recentOpportunities - recentSuccesses,
+        successRate,
+      },
+      previous: {
+        opportunities: previousOpportunities,
+        correctlyTreated: previousSuccesses,
+        failures: previousOpportunities - previousSuccesses,
+        successRate: previousOpportunities >= PROGRESS_READ_MODEL_POLICY.minimumDomainExposures
+          ? previousSuccesses / previousOpportunities
+          : null,
+      },
+      opportunities: recentOpportunities,
+      correctlyTreated: recentSuccesses,
+      failures: recentOpportunities - recentSuccesses,
       successRate,
-      observation: opportunities < PROGRESS_READ_MODEL_POLICY.minimumDomainExposures
+      observation: recentOpportunities < PROGRESS_READ_MODEL_POLICY.minimumDomainExposures
         ? "INSUFFICIENT_DATA"
-        : opportunities >= PROGRESS_READ_MODEL_POLICY.wellObservedDomainExposures ? "WELL_OBSERVED" : "OBSERVED",
+        : recentOpportunities >= PROGRESS_READ_MODEL_POLICY.wellObservedDomainExposures ? "WELL_OBSERVED" : "OBSERVED",
       trend,
       conceptCount: domainConcepts.length,
     };

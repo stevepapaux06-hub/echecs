@@ -7,6 +7,7 @@ import {
   developmentFixtureName,
   ProgressView,
   progressAchievements,
+  progressChanges,
   progressStrengths,
   progressSummary,
   progressWorkItems,
@@ -30,16 +31,17 @@ describe("ProgressView player map", () => {
     expect(progressSummary(model).title).toBe("Ton profil est plutôt équilibré.");
     const html = renderFixture("BALANCED");
     expect(html).toContain("5/5 domaines mesurés");
-    expect(html).toContain("16/20 occasions bien traitées");
+    expect(html).toContain("8/10 occasions récentes bien traitées");
   });
 
   it("shows a strong tactical profile as observed performance, never domain Elo", () => {
     const html = renderFixture("TACTICAL_STRENGTH");
-    expect(html).toContain("98 %");
+    expect(html).toContain("100 %");
     expect(progressStrengths(buildProgressFixture("TACTICAL_STRENGTH"))).toContainEqual(expect.objectContaining({
       label: "POINT FORT OBSERVÉ",
       concept: expect.objectContaining({ conceptSlug: "fork" }),
     }));
+    expect(html.match(/M’entraîner/g)).toHaveLength(1);
     expect(html).not.toMatch(/elo tactique|elo stratégie|elo finales/i);
   });
 
@@ -76,12 +78,24 @@ describe("ProgressView player map", () => {
     expect(renderFixture("INSUFFICIENT_DATA")).toContain("avant une tendance fiable");
   });
 
+  it("compares recent and previous domain windows without fabricating missing values", () => {
+    const changes = progressChanges(buildProgressFixture("IMPROVING"));
+    expect(changes).toContainEqual(expect.objectContaining({
+      direction: "IMPROVEMENT",
+      domain: expect.objectContaining({ category: "strategy" }),
+    }));
+    expect(progressChanges(buildProgressFixture("INSUFFICIENT_DATA"))).toEqual([]);
+    expect(renderFixture("INSUFFICIENT_DATA")).toContain("Pas encore assez d’historique comparable");
+  });
+
   it("renders accessible domain exploration and training actions", () => {
     const html = renderFixture("RICH_PROFILE");
     expect(html).toContain("Explorer par domaine");
     expect(html).toContain("Tactique");
     expect(html).toContain("Stratégie");
     expect(html).toContain("aria-expanded=\"false\"");
+    expect(html).toContain("role=\"button\"");
+    expect(html).toContain("aria-label=\"Voir Tactique");
     expect(html).toContain("M’entraîner");
   });
 
